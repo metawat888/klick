@@ -197,13 +197,17 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
+            <label class="flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 rounded-lg px-2.5 py-1 text-emerald-300 font-bold cursor-pointer select-none">
+              <input id="chk-lock-aspect" type="checkbox" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500" />
+              <span>🔒 ล็อกสัดส่วนจอแม่นยำ 1:1 (Lock Aspect Ratio)</span>
+            </label>
             <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1">
-              <span class="text-slate-400">สเกลจอจริง:</span>
+              <span class="text-slate-400">ความละเอียดอ้างอิง:</span>
               <select id="sim-screen-res" class="bg-slate-950 text-cyan-300 mono font-semibold rounded px-1.5 py-0.5 border border-slate-700">
-                <option value="window">ตามหน้าต่างปัจจุบัน (Auto)</option>
-                <option value="1920x1080">1920 × 1080 (Full HD)</option>
-                <option value="1440x900">1440 × 900 (MacBook)</option>
-                <option value="1366x768">1366 × 768 (Laptop)</option>
+                <option value="window" selected>ตรงกับหน้าต่างจริง 100% (Live Window)</option>
+                <option value="1920x1080">1920 × 1080 (16:9 Full HD)</option>
+                <option value="1440x900">1440 × 900 (16:10 MacBook)</option>
+                <option value="1366x768">1366 × 768 (16:9 Laptop)</option>
               </select>
             </div>
 
@@ -302,10 +306,15 @@
           </div>
         </div>
 
-        <!-- Selector Input (Hidden when using X,Y) -->
+        <!-- Selector Input (Supports Button Name, Placeholder, ID, Class + Live Scan Verification) -->
         <div id="group-selector" class="hidden sm:col-span-3">
-          <label class="block text-slate-400 mb-1">ชื่อปุ่ม หรือ CSS Selector</label>
-          <input id="input-selector" type="text" value="Play|เล่น|Login|เข้าสู่ระบบ" placeholder="เช่น Play หรือ #login-btn" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-cyan-300 mono focus:outline-none focus:border-cyan-400" />
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-slate-400">ชื่อปุ่ม / ข้อความบนปุ่ม / CSS</label>
+            <button id="btn-verify-selector" type="button" class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500 hover:text-slate-950 font-bold transition">
+              🔍 ทดสอบหาปุ่ม
+            </button>
+          </div>
+          <input id="input-selector" type="text" value="PLAY" placeholder="พิมพ์ชื่อปุ่ม เช่น PLAY, Login, ช่อง ID..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-cyan-300 mono focus:outline-none focus:border-cyan-400" />
         </div>
 
         <!-- Value / Text to Type / Delay -->
@@ -732,49 +741,164 @@
       setTimeout(() => spark.remove(), 620);
     }
 
-    function findTargetElement(step) {
-      if (step.type === 'click_selector' || step.type === 'type_selector' || step.type === 'wait_for_element') {
-        const parts = String(step.selector || '').split('|').map(s => s.trim()).filter(Boolean);
-        for (const p of parts) {
-          if (p.startsWith('#') || p.startsWith('.') || p.startsWith('input') || p.startsWith('button')) {
-            try {
-              const el = document.querySelector(p);
-              if (el) return el;
-            } catch (e) {}
-          }
+    // --- Smart Element & Button Finder (Finds by exact/partial button text, placeholder, label, aria-label, ID, CSS, or ratio-locked X,Y) ---
+    function isBotInternalElement(el) {
+      if (!el) return true;
+      if (el.closest('#embedded-hud-panel') || el.closest('#bot-cursor') || el.closest('header')) return true;
+      return false;
+    }
+
+    function deepClickElement(el, clientX, clientY) {
+      if (!el) return false;
+      // Climb up to actual interactive button/link/input if a child span/icon was hit
+      const interactive = el.closest('button, a, input, textarea, select, [role="button"], [onclick]') || el;
+      interactive.focus();
+
+      const opts = { bubbles: true, cancelable: true, view: window, clientX: clientX || 0, clientY: clientY || 0, button: 0, buttons: 1 };
+      interactive.dispatchEvent(new PointerEvent('pointerdown', opts));
+      interactive.dispatchEvent(new MouseEvent('mousedown', opts));
+      interactive.dispatchEvent(new PointerEvent('pointerup', opts));
+      interactive.dispatchEvent(new MouseEvent('mouseup', opts));
+      interactive.dispatchEvent(new MouseEvent('click', opts));
+      if (typeof interactive.click === 'function') {
+        interactive.click();
+      }
+      return true;
+    }
+
+    function deepPressEnter(el) {
+      const target = (el && !isBotInternalElement(el)) ? el : (document.activeElement && !isBotInternalElement(document.activeElement) ? document.activeElement : document.getElementById('test-box-msg'));
+      if (!target) return false;
+      target.focus();
+      const keyOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true };
+      target.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
+      target.dispatchEvent(new KeyboardEvent('keypress', keyOpts));
+      target.dispatchEvent(new KeyboardEvent('keyup', keyOpts));
+
+      // Trigger parent form submit or associated action button
+      const form = target.closest('form');
+      if (form) {
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.submit();
+      } else if (target.id === 'test-box-id' || target.id === 'test-box-pass') {
+        document.getElementById('test-btn-login')?.click();
+      } else if (target.id === 'test-box-msg') {
+        document.getElementById('test-btn-play')?.click();
+      }
+      return true;
+    }
+
+    function findElementBySmartQuery(queryStr, preferInput = false) {
+      const raw = String(queryStr || '').trim();
+      if (!raw) return null;
+
+      // Support pipe-separated keywords/selectors
+      const terms = raw.split('|').map(t => t.trim()).filter(Boolean);
+
+      // 1. Direct CSS Selector / ID check first
+      for (const term of terms) {
+        if (term.startsWith('#') || term.startsWith('.') || term.startsWith('[') || term.includes('input') || term.includes('button')) {
+          try {
+            const direct = document.querySelector(term);
+            if (direct && !isBotInternalElement(direct)) return direct;
+          } catch (e) {}
         }
-        const regex = new RegExp(parts.join('|'), 'i');
-        const all = Array.from(document.querySelectorAll('button, a, input, textarea, [role="button"]'));
-        const matched = all.find(el => regex.test((el.innerText || el.value || el.placeholder || '').trim()));
-        if (matched) return matched;
+        // Also check if term matches an element ID directly without '#'
+        const byId = document.getElementById(term);
+        if (byId && !isBotInternalElement(byId)) return byId;
       }
 
-      const elAtPoint = document.elementFromPoint(step.x, step.y);
-      if (elAtPoint && (elAtPoint.tagName === 'INPUT' || elAtPoint.tagName === 'BUTTON' || elAtPoint.tagName === 'TEXTAREA')) {
-        return elAtPoint;
+      // 2. Gather candidate elements (prioritize Target Pad first, then whole page excluding bot configuration controls)
+      const targetPad = document.getElementById('target-pad-section');
+      const pool = [
+        ...(targetPad ? Array.from(targetPad.querySelectorAll('button, input, textarea, select, a, [role="button"], label')) : []),
+        ...Array.from(document.querySelectorAll('button, input, textarea, select, a, [role="button"]')).filter(el => !isBotInternalElement(el) && !el.closest('#control-config-section') && !el.closest('#queue-builder-section'))
+      ];
+
+      for (const term of terms) {
+        const lowerTerm = term.toLowerCase();
+        for (const el of pool) {
+          if (preferInput && !('value' in el) && el.tagName !== 'TEXTAREA' && el.tagName !== 'INPUT') continue;
+          const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+          const val = (el.value || '').trim().toLowerCase();
+          const ph = (el.getAttribute('placeholder') || '').trim().toLowerCase();
+          const aria = (el.getAttribute('aria-label') || '').trim().toLowerCase();
+          const title = (el.getAttribute('title') || '').trim().toLowerCase();
+          const idStr = (el.id || '').trim().toLowerCase();
+          const nameStr = (el.getAttribute('name') || '').trim().toLowerCase();
+
+          if (
+            text.includes(lowerTerm) ||
+            val.includes(lowerTerm) ||
+            ph.includes(lowerTerm) ||
+            aria.includes(lowerTerm) ||
+            title.includes(lowerTerm) ||
+            idStr.includes(lowerTerm) ||
+            nameStr.includes(lowerTerm)
+          ) {
+            if (el.tagName === 'LABEL' && el.htmlFor) {
+              const linked = document.getElementById(el.htmlFor);
+              if (linked) return linked;
+            }
+            return el;
+          }
+        }
       }
-      if (step.selector) {
-        try {
-          const fallbackEl = document.querySelector(step.selector);
-          if (fallbackEl) return fallbackEl;
-        } catch (e) {}
-      }
-      return elAtPoint;
+      return null;
     }
+
+    function resolveScreenCoordsForStep(step) {
+      // If step stores normalized ratios (rx, ry) and Lock Aspect Ratio is active, compute exact current viewport X, Y
+      const lockAspect = document.getElementById('chk-lock-aspect')?.checked;
+      if (lockAspect && typeof step.rx === 'number' && typeof step.ry === 'number') {
+        return {
+          x: Math.round(step.rx * window.innerWidth),
+          y: Math.round(step.ry * window.innerHeight)
+        };
+      }
+      return {
+        x: Number(step.x) || 400,
+        y: Number(step.y) || 300
+      };
+    }
+
+    function findTargetElement(step) {
+      const isSelectorType = step.type === 'click_selector' || step.type === 'type_selector' || step.type === 'wait_for_element';
+      if (isSelectorType) {
+        const searchKey = step.selector || step.value || '';
+        const found = findElementBySmartQuery(searchKey, step.type === 'type_selector');
+        if (found) return found;
+      }
+
+      // If step has a linked selector (e.g. from template or smart target lock), check if that element exists
+      if (step.selector) {
+        const linked = findElementBySmartQuery(step.selector, step.type.includes('type'));
+        if (linked) return linked;
+      }
+
+      // Otherwise hit-test the exact screen coordinates
+      const { x, y } = resolveScreenCoordsForStep(step);
+      const hit = document.elementFromPoint(x, y);
+      if (hit && !isBotInternalElement(hit)) {
+        return hit.closest('button, a, input, textarea, select, [role="button"]') || hit;
+      }
+      return hit;
+    }
+
+    let lastInteractedElement = null;
 
     async function executeStepItem(step, index) {
       if (!step || step.enabled === false) return;
 
-      // Smart Run-Once Check (e.g. Login only on cycle 0)
       if (step.runOnce && state.cycles > 0) {
         return;
       }
 
       const speed = parseFloat(document.getElementById('loop-speed').value) || 2;
-      const jitter = document.getElementById('chk-human-jitter')?.checked ? (Math.random() * 140 - 40) : 0;
-      const moveWait = Math.max(120, Math.round((440 / speed) + jitter));
+      const jitter = document.getElementById('chk-human-jitter')?.checked ? (Math.random() * 90 - 25) : 0;
+      const moveWait = Math.max(110, Math.round((400 / speed) + jitter));
 
-      document.getElementById('hud-active-step-name').textContent = `#${index + 1}: ${step.note || step.value}`;
+      document.getElementById('hud-active-step-name').textContent = `#${index + 1}: ${step.note || step.value || step.selector}`;
 
       if (step.type === 'wait') {
         const sec = parseFloat(resolveSmartText(step.value)) || 1;
@@ -791,30 +915,52 @@
         return;
       }
 
+      if (step.type === 'press_enter') {
+        const target = lastInteractedElement || findTargetElement(step) || document.getElementById('test-box-msg');
+        let ex = state.lastMouseX, ey = state.lastMouseY;
+        if (target && target.getBoundingClientRect) {
+          const r = target.getBoundingClientRect();
+          if (r.width > 0) { ex = Math.round(r.left + r.width / 2); ey = Math.round(r.top + r.height / 2); }
+        }
+        moveBotCursor(ex, ey, '↵ กดปุ่ม ENTER');
+        await new Promise(r => setTimeout(r, Math.round(moveWait * 0.6)));
+        triggerClickVisual(ex, ey, '↵ ENTER!');
+        deepPressEnter(target);
+        return;
+      }
+
       if (step.type === 'wait_for_element') {
         const smartRetry = document.getElementById('chk-smart-retry')?.checked;
-        const maxTries = smartRetry ? 12 : 1;
-        for (let t = 0; t < maxTries && state.running; t++) {
+        const maxTries = smartRetry ? 15 : 2;
+        for (let t = 0; t < maxTries; t++) {
           const found = findTargetElement(step);
           if (found && found.offsetParent !== null) {
             const r = found.getBoundingClientRect();
-            moveBotCursor(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2), '👁️ พบปุ่มแล้ว!');
+            const fx = Math.round(r.left + r.width / 2);
+            const fy = Math.round(r.top + r.height / 2);
+            moveBotCursor(fx, fy, '👁️ พบปุ่มเป้าหมายแล้ว!');
+            triggerClickVisual(fx, fy, '👁️ FOUND!');
+            lastInteractedElement = found;
             return;
           }
-          await new Promise(r => setTimeout(r, 350));
+          await new Promise(r => setTimeout(r, 300));
         }
         return;
       }
 
       let targetEl = findTargetElement(step);
-      let targetX = Number(step.x) || 400;
-      let targetY = Number(step.y) || 300;
+      let { x: targetX, y: targetY } = resolveScreenCoordsForStep(step);
 
-      if ((step.type === 'click_selector' || step.type === 'type_selector' || step.selector) && targetEl) {
+      // If element was located via selector or smart match, snap coordinates to its live center
+      if (targetEl && (step.type === 'click_selector' || step.type === 'type_selector' || step.selector)) {
         const r = targetEl.getBoundingClientRect();
         if (r.width > 0 && r.height > 0) {
           targetX = Math.round(r.left + r.width * 0.5);
           targetY = Math.round(r.top + r.height * 0.5);
+          step.x = targetX;
+          step.y = targetY;
+          step.rx = Number((targetX / Math.max(1, window.innerWidth)).toFixed(4));
+          step.ry = Number((targetY / Math.max(1, window.innerHeight)).toFixed(4));
         }
       }
 
@@ -822,7 +968,14 @@
       await new Promise(r => setTimeout(r, moveWait));
 
       if (!targetEl) {
-        targetEl = document.elementFromPoint(targetX, targetY);
+        const hit = document.elementFromPoint(targetX, targetY);
+        if (hit && !isBotInternalElement(hit)) {
+          targetEl = hit.closest('button, a, input, textarea, select, [role="button"]') || hit;
+        }
+      }
+
+      if (targetEl) {
+        lastInteractedElement = targetEl;
       }
 
       if (step.type === 'click_xy' || step.type === 'click_selector') {
@@ -830,18 +983,16 @@
         state.clicks++;
         document.getElementById('stat-clicks').textContent = state.clicks;
         if (targetEl) {
-          targetEl.focus();
-          targetEl.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: targetX, clientY: targetY }));
-          targetEl.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: targetX, clientY: targetY }));
-          targetEl.click();
+          deepClickElement(targetEl, targetX, targetY);
+        } else {
+          document.getElementById('target-last-action').textContent = `🖱️ คลิกที่พิกัด (X: ${targetX}, Y: ${targetY})`;
         }
       } else if (step.type === 'dblclick_xy') {
         triggerClickVisual(targetX, targetY, `🖱️🖱️ 2x CLICK (${targetX}, ${targetY})`);
         state.clicks += 2;
         document.getElementById('stat-clicks').textContent = state.clicks;
         if (targetEl) {
-          targetEl.focus();
-          targetEl.click();
+          deepClickElement(targetEl, targetX, targetY);
           targetEl.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: targetX, clientY: targetY }));
         }
       } else if (step.type === 'click_ type_xy' || step.type === 'type_selector') {
@@ -849,21 +1000,22 @@
         triggerClickVisual(targetX, targetY, `⌨️ พิมพ์: "${resolvedText}"`);
         state.clicks++;
         document.getElementById('stat-clicks').textContent = state.clicks;
-        if (targetEl && ('value' in targetEl)) {
-          targetEl.focus();
-          setNativeValue(targetEl, '');
-          const charWait = Math.max(8, Math.round(28 / speed));
-          let cur = '';
-          for (let i = 0; i < resolvedText.length; i++) {
-            cur += resolvedText[i];
-            setNativeValue(targetEl, cur);
-            await new Promise(r => setTimeout(r, charWait));
-          }
-        }
-      } else if (step.type === 'press_enter') {
-        triggerClickVisual(targetX, targetY, '↵ ENTER');
         if (targetEl) {
-          targetEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+          deepClickElement(targetEl, targetX, targetY);
+          const inputTarget = ('value' in targetEl) ? targetEl : (targetEl.querySelector('input, textarea') || document.getElementById('test-box-msg'));
+          if (inputTarget && ('value' in inputTarget)) {
+            lastInteractedElement = inputTarget;
+            inputTarget.focus();
+            setNativeValue(inputTarget, '');
+            const charWait = Math.max(8, Math.round(25 / speed));
+            let cur = '';
+            for (let i = 0; i < resolvedText.length; i++) {
+              cur += resolvedText[i];
+              setNativeValue(inputTarget, cur);
+              await new Promise(r => setTimeout(r, charWait));
+            }
+            document.getElementById('target-last-action').textContent = `⌨️ พิมพ์ข้อความ "${resolvedText}" ลงใน #${inputTarget.id || inputTarget.tagName}`;
+          }
         }
       }
     }
@@ -921,8 +1073,8 @@
         'click_xy': '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold mono">🖱️ คลิก X,Y</span>',
         'dblclick_xy': '<span class="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[10px] font-bold mono">🖱️🖱️ 2xคลิก</span>',
         'click_ type_xy': '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold mono">⌨️ X,Y+พิมพ์</span>',
-        'click_selector': '<span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold mono">🔎 คลิกปุ่ม</span>',
-        'type_selector': '<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold mono">📝 พิมพ์</span>',
+        'click_selector': '<span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold mono">🔎 คลิกปุ่มตามชื่อ</span>',
+        'type_selector': '<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold mono">📝 พิมพ์ตามชื่อช่อง</span>',
         'wait_for_element': '<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold mono">👁️ รอปุ่ม</span>',
         'scroll_page': '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] font-bold mono">📜 เลื่อนจอ</span>',
         'press_enter': '<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold mono">↵ Enter</span>',
@@ -942,6 +1094,8 @@
 
         const usesXY = step.type === 'click_xy' || step.type === 'dblclick_xy' || step.type === 'click_ type_xy';
         const usesSel = step.type === 'click_selector' || step.type === 'type_selector' || step.type === 'wait_for_element';
+        const pctX = ((Number(step.rx || (step.x / Math.max(1, window.innerWidth)))) * 100).toFixed(1);
+        const pctY = ((Number(step.ry || (step.y / Math.max(1, window.innerHeight)))) * 100).toFixed(1);
 
         card.innerHTML = `
           <div>
@@ -951,6 +1105,7 @@
                   ${idx + 1}
                 </span>
                 ${typeBadge[step.type] || ''}
+                ${usesXY ? `<span class="text-[10px] mono text-slate-400">(${pctX}%, ${pctY}%)</span>` : ''}
               </div>
               <div class="flex items-center gap-1 shrink-0">
                 <button data-up-idx="${idx}" class="btn-card-up px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300" title="เลื่อนขึ้น">▲</button>
@@ -974,12 +1129,12 @@
               </div>
             ` : usesSel ? `
               <div class="mb-2 text-[11px]">
-                <input data-edit-sel="${idx}" type="text" value="${step.selector || ''}" placeholder="CSS Selector / ชื่อปุ่ม" class="edit-step-sel w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-cyan-300 mono focus:outline-none" />
+                <input data-edit-sel="${idx}" type="text" value="${step.selector || ''}" placeholder="ชื่อปุ่ม เช่น PLAY, Login หรือ #id" class="edit-step-sel w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-cyan-300 mono focus:outline-none" />
               </div>
             ` : ''}
 
             <div class="text-[11px]">
-              <input data-edit-val="${idx}" type="text" value="${step.value || ''}" placeholder="ข้อมูลที่พิมพ์ / เวลา / พิกเซล..." class="edit-step-val w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-emerald-200 focus:outline-none focus:border-emerald-500" />
+              <input data-edit-val="${idx}" type="text" value="${step.value || ''}" placeholder="ข้อความที่พิมพ์ / คำอธิบาย..." class="edit-step-val w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-emerald-200 focus:outline-none focus:border-emerald-500" />
             </div>
           </div>
 
@@ -997,18 +1152,21 @@
         container.appendChild(card);
       });
 
-      // Bind inline edits and unlimited queue controls
       container.querySelectorAll('.edit-step-x').forEach(inp => {
         inp.addEventListener('input', (e) => {
           const i = parseInt(e.target.getAttribute('data-edit-x'), 10);
-          state.queue[i].x = parseInt(e.target.value, 10) || 0;
+          const nx = parseInt(e.target.value, 10) || 0;
+          state.queue[i].x = nx;
+          state.queue[i].rx = Number((nx / Math.max(1, window.innerWidth)).toFixed(4));
           syncDynamicAutoMouseCode(); saveQueueToStorage();
         });
       });
       container.querySelectorAll('.edit-step-y').forEach(inp => {
         inp.addEventListener('input', (e) => {
           const i = parseInt(e.target.getAttribute('data-edit-y'), 10);
-          state.queue[i].y = parseInt(e.target.value, 10) || 0;
+          const ny = parseInt(e.target.value, 10) || 0;
+          state.queue[i].y = ny;
+          state.queue[i].ry = Number((ny / Math.max(1, window.innerHeight)).toFixed(4));
           syncDynamicAutoMouseCode(); saveQueueToStorage();
         });
       });
@@ -1082,17 +1240,21 @@
       });
     }
 
+    // Standalone Script with Full Ratio Lock, Smart Button Text Search, and Real Click/Enter Dispatch
     function generateStandaloneQueueScript() {
       const uid = document.getElementById('quick-id')?.value.trim() || '';
       const pwd = document.getElementById('quick-pass')?.value.trim() || '';
       const msg = document.getElementById('quick-text')?.value.trim() || '';
       const listRaw = document.getElementById('smart-rotating-list')?.value || '';
       const lines = listRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const lockAspect = Boolean(document.getElementById('chk-lock-aspect')?.checked);
 
       const serializedQueue = JSON.stringify(state.queue.filter(s => s.enabled !== false).map(s => ({
         type: s.type,
         x: s.x,
         y: s.y,
+        rx: typeof s.rx === 'number' ? s.rx : Number((s.x / Math.max(1, window.innerWidth)).toFixed(4)),
+        ry: typeof s.ry === 'number' ? s.ry : Number((s.y / Math.max(1, window.innerHeight)).toFixed(4)),
         selector: s.selector || '',
         value: s.value || '',
         note: s.note || '',
@@ -1101,13 +1263,13 @@
 
       return `(function(){
   const QUEUE = ${serializedQueue};
-  const VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)} };
-  let running = false, idx = 0, cycles = 0;
+  const VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect} };
+  let running = false, idx = 0, cycles = 0, lastEl = null;
   let cur = document.getElementById('ailab-q-cursor');
   if (!cur) {
     cur = document.createElement('div');
     cur.id = 'ailab-q-cursor';
-    cur.style.cssText = 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:all 0.3s ease;filter:drop-shadow(0 0 10px #10b981);';
+    cur.style.cssText = 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:all 0.28s ease;filter:drop-shadow(0 0 10px #10b981);';
     cur.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24"><path d="M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z" fill="#10b981" stroke="#fff" stroke-width="2"/></svg>';
     document.body.appendChild(cur);
   }
@@ -1115,7 +1277,7 @@
   if (!hud) {
     hud = document.createElement('div');
     hud.id = 'ailab-q-hud';
-    hud.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:#060b17;color:#ecfdf5;border:2px solid #10b981;border-radius:14px;padding:10px 14px;font-family:sans-serif;font-size:12px;box-shadow:0 12px 30px rgba(0,0,0,0.8);';
+    hud.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:#060b17;color:#ecfdf5;border:2px solid #10b981;border-radius:14px;padding:10px 14px;font-family:sans-serif;font-size:12px;box-shadow:0 12px 30px rgba(0,0,0,0.85);';
     hud.innerHTML = '<div style="font-weight:800;color:#34d399;margin-bottom:6px;">🖱️ Smart AutoMouse (' + QUEUE.length + ' ขั้นตอน)</div><div id="aq-stat" style="font-family:monospace;font-size:11px;margin-bottom:8px;">ตั้งค่าพร้อมแล้ว กดเริ่มทำงาน</div><div style="display:flex;gap:6px;"><button id="aq-start" style="background:#10b981;color:#020617;border:none;padding:5px 12px;border-radius:8px;font-weight:800;cursor:pointer;">▶ เริ่มทำงาน</button><button id="aq-stop" style="background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:8px;font-weight:700;cursor:pointer;">⏹ หยุด</button></div>';
     document.body.appendChild(hud);
     document.getElementById('aq-start').onclick = () => { if (!running) { running = true; loop(); } };
@@ -1131,6 +1293,21 @@
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
+  function findSmart(qStr) {
+    if (!qStr) return null;
+    const terms = qStr.split('|').map(t => t.trim()).filter(Boolean);
+    for (const t of terms) {
+      try { const d = document.querySelector(t); if (d && !hud.contains(d)) return d; } catch(e){}
+      const byId = document.getElementById(t); if (byId && !hud.contains(byId)) return byId;
+    }
+    const pool = Array.from(document.querySelectorAll('button, a, input, textarea, select, [role="button"]')).filter(el => !hud.contains(el));
+    for (const t of terms) {
+      const lt = t.toLowerCase();
+      const found = pool.find(el => ((el.innerText||el.value||el.placeholder||el.getAttribute('aria-label')||el.id||'').toLowerCase().includes(lt)));
+      if (found) return found;
+    }
+    return null;
+  }
   async function loop() {
     while (running && QUEUE.length > 0) {
       const step = QUEUE[idx];
@@ -1140,26 +1317,32 @@
           await new Promise(r => setTimeout(r, (parseFloat(val) || 1) * 1000));
         } else if (step.type === 'scroll_page') {
           window.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
+        } else if (step.type === 'press_enter') {
+          const t = lastEl || document.activeElement || document.body;
+          ['keydown','keypress','keyup'].forEach(k => t.dispatchEvent(new KeyboardEvent(k, { key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true })));
+          const f = t.closest && t.closest('form'); if (f) f.requestSubmit ? f.requestSubmit() : f.submit();
         } else {
-          let x = step.x || 300, y = step.y || 300;
-          let el = document.elementFromPoint(x, y);
-          if (step.selector) { try { const q = document.querySelector(step.selector); if (q) { el = q; const r = q.getBoundingClientRect(); x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); } } catch(e){} }
+          let x = (VARS.lockRatio && typeof step.rx === 'number') ? Math.round(step.rx * window.innerWidth) : (step.x || 300);
+          let y = (VARS.lockRatio && typeof step.ry === 'number') ? Math.round(step.ry * window.innerHeight) : (step.y || 300);
+          let el = findSmart(step.selector || (step.type.includes('selector') ? step.value : ''));
+          if (el) { const r = el.getBoundingClientRect(); if (r.width > 0) { x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); } }
+          else { el = document.elementFromPoint(x, y); if (el) el = el.closest('button,a,input,textarea,select,[role="button"]') || el; }
           cur.style.left = x + 'px'; cur.style.top = y + 'px';
           document.getElementById('aq-stat').textContent = 'ขั้น #' + (idx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
-          await new Promise(r => setTimeout(r, 380));
-          if (el) {
+          await new Promise(r => setTimeout(r, 340));
+          if (el && !hud.contains(el)) {
+            lastEl = el;
             el.focus();
-            el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
-            el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
-            el.click();
-            if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: x, clientY: y }));
+            ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(ev => el.dispatchEvent(new MouseEvent(ev, { bubbles:true, clientX:x, clientY:y })));
+            if (typeof el.click === 'function') el.click();
+            if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
             if (step.type.includes('type') && ('value' in el)) setVal(el, val);
           }
         }
       }
       idx++;
       if (idx >= QUEUE.length) { idx = 0; cycles++; }
-      await new Promise(r => setTimeout(r, 420));
+      await new Promise(r => setTimeout(r, 380));
     }
   }
 })();`;
@@ -1188,6 +1371,12 @@
 
     // --- Event Listeners ---
     window.addEventListener('DOMContentLoaded', () => {
+      // Tag main sections so smart button search never clicks the bot's own config inputs
+      const sections = document.querySelectorAll('main > section');
+      if (sections[0]) sections[0].id = 'control-config-section';
+      if (sections[1]) sections[1].id = 'queue-builder-section';
+      if (sections[2]) sections[2].id = 'target-pad-section';
+
       if (!loadQueueFromStorage()) {
         initDefaultQueueFromTargets();
       } else {
@@ -1198,7 +1387,9 @@
       window.addEventListener('mousemove', (e) => {
         state.lastMouseX = e.clientX;
         state.lastMouseY = e.clientY;
-        document.getElementById('live-mouse-xy').textContent = `X: ${e.clientX}, Y: ${e.clientY}`;
+        const rx = ((e.clientX / Math.max(1, window.innerWidth)) * 100).toFixed(1);
+        const ry = ((e.clientY / Math.max(1, window.innerHeight)) * 100).toFixed(1);
+        document.getElementById('live-mouse-xy').textContent = `X: ${e.clientX}, Y: ${e.clientY} (${rx}%, ${ry}%)`;
         document.getElementById('hud-xy-readout').textContent = `X:${e.clientX} Y:${e.clientY}`;
       });
 
@@ -1224,7 +1415,7 @@
         document.body.classList.toggle('coord-finder-active', state.pickingXY);
         const txt = document.getElementById('pick-xy-text');
         if (state.pickingXY) {
-          txt.textContent = 'กำลังหาพิกัด: คลิกจุดใดก็ได้บนหน้าจอเพื่อล็อกค่า X,Y...';
+          txt.textContent = 'กำลังหาพิกัด: คลิกจุดใดก็ได้บนหน้าจอเพื่อล็อกค่า X,Y และสัดส่วน...';
         } else {
           txt.textContent = 'กดเพื่อจิ้มหาพิกัดเมาส์บนหน้าจอ (หรือกดปุ่ม F2)';
         }
@@ -1238,19 +1429,47 @@
         if (e.target.closest('#btn-pick-xy') || e.target.closest('#hud-btn-pick-xy')) return;
         e.preventDefault();
         e.stopPropagation();
-        lockCoordinate(e.clientX, e.clientY);
+        setLockedXY(e.clientX, e.clientY);
         state.pickingXY = false;
         document.body.classList.remove('coord-finder-active');
-        document.getElementById('pick-xy-text').textContent = `✓ ล็อกพิกัด (X: ${e.clientX}, Y: ${e.clientY}) เรียบร้อย!`;
+        const rx = ((e.clientX / Math.max(1, window.innerWidth)) * 100).toFixed(1);
+        const ry = ((e.clientY / Math.max(1, window.innerHeight)) * 100).toFixed(1);
+        document.getElementById('pick-xy-text').textContent = `✓ ล็อกพิกัด X:${e.clientX}, Y:${e.clientY} (สัดส่วน ${rx}%, ${ry}%)`;
       }, true);
 
       document.getElementById('btn-test-xy-click').addEventListener('click', async () => {
         const x = parseInt(document.getElementById('input-x').value, 10) || 400;
         const y = parseInt(document.getElementById('input-y').value, 10) || 300;
-        await executeStepItem({ type: 'click_xy', x, y, value: 'ทดสอบคลิกพิกัด', note: 'ทดสอบพิกัด', enabled: true }, 0);
+        await executeStepItem({
+          type: 'click_xy',
+          x,
+          y,
+          rx: Number((x / Math.max(1, window.innerWidth)).toFixed(4)),
+          ry: Number((y / Math.max(1, window.innerHeight)).toFixed(4)),
+          value: 'ทดสอบคลิกพิกัด',
+          note: 'ทดสอบพิกัด',
+          enabled: true
+        }, 0);
       });
 
-      // --- Precision Coordinate Screen Simulator & 4x Magnifier Loupe ---
+      // Live Button Finder Verification Button
+      document.getElementById('btn-verify-selector')?.addEventListener('click', () => {
+        const q = document.getElementById('input-selector').value.trim();
+        const found = findElementBySmartQuery(q, document.getElementById('step-type').value === 'type_selector');
+        if (found) {
+          const r = found.getBoundingClientRect();
+          const cx = Math.round(r.left + r.width / 2);
+          const cy = Math.round(r.top + r.height / 2);
+          setLockedXY(cx, cy);
+          moveBotCursor(cx, cy, `🔍 พบปุ่ม "${q}" ที่ (${cx}, ${cy})`);
+          triggerClickVisual(cx, cy, `🔍 FOUND: ${found.tagName}`);
+          document.getElementById('target-last-action').textContent = `🔍 พบปุ่ม/ช่อง "${q}" ที่พิกัด X:${cx}, Y:${cy} พร้อมคลิกแม่นยำ 100%`;
+        } else {
+          document.getElementById('target-last-action').textContent = `⚠️ ไม่พบชื่อปุ่ม "${q}" บนหน้านี้ (ลองพิมพ์คำว่า PLAY, Login, หรือ ช่อง ID)`;
+        }
+      });
+
+      // --- Precision Aspect-Locked Coordinate Screen Simulator & 4x Magnifier Loupe ---
       const simCanvas = document.getElementById('precision-screen-canvas');
       const simCtx = simCanvas.getContext('2d');
       const loupeCanvas = document.getElementById('precision-loupe-canvas');
@@ -1260,13 +1479,39 @@
       let hoverVirtualX = 520;
       let hoverVirtualY = 340;
 
+      // Compute exact Aspect-Ratio Locked viewport box inside the canvas so coordinates never stretch or skew
       function getVirtualResolution() {
         const val = resSelect.value;
         if (val === 'window') {
-          return { w: Math.max(window.innerWidth, 800), h: Math.max(window.innerHeight, 600) };
+          return { w: Math.max(window.innerWidth, 320), h: Math.max(window.innerHeight, 240) };
         }
         const [w, h] = val.split('x').map(Number);
         return { w: w || 1920, h: h || 1080 };
+      }
+
+      function getSimViewportBox() {
+        const cw = simCanvas.width;
+        const ch = simCanvas.height;
+        const { w: vw, h: vh } = getVirtualResolution();
+        const lockAspect = document.getElementById('chk-lock-aspect')?.checked;
+        if (!lockAspect) {
+          return { x: 0, y: 0, w: cw, h: ch, vw, vh };
+        }
+        const targetRatio = vw / vh;
+        const canvasRatio = cw / ch;
+        let drawW = cw, drawH = ch, offX = 0, offY = 0;
+        if (canvasRatio > targetRatio) {
+          drawH = ch - 12;
+          drawW = Math.round(drawH * targetRatio);
+          offX = Math.round((cw - drawW) / 2);
+          offY = 6;
+        } else {
+          drawW = cw - 12;
+          drawH = Math.round(drawW / targetRatio);
+          offX = 6;
+          offY = Math.round((ch - drawH) / 2);
+        }
+        return { x: offX, y: offY, w: drawW, h: drawH, vw, vh };
       }
 
       function resizeSimCanvas() {
@@ -1279,21 +1524,31 @@
       function drawPrecisionSimulator() {
         const cw = simCanvas.width;
         const ch = simCanvas.height;
-        const { w: vw, h: vh } = getVirtualResolution();
+        const box = getSimViewportBox();
+        const { x: bx, y: by, w: bw, h: bh, vw, vh } = box;
 
         simCtx.clearRect(0, 0, cw, ch);
+        simCtx.fillStyle = '#03060c';
+        simCtx.fillRect(0, 0, cw, ch);
+
+        // Draw Aspect-Locked Screen Frame
+        simCtx.save();
+        simCtx.beginPath();
+        simCtx.rect(bx, by, bw, bh);
+        simCtx.clip();
 
         if (uploadedBgImg) {
-          simCtx.drawImage(uploadedBgImg, 0, 0, cw, ch);
-          simCtx.fillStyle = 'rgba(5, 8, 17, 0.25)';
-          simCtx.fillRect(0, 0, cw, ch);
+          simCtx.drawImage(uploadedBgImg, bx, by, bw, bh);
+          simCtx.fillStyle = 'rgba(5, 8, 17, 0.2)';
+          simCtx.fillRect(bx, by, bw, bh);
         } else {
-          const grad = simCtx.createLinearGradient(0, 0, cw, ch);
-          grad.addColorStop(0, '#070c18');
+          const grad = simCtx.createLinearGradient(bx, by, bx + bw, by + bh);
+          grad.addColorStop(0, '#070e1e');
           grad.addColorStop(1, '#0f172a');
           simCtx.fillStyle = grad;
-          simCtx.fillRect(0, 0, cw, ch);
+          simCtx.fillRect(bx, by, bw, bh);
 
+          // Map real page target buttons proportionally inside the aspect-locked screen frame
           const zones = [
             { id: 'test-box-id', label: 'ช่อง ID', color: '#06b6d4' },
             { id: 'test-box-pass', label: 'ช่อง Password', color: '#f59e0b' },
@@ -1305,49 +1560,48 @@
             const el = document.getElementById(z.id);
             if (!el) return;
             const r = el.getBoundingClientRect();
-            const zx = (r.left / vw) * cw;
-            const zy = (r.top / vh) * ch;
-            const zw = Math.max(28, (r.width / vw) * cw);
-            const zh = Math.max(14, (r.height / vh) * ch);
+            const zx = bx + (r.left / window.innerWidth) * bw;
+            const zy = by + (r.top / window.innerHeight) * bh;
+            const zw = Math.max(26, (r.width / window.innerWidth) * bw);
+            const zh = Math.max(14, (r.height / window.innerHeight) * bh);
             simCtx.strokeStyle = z.color;
-            simCtx.lineWidth = 1.2;
-            simCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            simCtx.lineWidth = 1.4;
+            simCtx.fillStyle = 'rgba(15, 23, 42, 0.9)';
             simCtx.fillRect(zx, zy, zw, zh);
             simCtx.strokeRect(zx, zy, zw, zh);
             simCtx.fillStyle = z.color;
             simCtx.font = '10px Kanit, sans-serif';
-            simCtx.fillText(z.label, zx + 4, zy + Math.min(12, zh - 3));
+            simCtx.fillText(z.label, zx + 4, zy + Math.min(11, zh - 2));
           });
         }
 
-        simCtx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+        // Precision 10x10 Percentage & Pixel Grid inside Aspect-Locked Frame
+        simCtx.strokeStyle = 'rgba(56, 189, 248, 0.14)';
         simCtx.lineWidth = 1;
-        const stepX = cw / 10;
-        const stepY = ch / 6;
         for (let i = 1; i < 10; i++) {
-          const x = Math.round(i * stepX) + 0.5;
-          simCtx.beginPath(); simCtx.moveTo(x, 0); simCtx.lineTo(x, ch); simCtx.stroke();
-          simCtx.fillStyle = 'rgba(148, 163, 184, 0.55)';
+          const gx = Math.round(bx + (i / 10) * bw) + 0.5;
+          simCtx.beginPath(); simCtx.moveTo(gx, by); simCtx.lineTo(gx, by + bh); simCtx.stroke();
+          simCtx.fillStyle = 'rgba(148, 163, 184, 0.6)';
           simCtx.font = '9px JetBrains Mono, monospace';
-          simCtx.fillText(Math.round((i / 10) * vw), x + 2, 10);
+          simCtx.fillText(`${i * 10}%`, gx + 2, by + 10);
         }
         for (let j = 1; j < 6; j++) {
-          const y = Math.round(j * stepY) + 0.5;
-          simCtx.beginPath(); simCtx.moveTo(0, y); simCtx.lineTo(cw, y); simCtx.stroke();
-          simCtx.fillStyle = 'rgba(148, 163, 184, 0.55)';
-          simCtx.font = '9px JetBrains Mono, monospace';
-          simCtx.fillText(Math.round((j / 6) * vh), 3, y - 2);
+          const gy = Math.round(by + (j / 6) * bh) + 0.5;
+          simCtx.beginPath(); simCtx.moveTo(bx, gy); simCtx.lineTo(bx + bw, gy); simCtx.stroke();
         }
 
+        // Draw Queue Steps & Trajectory
         const xySteps = state.queue.map((st, idx) => ({ ...st, idx })).filter(st => (st.type === 'click_xy' || st.type === 'dblclick_xy' || st.type === 'click_ type_xy') && st.enabled !== false);
         if (xySteps.length > 1) {
-          simCtx.strokeStyle = 'rgba(16, 185, 129, 0.45)';
+          simCtx.strokeStyle = 'rgba(16, 185, 129, 0.5)';
           simCtx.lineWidth = 1.8;
           simCtx.setLineDash([4, 4]);
           simCtx.beginPath();
           xySteps.forEach((st, i) => {
-            const px = (st.x / vw) * cw;
-            const py = (st.y / vh) * ch;
+            const rx = typeof st.rx === 'number' ? st.rx : (st.x / vw);
+            const ry = typeof st.ry === 'number' ? st.ry : (st.y / vh);
+            const px = bx + rx * bw;
+            const py = by + ry * bh;
             if (i === 0) simCtx.moveTo(px, py);
             else simCtx.lineTo(px, py);
           });
@@ -1356,8 +1610,10 @@
         }
 
         xySteps.forEach(st => {
-          const px = (st.x / vw) * cw;
-          const py = (st.y / vh) * ch;
+          const rx = typeof st.rx === 'number' ? st.rx : (st.x / vw);
+          const ry = typeof st.ry === 'number' ? st.ry : (st.y / vh);
+          const px = bx + rx * bw;
+          const py = by + ry * bh;
           const isCurrent = state.running && state.currentIndex === st.idx;
           simCtx.beginPath();
           simCtx.arc(px, py, isCurrent ? 9 : 7, 0, Math.PI * 2);
@@ -1372,16 +1628,17 @@
           simCtx.fillText(String(st.idx + 1), px - 3, py + 3);
         });
 
+        // Draw Locked Target Crosshair
         const lockedX = parseInt(document.getElementById('input-x').value, 10) || 0;
         const lockedY = parseInt(document.getElementById('input-y').value, 10) || 0;
-        const lx = (lockedX / vw) * cw;
-        const ly = (lockedY / vh) * ch;
+        const lx = bx + (lockedX / vw) * bw;
+        const ly = by + (lockedY / vh) * bh;
 
-        simCtx.strokeStyle = 'rgba(245, 158, 11, 0.85)';
-        simCtx.lineWidth = 1.2;
+        simCtx.strokeStyle = 'rgba(245, 158, 11, 0.9)';
+        simCtx.lineWidth = 1.3;
         simCtx.beginPath();
-        simCtx.moveTo(lx, 0); simCtx.lineTo(lx, ch);
-        simCtx.moveTo(0, ly); simCtx.lineTo(cw, ly);
+        simCtx.moveTo(lx, by); simCtx.lineTo(lx, by + bh);
+        simCtx.moveTo(bx, ly); simCtx.lineTo(bx + bw, ly);
         simCtx.stroke();
 
         simCtx.beginPath();
@@ -1389,10 +1646,17 @@
         simCtx.strokeStyle = '#f59e0b';
         simCtx.lineWidth = 2.5;
         simCtx.stroke();
+        simCtx.restore();
 
+        // Outer border of the aspect-locked screen
+        simCtx.strokeStyle = '#10b981';
+        simCtx.lineWidth = 1.5;
+        simCtx.strokeRect(bx, by, bw, bh);
+
+        // Update 4x Magnifier Loupe
         loupeCtx.clearRect(0, 0, loupeCanvas.width, loupeCanvas.height);
-        const srcX = ((hoverVirtualX || lockedX) / vw) * cw;
-        const srcY = ((hoverVirtualY || lockedY) / vh) * ch;
+        const srcX = bx + ((hoverVirtualX || lockedX) / vw) * bw;
+        const srcY = by + ((hoverVirtualY || lockedY) / vh) * bh;
         const sampleW = loupeCanvas.width / 3.2;
         const sampleH = loupeCanvas.height / 3.2;
         loupeCtx.drawImage(simCanvas, srcX - sampleW / 2, srcY - sampleH / 2, sampleW, sampleH, 0, 0, loupeCanvas.width, loupeCanvas.height);
@@ -1404,9 +1668,9 @@
         const clampedY = Math.max(0, Math.min(vh, Math.round(vy)));
         document.getElementById('input-x').value = clampedX;
         document.getElementById('input-y').value = clampedY;
-        document.getElementById('canvas-locked-xy').textContent = `X: ${clampedX}, Y: ${clampedY}`;
-        const pctX = ((clampedX / vw) * 100).toFixed(1);
-        const pctY = ((clampedY / vh) * 100).toFixed(1);
+        const pctX = ((clampedX / vw) * 100).toFixed(2);
+        const pctY = ((clampedY / vh) * 100).toFixed(2);
+        document.getElementById('canvas-locked-xy').textContent = `X: ${clampedX}, Y: ${clampedY} (${pctX}%, ${pctY}%)`;
         document.getElementById('loupe-percent-xy').textContent = `${pctX}% , ${pctY}%`;
         lockCoordinate(clampedX, clampedY);
         drawPrecisionSimulator();
@@ -1415,14 +1679,18 @@
       let isDraggingSim = false;
       function handleSimPointer(e, shouldLock) {
         const rect = simCanvas.getBoundingClientRect();
-        const { w: vw, h: vh } = getVirtualResolution();
-        const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-        const relY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-        const vx = Math.round((relX / rect.width) * vw);
-        const vy = Math.round((relY / rect.height) * vh);
+        const box = getSimViewportBox();
+        const rawX = e.clientX - rect.left - box.x;
+        const rawY = e.clientY - rect.top - box.y;
+        const relX = Math.max(0, Math.min(box.w, rawX));
+        const relY = Math.max(0, Math.min(box.h, rawY));
+        const vx = Math.round((relX / Math.max(1, box.w)) * box.vw);
+        const vy = Math.round((relY / Math.max(1, box.h)) * box.vh);
         hoverVirtualX = vx;
         hoverVirtualY = vy;
-        document.getElementById('canvas-hover-xy').textContent = `X: ${vx}, Y: ${vy}`;
+        const pctX = ((vx / box.vw) * 100).toFixed(1);
+        const pctY = ((vy / box.vh) * 100).toFixed(1);
+        document.getElementById('canvas-hover-xy').textContent = `X: ${vx}, Y: ${vy} (${pctX}%, ${pctY}%)`;
         if (shouldLock) setLockedXY(vx, vy);
         else drawPrecisionSimulator();
       }
@@ -1459,6 +1727,7 @@
       });
 
       resSelect.addEventListener('change', drawPrecisionSimulator);
+      document.getElementById('chk-lock-aspect')?.addEventListener('change', drawPrecisionSimulator);
       window.addEventListener('resize', resizeSimCanvas);
 
       document.getElementById('sim-bg-upload').addEventListener('change', (e) => {
@@ -1491,8 +1760,11 @@
 
       document.getElementById('btn-add-to-queue').addEventListener('click', () => {
         const type = document.getElementById('step-type').value;
+        const { w: vw, h: vh } = getVirtualResolution();
         const x = parseInt(document.getElementById('input-x').value, 10) || 0;
         const y = parseInt(document.getElementById('input-y').value, 10) || 0;
+        const rx = Number((x / Math.max(1, vw)).toFixed(4));
+        const ry = Number((y / Math.max(1, vh)).toFixed(4));
         const selector = document.getElementById('input-selector').value.trim();
         const value = document.getElementById('input-value').value.trim();
 
@@ -1501,9 +1773,11 @@
           type,
           x,
           y,
+          rx,
+          ry,
           selector: (type === 'click_selector' || type === 'type_selector' || type === 'wait_for_element') ? selector : '',
-          value: value || (type === 'wait' ? '1' : type === 'scroll_page' ? '350' : 'คลิกเมาส์'),
-          note: type.includes('xy') ? `พิกัด (${x}, ${y})` : `คำสั่ง ${type}`,
+          value: value || (type === 'wait' ? '1' : type === 'scroll_page' ? '350' : type === 'press_enter' ? 'กดปุ่ม Enter' : 'คลิกเมาส์'),
+          note: type.includes('xy') ? `พิกัด (${x}, ${y}) [${(rx*100).toFixed(1)}%, ${(ry*100).toFixed(1)}%]` : `เป้าหมาย ${selector || type}`,
           runOnce: false,
           enabled: true
         });
@@ -1592,6 +1866,16 @@
         document.getElementById('target-play-count').textContent = state.playHits;
         const msg = document.getElementById('test-box-msg').value || '(ไม่มีข้อความ)';
         document.getElementById('target-last-action').textContent = `▶ กดปุ่ม PLAY ครั้งที่ #${state.playHits} พร้อมข้อความ: "${msg}"`;
+      });
+
+      // Also support pressing Enter manually or via bot inside the test inputs
+      ['test-box-id', 'test-box-pass'].forEach(id => {
+        document.getElementById(id).addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') document.getElementById('test-btn-login').click();
+        });
+      });
+      document.getElementById('test-box-msg').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('test-btn-play').click();
       });
 
       document.getElementById('run-status-pill').textContent = 'รอคำสั่งเริ่มทำงาน (READY)';
