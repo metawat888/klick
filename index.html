@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AiLab Web Auto-Commander - ระบบสั่งการเว็บไซต์อัตโนมัติ</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Sarabun', 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(56, 189, 248, 0.22);
+        }
+        .neon-glow {
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.18), inset 0 0 12px rgba(99, 102, 241, 0.12);
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-slate-950">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 border-b border-cyan-500/30 sticky top-0 z-40 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div class="flex items-center space-x-3.5">
+                <div class="bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 text-slate-950 p-2.5 rounded-2xl shadow-lg shadow-cyan-500/25 flex items-center justify-center w-11 h-11">
+                    <i class="fa-solid fa-robot text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-200 to-indigo-300 bg-clip-text text-transparent">
+                            AiLab Universal Web Auto-Commander
+                        </h1>
+                        <span class="bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 text-[11px] px-2.5 py-0.5 rounded-full font-semibold">
+                            PRO DOM & Mouse Bot
+                        </span>
+                    </div>
+                    <p class="text-slate-400 text-xs sm:text-sm">
+                        ระบุเว็บไซต์ที่ต้องการ แล้วสั่งคลิกเมาส์ พิมพ์ข้อมูล เลือกเมนู ดึงข้อมูล และรันลูปอัตโนมัติได้ทุกเว็บ
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-between lg:justify-end">
+                <div class="flex items-center space-x-2.5 bg-slate-900/90 px-3 py-1.5 rounded-full border border-cyan-500/30 shadow-sm">
+                    <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white border border-white/60 overflow-hidden shrink-0">
+                        <img src="https://github.com/metawat888/Picture/raw/69f9d3a46e017adc43abb8db3503ea8106ecae61/97488303_2887790847941184_353651305119481856_n.jpg"
+                             alt="Developer"
+                             class="w-full h-full object-cover"
+                             onerror="this.style.display='none'; this.parentElement.innerText='MP';">
+                    </div>
+                    <div class="text-xs leading-tight">
+                        <span class="text-slate-400">คิดค้นและพัฒนาโดย:</span>
+                        <span class="font-bold text-cyan-300 ml-1">นายเมธาวัฒน์ พงสะพัง</span>
+                        <span class="hidden sm:inline-block text-[10px] text-indigo-300 bg-indigo-950 px-1.5 py-0.5 rounded ml-1 border border-indigo-700/50">Ai Lab Studio dev</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="btnOpenFloatingHud" class="bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-950 font-extrabold px-3.5 py-2 rounded-xl text-xs sm:text-sm transition shadow-md shadow-amber-500/15 flex items-center gap-1.5">
+                        <i class="fa-solid fa-satellite-dish"></i> เปิดรีโมทบอทลอยตัว (HUD)
+                    </button>
+                    <button id="btnRunCurrentWorkflow" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-3.5 py-2 rounded-xl text-xs sm:text-sm transition shadow-md shadow-emerald-500/15 flex items-center gap-1.5">
+                        <i class="fa-solid fa-play"></i> รันคำสั่งอัตโนมัติทันที
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-5 space-y-5">
+
+        <!-- STEP 1: TARGET WEBSITE COMMAND BAR (ระบุเว็บที่ต้องการสั่งการ) -->
+        <section class="glass-panel neon-glow rounded-2xl p-4 sm:p-5 space-y-3.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-lg bg-cyan-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">1</span>
+                    <h2 class="font-bold text-sm sm:text-base text-white">ระบุเว็บไซต์ที่คุณต้องการสั่งการอัตโนมัติ (Target Website URL)</h2>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                    <span class="text-slate-400 mr-1">เลือกเว็บด่วน:</span>
+                    <button type="button" data-url="https://docs.google.com/forms/" data-sim="form" class="quick-url-btn bg-slate-800 hover:bg-cyan-500/20 hover:border-cyan-400 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">Google Forms</button>
+                    <button type="button" data-url="https://seller.shopee.co.th/" data-sim="ecommerce" class="quick-url-btn bg-slate-800 hover:bg-cyan-500/20 hover:border-cyan-400 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">ระบบจัดการร้านค้า/สต็อก</button>
+                    <button type="button" data-url="https://business.facebook.com/" data-sim="social" class="quick-url-btn bg-slate-800 hover:bg-cyan-500/20 hover:border-cyan-400 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">ระบบโพสต์โซเชียล</button>
+                    <button type="button" data-url="https://erp.company-portal.com/approvals" data-sim="clicker" class="quick-url-btn bg-slate-800 hover:bg-cyan-500/20 hover:border-cyan-400 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">ระบบกดอนุมัติ/ดึงข้อมูล</button>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-2.5">
+                <div class="relative flex-grow">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-cyan-400">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <input type="url" id="targetWebsiteUrl" value="https://erp.company-portal.com/automation-workspace"
+                           class="w-full pl-10 pr-4 py-2.5 bg-slate-900/95 border border-slate-700 focus:border-cyan-400 rounded-xl text-xs sm:text-sm text-white outline-none font-mono"
+                           placeholder="พิมพ์หรือวางลิงก์เว็บไซต์ที่ต้องการสั่งการ เช่น https://...">
+                </div>
+                <div class="flex flex-wrap sm:flex-nowrap gap-2 shrink-0">
+                    <button id="btnConnectSimulatedWeb" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 flex-1 sm:flex-initial">
+                        <i class="fa-solid fa-desktop"></i> เชื่อมต่อหน้าต่างจำลอง
+                    </button>
+                    <button id="btnOpenRealWebTab" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 flex-1 sm:flex-initial">
+                        <i class="fa-solid fa-up-right-from-square"></i> เปิดเว็บจริง + คัดลอกบอท
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="grid grid-cols-3 gap-2.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+            <button data-view="view-commander" class="nav-view-btn bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow">
+                <i class="fa-solid fa-gamepad"></i> ศูนย์ควบคุม & หน้าเว็บเป้าหมาย
+            </button>
+            <button data-view="view-batchdata" class="nav-view-btn text-slate-300 hover:bg-slate-800/80 font-semibold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-layer-group"></i> ชุดข้อมูลสั่งรันลูป (Batch Queue)
+            </button>
+            <button data-view="view-export" class="nav-view-btn text-slate-300 hover:bg-slate-800/80 font-semibold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-code"></i> นำบอทไปฝังเว็บจริง (Bookmarklet / Playwright)
+            </button>
+        </div>
+
+        <!-- VIEW 1: COMMANDER STUDIO & INTERACTIVE TARGET BROWSER -->
+        <section id="view-commander" class="app-view grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+            <!-- Left Column: Workflow Builder & Live Recorder (5 cols) -->
+            <div class="lg:col-span-5 space-y-4">
+
+                <!-- Macro Templates & Live Recorder Bar -->
+                <div class="glass-panel rounded-2xl p-4 space-y-3.5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i> รูปแบบคำสั่งอัตโนมัติ (Automation Mode)
+                        </h3>
+                        <button id="btnToggleRecord" class="bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                            <span id="recordDot" class="w-2 h-2 rounded-full bg-rose-500"></span>
+                            <span id="recordBtnLabel">บันทึกการคลิก/พิมพ์สด</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button data-macro="ecommerce" class="macro-preset-btn text-left p-2.5 rounded-xl border border-cyan-500 bg-cyan-500/15 transition">
+                            <div class="font-bold text-xs text-cyan-300">📦 จัดการข้อมูล/สต็อก</div>
+                            <div class="text-[11px] text-slate-300 mt-0.5">กรอกรหัส + จำนวน + คลิกอัปเดต</div>
+                        </button>
+                        <button data-macro="form" class="macro-preset-btn text-left p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition">
+                            <div class="font-bold text-xs text-white">📝 กรอกฟอร์มเรียงช่อง</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">พิมพ์ทุกช่อง + เลือกเมนู + กดส่ง</div>
+                        </button>
+                        <button data-macro="social" class="macro-preset-btn text-left p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition">
+                            <div class="font-bold text-xs text-white">📣 โพสต์ข้อความอัตโนมัติ</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">วางแคปชัน + เลือกหมวด + กดเผยแพร่</div>
+                        </button>
+                        <button data-macro="clicker" class="macro-preset-btn text-left p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition">
+                            <div class="font-bold text-xs text-white">⚡ คลิกปุ่มรัว & ดึงข้อมูล</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">คลิกปุ่มทุกแถว + ดูดข้อความเก็บลง Log</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step Adder -->
+                <div class="glass-panel rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-xs sm:text-sm text-white flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-emerald-400"></i> เพิ่มคำสั่งสั่งการเว็บ (Add Command Step)
+                        </h3>
+                        <button id="btnVisualPickStep" class="bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 px-2.5 py-1 rounded-lg text-[11px] font-bold transition">
+                            🎯 ชี้เป้าบนหน้าเว็บ
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">คำสั่ง (Action)</label>
+                            <select id="stepActionType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white outline-none focus:border-cyan-400">
+                                <option value="fill">⌨️ พิมพ์ข้อความ (Type / Fill)</option>
+                                <option value="click">🖱️ คลิกเมาส์ (Click Element)</option>
+                                <option value="select">📋 เลือก Dropdown (Select)</option>
+                                <option value="keypress">⏎ กดปุ่มคีย์บอร์ด (Key Press)</option>
+                                <option value="extract">📥 ดึงข้อความจากเว็บ (Extract)</option>
+                                <option value="scroll">📜 เลื่อนหน้าจอ (Scroll)</option>
+                                <option value="wait">⏱️ รอเวลาหน่วง (Delay ms)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">เป้าหมาย (CSS Selector)</label>
+                            <input type="text" id="stepTargetSelector" value=".target-input-1"
+                                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-cyan-300 font-mono outline-none focus:border-cyan-400"
+                                   placeholder="เช่น #btn-submit, input.name">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input type="text" id="stepParamValue" value="{{var1}}"
+                               class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 outline-none focus:border-cyan-400"
+                               placeholder="ค่าที่จะพิมพ์ หรือปุ่มคีย์บอร์ด เช่น {{var1}}, Enter, 500">
+                        <button id="btnAddCommandStep" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition shrink-0 flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> เพิ่มคำสั่ง
+                        </button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1.5 text-[11px]">
+                        <span class="text-slate-400 self-center">ตัวแปรข้อมูลลูป:</span>
+                        <button type="button" data-var="{{var1}}" class="var-chip bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2 py-0.5 rounded border border-slate-700">{{var1}} ค่าที่ 1</button>
+                        <button type="button" data-var="{{var2}}" class="var-chip bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2 py-0.5 rounded border border-slate-700">{{var2}} ค่าที่ 2</button>
+                        <button type="button" data-var="{{var3}}" class="var-chip bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2 py-0.5 rounded border border-slate-700">{{var3}} ค่าที่ 3</button>
+                        <button type="button" data-var="Enter" class="var-chip bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2 py-0.5 rounded border border-slate-700">ปุ่ม Enter</button>
+                    </div>
+                </div>
+
+                <!-- Active Command Pipeline -->
+                <div class="glass-panel rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-xs sm:text-sm text-white flex items-center gap-2">
+                                <i class="fa-solid fa-list-ol text-amber-400"></i> คิวคำสั่งที่จะรันอัตโนมัติ (<span id="stepCountBadge">0</span> ขั้นตอน)
+                            </h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="loopCountSelect" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-cyan-300 outline-none">
+                                <option value="1">รัน 1 รอบ</option>
+                                <option value="3" selected>รันลูป 3 รอบ (ตามชุดข้อมูล)</option>
+                                <option value="5">รันลูป 5 รอบ</option>
+                            </select>
+                            <button id="btnClearPipeline" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-slate-900 border border-slate-800">
+                                ล้างคิว
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="pipelineContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+
+                    <!-- Speed & Execution Controls -->
+                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2 flex-grow">
+                            <span class="text-[11px] text-slate-400 whitespace-nowrap">ความเร็วบอท:</span>
+                            <input type="range" id="botSpeedSlider" min="100" max="1200" step="50" value="350" class="w-full accent-cyan-400">
+                            <span id="botSpeedText" class="text-xs font-bold text-cyan-300 w-16 text-right">350 ms</span>
+                        </div>
+                        <button id="btnStopWorkflow" class="hidden bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">
+                            ⏹ หยุดบอท
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Interactive Target Web Browser Workspace & Live Console (7 cols) -->
+            <div class="lg:col-span-7 space-y-4">
+
+                <!-- Simulated Browser Window -->
+                <div class="glass-panel rounded-2xl overflow-hidden border border-slate-700/80 flex flex-col">
+                    <!-- Browser Chrome Bar -->
+                    <div class="bg-slate-900 px-3.5 py-2.5 border-b border-slate-800 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+                            <span class="w-3 h-3 rounded-full bg-amber-400/80"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+                        </div>
+                        <div class="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-cyan-300 truncate flex items-center gap-2">
+                            <i class="fa-solid fa-lock text-emerald-400 text-[10px]"></i>
+                            <span id="browserAddressText">https://erp.company-portal.com/automation-workspace</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <select id="simTemplateSwitcher" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 outline-none">
+                                <option value="ecommerce">หน้าเว็บ: ระบบสต็อก & ออเดอร์</option>
+                                <option value="form">หน้าเว็บ: ระบบกรอกฟอร์มออนไลน์</option>
+                                <option value="social">หน้าเว็บ: ระบบโพสต์คอนเทนต์</option>
+                                <option value="clicker">หน้าเว็บ: ตารางกดอนุมัติ & ดึงข้อมูล</option>
+                            </select>
+                            <button id="btnResetTargetWeb" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs" title="รีเซ็ตหน้าเว็บจำลอง">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Target Website Viewport -->
+                    <div id="targetWebViewport" class="p-5 bg-slate-950/90 min-h-[340px] relative">
+
+                        <!-- Target Web 1: E-Commerce & Inventory Portal -->
+                        <div id="sim-page-ecommerce" class="sim-page space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                <div>
+                                    <h4 class="font-bold text-sm text-cyan-300"><i class="fa-solid fa-boxes-stacked mr-1.5"></i> ระบบจัดการสินค้าและอัปเดตสต็อกอัตโนมัติ (Web Portal)</h4>
+                                    <p class="text-xs text-slate-400">บอทสามารถพิมพ์รหัสสินค้า กรอกราคา เลือกคลังสินค้า และกดปุ่มบันทึกซ้ำอัตโนมัติ</p>
+                                </div>
+                                <span id="ecomSavedBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs px-2.5 py-1 rounded-full font-bold">
+                                    อัปเดตแล้ว: 0 รายการ
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">ชื่อรายการ / รหัสสินค้า (`.target-input-1`)</label>
+                                    <input type="text" id="ecomSkuInput" class="target-input-1 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none" placeholder="รอรับข้อมูลจากบอท...">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">ราคา / จำนวนสต็อก (`.target-input-2`)</label>
+                                    <input type="text" id="ecomQtyInput" class="target-input-2 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none" placeholder="รอรับค่าตัวเลข...">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">สถานะการจัดส่ง (`.target-select`)</label>
+                                    <select id="ecomStatusSelect" class="target-select w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                                        <option value="รอดำเนินการ">รอดำเนินการ</option>
+                                        <option value="พร้อมจัดส่ง">พร้อมจัดส่ง</option>
+                                        <option value="อนุมัติด่วน">อนุมัติด่วน</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-1">
+                                <button type="button" id="btnEcomSubmit" class="target-submit-btn bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs transition shadow">
+                                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> บันทึกข้อมูลเข้าเว็บ (`.target-submit-btn`)
+                                </button>
+                                <span class="text-[11px] text-slate-400">Selector ปุ่ม: <code class="text-amber-300">.target-submit-btn</code></span>
+                            </div>
+
+                            <div class="border border-slate-800 rounded-xl overflow-hidden">
+                                <table class="w-full text-xs text-left">
+                                    <thead class="bg-slate-900 text-slate-400">
+                                        <tr>
+                                            <th class="p-2.5">เวลา</th>
+                                            <th class="p-2.5">รายการ / รหัส</th>
+                                            <th class="p-2.5">จำนวน / ค่า</th>
+                                            <th class="p-2.5">สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ecomRecordsBody" class="divide-y divide-slate-800/70 bg-slate-900/40">
+                                        <tr><td colspan="4" class="p-4 text-center text-slate-500">กดปุ่ม "รันคำสั่งอัตโนมัติทันที" ด้านบนเพื่อดูบอทกรอกและคลิกบันทึก</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Target Web 2: Online Form & Survey Submitter -->
+                        <div id="sim-page-form" class="sim-page hidden space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                <div>
+                                    <h4 class="font-bold text-sm text-indigo-300"><i class="fa-solid fa-file-signature mr-1.5"></i> ระบบแบบฟอร์มลงทะเบียน & ส่งข้อมูลอัตโนมัติ</h4>
+                                    <p class="text-xs text-slate-400">จำลองหน้าเว็บแบบฟอร์มทั่วไป (Google Forms / ระบบลงทะเบียนออนไลน์)</p>
+                                </div>
+                                <span id="formSavedBadge" class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs px-2.5 py-1 rounded-full font-bold">
+                                    ส่งฟอร์มแล้ว: 0 ชุด
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">หัวข้อ / ชื่อผู้ติดต่อ (`.target-input-1`)</label>
+                                    <input type="text" class="target-input-1 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="ช่องที่ 1...">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">ข้อมูลอ้างอิง / เบอร์ติดต่อ (`.target-input-2`)</label>
+                                    <input type="text" class="target-input-2 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="ช่องที่ 2...">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs text-slate-400 mb-1">รายละเอียดเพิ่มเติม (`.target-input-3`)</label>
+                                    <input type="text" class="target-input-3 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="ช่องที่ 3...">
+                                </div>
+                            </div>
+
+                            <button type="button" id="btnFormSubmit" class="target-submit-btn bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition">
+                                <i class="fa-solid fa-paper-plane mr-1"></i> ส่งแบบฟอร์ม (`.target-submit-btn`)
+                            </button>
+                        </div>
+
+                        <!-- Target Web 3: Social Content Publisher -->
+                        <div id="sim-page-social" class="sim-page hidden space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                <div>
+                                    <h4 class="font-bold text-sm text-amber-300"><i class="fa-solid fa-bullhorn mr-1.5"></i> ระบบตั้งเวลาและโพสต์คอนเทนต์อัตโนมัติ</h4>
+                                    <p class="text-xs text-slate-400">สั่งบอทพิมพ์แคปชัน แนบลิงก์ และกดเผยแพร่ลงฟีดอัตโนมัติ</p>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <textarea rows="2" class="target-input-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white" placeholder="เนื้อหาโพสต์ / แคปชัน (`.target-input-1`)..."></textarea>
+                                <div class="flex gap-2">
+                                    <input type="text" class="target-input-2 flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300" placeholder="แท็ก / ลิงก์แนบ (`.target-input-2`)...">
+                                    <button type="button" id="btnSocialPost" class="target-submit-btn bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs transition">
+                                        เผยแพร่โพสต์ทันที
+                                    </button>
+                                </div>
+                                <div id="socialFeedList" class="space-y-2 max-h-36 overflow-y-auto"></div>
+                            </div>
+                        </div>
+
+                        <!-- Target Web 4: Batch Approval & Scraper Table -->
+                        <div id="sim-page-clicker" class="sim-page hidden space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <div>
+                                    <h4 class="font-bold text-sm text-emerald-300"><i class="fa-solid fa-bolt mr-1.5"></i> ตารางคำขออนุมัติ & ดึงข้อมูลจากหน้าเว็บ (Auto-Clicker & Scraper)</h4>
+                                    <p class="text-xs text-slate-400">สั่งบอทคลิกปุ่ม <code class="text-cyan-300">.approve-btn</code> ทุกแถว หรือดึงข้อความจาก <code class="text-amber-300">.scrape-item</code></p>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs border border-slate-800 rounded-xl">
+                                    <thead class="bg-slate-900 text-slate-400">
+                                        <tr>
+                                            <th class="p-2 text-left">รหัสรายการ (`.scrape-item`)</th>
+                                            <th class="p-2 text-center">ช่องกรอกค่า (`.grid-input`)</th>
+                                            <th class="p-2 text-center">สถานะ</th>
+                                            <th class="p-2 text-center">คำสั่งคลิก (`.approve-btn`)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clickerTableBody" class="divide-y divide-slate-800"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Live Automation Console & Extracted Data Log -->
+                <div class="glass-panel rounded-2xl p-4 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-cyan-300 flex items-center gap-2">
+                            <i class="fa-solid fa-terminal"></i> หน้าต่างแสดงผลการสั่งการสด (Live Bot Execution Log)
+                        </span>
+                        <div class="flex gap-2">
+                            <button id="btnExportLogs" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700">
+                                <i class="fa-solid fa-download mr-1"></i> ดาวน์โหลด Log
+                            </button>
+                            <button id="btnClearLogs" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-700">
+                                ล้างประวัติ
+                            </button>
+                        </div>
+                    </div>
+                    <div id="botConsoleLog" class="bg-slate-950 border border-slate-800/90 rounded-xl p-3 h-36 overflow-y-auto font-mono text-[11px] text-slate-300 space-y-1"></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- VIEW 2: BATCH DATA QUEUE (ชุดข้อมูลสำหรับสั่งรันลูปทุกเว็บไซต์) -->
+        <section id="view-batchdata" class="app-view hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div class="lg:col-span-5 space-y-4">
+                <div class="glass-panel rounded-2xl p-5 space-y-4">
+                    <h3 class="font-bold text-base text-white flex items-center gap-2">
+                        <i class="fa-solid fa-database text-cyan-400"></i> วางชุดข้อมูลสำหรับสั่งรันอัตโนมัติ (CSV / Tab / ข้อความ)
+                    </h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        วางรายการสินค้า, รายชื่อ, รหัสอ้างอิง, ข้อความโพสต์ หรือพารามิเตอร์ที่ต้องการให้บอทหยิบไปกรอกลงในเว็บเป้าหมายทีละรอบ (คั่นคอลัมน์ด้วย Tab หรือเครื่องหมายจุลภาค `,`)
+                    </p>
+                    <textarea id="batchRawInput" rows="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-xs text-white font-mono outline-none focus:border-cyan-400"
+                              placeholder="ตัวอย่าง:
+ORD-2026-01, 1500, พร้อมจัดส่ง
+ORD-2026-02, 3200, อนุมัติด่วน
+ORD-2026-03, 890, พร้อมจัดส่ง"></textarea>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button id="btnParseBatch" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs sm:text-sm transition">
+                            <i class="fa-solid fa-rotate mr-1"></i> แปลงข้อมูลเข้าคิวบอท
+                        </button>
+                        <button id="btnLoadSampleBatch" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded-xl text-xs sm:text-sm border border-slate-700 transition">
+                            โหลดข้อมูลตัวอย่าง
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7 space-y-4">
+                <div class="glass-panel rounded-2xl p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-base text-white">ตารางตัวแปรพร้อมส่งเข้าเวิร์กโฟลว์ (<span id="batchRowCountLabel">0</span> รอบการทำงาน)</h3>
+                        <span class="text-xs text-cyan-300">อ้างอิงด้วย <code>{{var1}}</code>, <code>{{var2}}</code>, <code>{{var3}}</code></span>
+                    </div>
+                    <div class="overflow-x-auto max-h-80">
+                        <table class="w-full text-xs text-left border border-slate-800 rounded-xl overflow-hidden">
+                            <thead class="bg-slate-900 text-slate-400">
+                                <tr>
+                                    <th class="p-3 text-center w-14">รอบที่</th>
+                                    <th class="p-3 text-cyan-300">ตัวแปร {{var1}}</th>
+                                    <th class="p-3 text-indigo-300">ตัวแปร {{var2}}</th>
+                                    <th class="p-3 text-amber-300">ตัวแปร {{var3}}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchTableBody" class="divide-y divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: EXPORT & UNIVERSAL INJECTION (BOOKMARKLET, USERSCRIPT, PLAYWRIGHT) -->
+        <section id="view-export" class="app-view hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div class="lg:col-span-6 space-y-4">
+                <div class="glass-panel neon-glow rounded-2xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-base text-amber-300 flex items-center gap-2">
+                            <i class="fa-solid fa-bookmark"></i> 1. ปุ่มลัด Bookmarklet (ลากไปวางแถบ Bookmarks ใช้ได้ทุกเว็บ)
+                        </h3>
+                        <span class="text-[11px] bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-400/30 font-bold">ไม่ต้องลงโปรแกรม</span>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        ลากปุ่มสีทองด้านล่างไปวางไว้บนแถบ Bookmarks ของเบราว์เซอร์ เมื่อคุณเปิดเว็บไซต์ที่ต้องการสั่งการ ให้คลิกที่ Bookmark นี้ แผงควบคุมรีโมท <b>AiLab Web AutoBot</b> จะถูกฝังลงในหน้าเว็บนั้นทันที!
+                    </p>
+                    <a id="bookmarkletDragLink" href="#autobot"
+                       class="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-950 font-extrabold py-3.5 px-4 rounded-2xl shadow-lg text-xs sm:text-sm flex items-center justify-center gap-2 cursor-grab">
+                        <i class="fa-solid fa-robot text-base"></i>
+                        <span>🤖 AiLab AutoBot สั่งการทุกเว็บ (ลากปุ่มนี้ไปวางที่ Bookmarks Bar)</span>
+                    </a>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button id="btnCopyBookmarkletUrl" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 px-3 rounded-xl text-xs border border-slate-700 transition">
+                            <i class="fa-regular fa-copy mr-1 text-cyan-400"></i> คัดลอกลิงก์ Bookmarklet
+                        </button>
+                        <button id="btnDownloadTampermonkey" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-3 rounded-xl text-xs transition">
+                            <i class="fa-solid fa-download mr-1"></i> โหลดไฟล์ .user.js (ฝังถาวร)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-6 space-y-4">
+                <div class="glass-panel rounded-2xl p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-base text-cyan-300 flex items-center gap-2">
+                            <i class="fa-solid fa-terminal"></i> 2. โค้ดสคริปต์อัตโนมัติ (Console F12 & Node.js Playwright)
+                        </h3>
+                        <select id="exportScriptFormat" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white outline-none">
+                            <option value="console">สคริปต์วางใน Console (F12) ของเว็บเป้าหมาย</option>
+                            <option value="playwright">สคริปต์ Node.js Playwright (รันเปิดเบราว์เซอร์จริง)</option>
+                        </select>
+                    </div>
+                    <textarea id="exportedCodeBox" readonly rows="8" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-300 outline-none"></textarea>
+                    <button id="btnCopyExportedCode" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs sm:text-sm transition">
+                        <i class="fa-solid fa-copy mr-1.5"></i> คัดลอกสคริปต์สั่งการชุดนี้
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Virtual Bot Mouse Cursor for In-Page Execution -->
+    <div id="virtualBotCursor" class="fixed w-6 h-6 rounded-full bg-amber-400/90 border-2 border-white shadow-[0_0_20px_rgba(251,191,36,0.95)] pointer-events-none z-50 hidden -translate-x-1/2 -translate-y-1/2 transition-all duration-200"></div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 left-5 bg-slate-900 border border-cyan-500/50 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 text-xs sm:text-sm flex items-center gap-2.5 pointer-events-none">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastMsg">พร้อมทำงาน</span>
+    </div>
+
+    <script>
+        // ==========================================
+        // CORE STATE (ZERO SGS / 100% UNIVERSAL WEB AUTOMATION)
+        // ==========================================
+        let isRecording = false;
+        let isPickingSelector = false;
+        let runningTimer = null;
+        let ecomSavedCount = 0;
+        let formSavedCount = 0;
+
+        let batchRows = [
+            { var1: 'PRO-AI-001', var2: '2450', var3: 'พร้อมจัดส่ง' },
+            { var1: 'PRO-AI-002', var2: '1890', var3: 'อนุมัติด่วน' },
+            { var1: 'PRO-AI-003', var2: '5400', var3: 'พร้อมจัดส่ง' },
+            { var1: 'PRO-AI-004', var2: '990', var3: 'รอดำเนินการ' },
+            { var1: 'PRO-AI-005', var2: '3200', var3: 'อนุมัติด่วน' }
+        ];
+
+        const macroTemplates = {
+            ecommerce: [
+                { action: 'fill', selector: '.target-input-1', value: '{{var1}}' },
+                { action: 'fill', selector: '.target-input-2', value: '{{var2}}' },
+                { action: 'select', selector: '.target-select', value: '{{var3}}' },
+                { action: 'click', selector: '.target-submit-btn', value: 'คลิกปุ่มบันทึก' }
+            ],
+            form: [
+                { action: 'fill', selector: '.target-input-1', value: '{{var1}}' },
+                { action: 'fill', selector: '.target-input-2', value: '{{var2}}' },
+                { action: 'fill', selector: '.target-input-3', value: '{{var3}}' },
+                { action: 'click', selector: '.target-submit-btn', value: 'ส่งแบบฟอร์ม' }
+            ],
+            social: [
+                { action: 'fill', selector: '.target-input-1', value: 'อัปเดตสถานะอัตโนมัติ: {{var1}} ({{var3}})' },
+                { action: 'fill', selector: '.target-input-2', value: '#AiLab #AutoBot #{{var2}}' },
+                { action: 'click', selector: '.target-submit-btn', value: 'เผยแพร่โพสต์' }
+            ],
+            clicker: [
+                { action: 'fill', selector: '.grid-input', value: '{{var2}}' },
+                { action: 'click', selector: '.approve-btn', value: 'คลิกอนุมัติ' },
+                { action: 'extract', selector: '.scrape-item', value: 'ดึงรหัสรายการลง Log' }
+            ]
+        };
+
+        let pipelineSteps = JSON.parse(JSON.stringify(macroTemplates.ecommerce));
+
+        // ==========================================
+        // LOGGING & UI HELPERS
+        // ==========================================
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            if (!toast || !toastMsg) return;
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 2800);
+        }
+
+        function logBotEvent(message, type = 'info') {
+            const box = document.getElementById('botConsoleLog');
+            if (!box) return;
+            const time = new Date().toLocaleTimeString('th-TH');
+            const colorMap = {
+                info: 'text-cyan-300',
+                success: 'text-emerald-400',
+                warn: 'text-amber-300',
+                extract: 'text-purple-300'
+            };
+            const line = document.createElement('div');
+            line.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${colorMap[type] || 'text-slate-200'}">${message}</span>`;
+            box.prepend(line);
+        }
+
+        function copyText(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+        }
+
+        // ==========================================
+        // PIPELINE RENDERING & MACRO SWITCHING
+        // ==========================================
+        function renderPipeline() {
+            const container = document.getElementById('pipelineContainer');
+            const badge = document.getElementById('stepCountBadge');
+            if (badge) badge.innerText = pipelineSteps.length;
+            if (!container) return;
+
+            if (pipelineSteps.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">ยังไม่มีคำสั่งในคิว กดเลือกโหมดด้านบนหรือเพิ่มคำสั่งใหม่</div>`;
+                updateExportedScriptPreview();
+                return;
+            }
+
+            const labels = {
+                fill: { icon: 'fa-keyboard', text: 'พิมพ์ค่า', cls: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
+                click: { icon: 'fa-computer-mouse', text: 'คลิกเมาส์', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+                select: { icon: 'fa-list', text: 'เลือกเมนู', cls: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
+                keypress: { icon: 'fa-square-caret-down', text: 'กดปุ่มคีย์', cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+                extract: { icon: 'fa-magnet', text: 'ดึงข้อมูลเว็บ', cls: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+                scroll: { icon: 'fa-arrows-up-down', text: 'เลื่อนจอ', cls: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
+                wait: { icon: 'fa-clock', text: 'หน่วงเวลา', cls: 'bg-slate-700 text-slate-300 border-slate-600' }
+            };
+
+            container.innerHTML = pipelineSteps.map((s, idx) => {
+                const info = labels[s.action] || labels.fill;
+                return `
+                    <div class="flex items-center justify-between gap-2 bg-slate-900/95 border border-slate-800 rounded-xl px-3 py-2 text-xs">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-[10px] shrink-0">${idx + 1}</span>
+                            <span class="px-2 py-0.5 rounded-md border text-[11px] font-semibold shrink-0 ${info.cls}">
+                                <i class="fa-solid ${info.icon} mr-1"></i>${info.text}
+                            </span>
+                            <code class="text-cyan-300 font-mono truncate">${s.selector}</code>
+                            <span class="text-slate-500">→</span>
+                            <span class="text-amber-300 font-semibold truncate">${s.value}</span>
+                        </div>
+                        <button data-del-step="${idx}" class="text-slate-500 hover:text-rose-400 px-1.5 py-0.5 rounded transition shrink-0">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            container.querySelectorAll('[data-del-step]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const i = parseInt(btn.getAttribute('data-del-step'), 10);
+                    pipelineSteps.splice(i, 1);
+                    renderPipeline();
+                });
+            });
+
+            updateExportedScriptPreview();
+        }
+
+        function switchSimTemplate(simKey) {
+            document.getElementById('simTemplateSwitcher').value = simKey;
+            document.querySelectorAll('.sim-page').forEach(p => {
+                p.classList.toggle('hidden', p.id !== `sim-page-${simKey}`);
+            });
+
+            if (macroTemplates[simKey]) {
+                pipelineSteps = JSON.parse(JSON.stringify(macroTemplates[simKey]));
+                renderPipeline();
+            }
+
+            document.querySelectorAll('.macro-preset-btn').forEach(btn => {
+                const active = btn.getAttribute('data-macro') === simKey;
+                btn.className = active
+                    ? 'macro-preset-btn text-left p-2.5 rounded-xl border border-cyan-500 bg-cyan-500/15 transition'
+                    : 'macro-preset-btn text-left p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition';
+            });
+        }
+
+        // ==========================================
+        // TARGET SIMULATOR INITIALIZATION
+        // ==========================================
+        function initTargetSimulators() {
+            const clickerBody = document.getElementById('clickerTableBody');
+            if (clickerBody) {
+                const items = ['REQ-2026-101', 'REQ-2026-102', 'REQ-2026-103', 'REQ-2026-104'];
+                clickerBody.innerHTML = items.map((code, idx) => `
+                    <tr class="hover:bg-slate-900/60">
+                        <td class="p-2 font-mono text-amber-300 scrape-item">${code}</td>
+                        <td class="p-2 text-center">
+                            <input type="text" class="grid-input w-24 text-center bg-slate-900 border border-slate-700 rounded-lg p-1 text-white" placeholder="ว่าง">
+                        </td>
+                        <td class="p-2 text-center row-status text-slate-400">รออนุมัติ</td>
+                        <td class="p-2 text-center">
+                            <button type="button" data-idx="${idx}" class="approve-btn bg-emerald-600/30 hover:bg-emerald-500 text-emerald-200 hover:text-slate-950 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold transition">
+                                คลิกอนุมัติ
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                clickerBody.querySelectorAll('.approve-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const tr = btn.closest('tr');
+                        const st = tr.querySelector('.row-status');
+                        st.innerHTML = '<span class="text-emerald-400 font-bold">✔ อนุมัติแล้ว</span>';
+                        btn.innerText = 'สำเร็จ';
+                    });
+                });
+            }
+        }
+
+        // ==========================================
+        // IN-PAGE WORKFLOW EXECUTION ENGINE
+        // ==========================================
+        function moveBotCursorToElement(el) {
+            const cursor = document.getElementById('virtualBotCursor');
+            if (!cursor || !el) return;
+            const rect = el.getBoundingClientRect();
+            cursor.classList.remove('hidden');
+            cursor.style.left = `${rect.left + rect.width / 2}px`;
+            cursor.style.top = `${rect.top + rect.height / 2}px`;
+            cursor.style.transform = 'translate(-50%, -50%) scale(0.7)';
+            setTimeout(() => {
+                cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+            }, 120);
+        }
+
+        function resolveVariables(templateStr, rowObj) {
+            if (!templateStr) return '';
+            return templateStr
+                .replace(/\{\{var1\}\}/g, rowObj.var1 || '')
+                .replace(/\{\{var2\}\}/g, rowObj.var2 || '')
+                .replace(/\{\{var3\}\}/g, rowObj.var3 || '');
+        }
+
+        function executeWorkflowInSandbox() {
+            if (runningTimer) {
+                clearInterval(runningTimer);
+                runningTimer = null;
+            }
+            if (pipelineSteps.length === 0) {
+                showToast('กรุณาเพิ่มคำสั่งในคิวก่อนเริ่มรันครับ');
+                return;
+            }
+
+            const totalLoops = parseInt(document.getElementById('loopCountSelect').value, 10) || 1;
+            const speed = parseInt(document.getElementById('botSpeedSlider').value, 10) || 350;
+            const viewport = document.getElementById('targetWebViewport');
+
+            // Build flat execution queue across loops
+            const executionQueue = [];
+            for (let loopIdx = 0; loopIdx < totalLoops; loopIdx++) {
+                const rowData = batchRows[loopIdx % batchRows.length] || { var1: `ITEM-${loopIdx + 1}`, var2: '100', var3: 'สำเร็จ' };
+                pipelineSteps.forEach((step, stepIdx) => {
+                    executionQueue.push({
+                        loopIdx,
+                        stepIdx,
+                        action: step.action,
+                        selector: step.selector,
+                        resolvedValue: resolveVariables(step.value, rowData)
+                    });
+                });
+            }
+
+            let qIndex = 0;
+            document.getElementById('btnStopWorkflow').classList.remove('hidden');
+            logBotEvent(`🚀 เริ่มรันชุดคำสั่งอัตโนมัติ (${totalLoops} รอบ รวม ${executionQueue.length} คำสั่ง)...`, 'info');
+
+            runningTimer = setInterval(() => {
+                if (qIndex >= executionQueue.length) {
+                    clearInterval(runningTimer);
+                    runningTimer = null;
+                    document.getElementById('virtualBotCursor').classList.add('hidden');
+                    document.getElementById('btnStopWorkflow').classList.add('hidden');
+                    logBotEvent(`✅ รันชุดคำสั่งอัตโนมัติครบ ${executionQueue.length} ขั้นตอนเสร็จสมบูรณ์!`, 'success');
+                    showToast('บอททำงานครบทุกขั้นตอนเรียบร้อยแล้ว!');
+                    return;
+                }
+
+                const item = executionQueue[qIndex];
+                const activePage = viewport.querySelector('.sim-page:not(.hidden)') || viewport;
+                const candidates = Array.from(activePage.querySelectorAll(item.selector));
+                const targetEl = candidates[item.loopIdx] || candidates[0];
+
+                if (item.action === 'wait') {
+                    logBotEvent(`⏱️ [รอบ ${item.loopIdx + 1}] หน่วงเวลา ${item.resolvedValue}`);
+                } else if (item.action === 'scroll') {
+                    window.scrollBy({ top: 80, behavior: 'smooth' });
+                    logBotEvent(`📜 [รอบ ${item.loopIdx + 1}] เลื่อนหน้าจออัตโนมัติ`);
+                } else if (!targetEl) {
+                    logBotEvent(`⚠️ [รอบ ${item.loopIdx + 1}] ไม่พบ Selector "${item.selector}" ในหน้าจำลองปัจจุบัน`, 'warn');
+                } else {
+                    moveBotCursorToElement(targetEl);
+                    targetEl.focus();
+
+                    if (item.action === 'fill') {
+                        const nativeSetter = Object.getOwnPropertyDescriptor(
+                            targetEl.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype,
+                            'value'
+                        )?.set;
+                        if (nativeSetter) {
+                            nativeSetter.call(targetEl, item.resolvedValue);
+                        } else {
+                            targetEl.value = item.resolvedValue;
+                        }
+                        targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+                        targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        logBotEvent(`⌨️ [รอบ ${item.loopIdx + 1}] พิมพ์ "${item.resolvedValue}" ลงใน ${item.selector}`);
+                    } else if (item.action === 'select') {
+                        if (targetEl.tagName === 'SELECT') {
+                            const match = Array.from(targetEl.options).find(o => o.value === item.resolvedValue || o.text.includes(item.resolvedValue));
+                            if (match) targetEl.value = match.value;
+                            targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        logBotEvent(`📋 [รอบ ${item.loopIdx + 1}] เลือกเมนู "${item.resolvedValue}" ใน ${item.selector}`);
+                    } else if (item.action === 'click') {
+                        targetEl.click();
+                        logBotEvent(`🖱️ [รอบ ${item.loopIdx + 1}] คลิกเมาส์ที่ปุ่ม ${item.selector}`, 'success');
+                    } else if (item.action === 'keypress') {
+                        ['keydown', 'keypress', 'keyup'].forEach(ev => {
+                            targetEl.dispatchEvent(new KeyboardEvent(ev, { key: item.resolvedValue || 'Enter', bubbles: true }));
+                        });
+                        logBotEvent(`⏎ [รอบ ${item.loopIdx + 1}] กดปุ่มคีย์บอร์ด ${item.resolvedValue}`);
+                    } else if (item.action === 'extract') {
+                        const text = (targetEl.innerText || targetEl.value || '').trim();
+                        logBotEvent(`📥 [รอบ ${item.loopIdx + 1}] ดึงข้อมูลจากเว็บสำเร็จ: "${text}"`, 'extract');
+                    }
+                }
+
+                qIndex++;
+            }, speed);
+        }
+
+        // ==========================================
+        // BATCH DATA PARSER
+        // ==========================================
+        function parseBatchData() {
+            const raw = document.getElementById('batchRawInput').value.trim();
+            if (!raw) return;
+            const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+            batchRows = lines.map((line, i) => {
+                const cols = line.includes('\t')
+                    ? line.split('\t').map(c => c.trim())
+                    : line.split(',').map(c => c.trim());
+                return {
+                    var1: cols[0] || `ITEM-${i + 1}`,
+                    var2: cols[1] || '100',
+                    var3: cols[2] || 'พร้อมใช้งาน'
+                };
+            });
+            renderBatchTable();
+            updateExportedScriptPreview();
+        }
+
+        function renderBatchTable() {
+            const tbody = document.getElementById('batchTableBody');
+            const label = document.getElementById('batchRowCountLabel');
+            if (label) label.innerText = batchRows.length;
+            if (!tbody) return;
+
+            tbody.innerHTML = batchRows.map((r, i) => `
+                <tr class="hover:bg-slate-900/60">
+                    <td class="p-2.5 text-center text-slate-400 font-mono">${i + 1}</td>
+                    <td class="p-2.5 text-cyan-300 font-semibold">${r.var1}</td>
+                    <td class="p-2.5 text-indigo-300">${r.var2}</td>
+                    <td class="p-2.5 text-amber-300">${r.var3}</td>
+                </tr>
+            `).join('');
+        }
+
+        // ==========================================
+        // UNIVERSAL FLOATING HUD BOT (INJECTABLE ON ANY EXTERNAL WEBSITE)
+        // ==========================================
+        function launchUniversalFloatingHud() {
+            if (document.getElementById('ailab-universal-hud')) {
+                document.getElementById('ailab-universal-hud').style.display = 'flex';
+                return;
+            }
+
+            const style = document.createElement('style');
+            style.innerHTML = `
+                #ailab-universal-hud {
+                    position: fixed; top: 20px; right: 20px; width: 350px;
+                    background: #090d16; color: #f8fafc; border-radius: 18px;
+                    border: 2px solid #06b6d4; z-index: 2147483646;
+                    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.75), 0 0 25px rgba(6,182,212,0.3);
+                    font-family: 'Sarabun', sans-serif; font-size: 12px;
+                    display: flex; flex-direction: column; overflow: hidden;
+                }
+                #ailab-universal-hud * { box-sizing: border-box; }
+                .hud-head {
+                    background: linear-gradient(135deg, #0f172a, #1e1b4b, #0891b2);
+                    padding: 10px 14px; cursor: move; display: flex; justify-content: space-between; align-items: center;
+                }
+                .hud-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 9px; }
+                .hud-inp, .hud-sel, .hud-ta {
+                    width: 100%; background: #1e293b; border: 1px solid #334155; color: #fff;
+                    border-radius: 8px; padding: 6px 8px; font-size: 12px; outline: none;
+                }
+                .hud-btn {
+                    border: none; border-radius: 8px; padding: 8px 10px; font-weight: 700;
+                    cursor: pointer; font-size: 12px; transition: 0.15s;
+                }
+                .hud-highlight { outline: 3px dashed #f59e0b !important; background: rgba(245,158,11,0.15) !important; }
+            `;
+            document.head.appendChild(style);
+
+            const hud = document.createElement('div');
+            hud.id = 'ailab-universal-hud';
+            hud.innerHTML = `
+                <div class="hud-head" id="hud-drag-bar">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:16px;">🤖</span>
+                        <div>
+                            <div style="font-weight:800;font-size:13px;">AiLab AutoBot Remote</div>
+                            <div style="font-size:10px;color:#67e8f9;">สั่งการทุกเว็บอัตโนมัติ • นายเมธาวัฒน์ พงสะพัง</div>
+                        </div>
+                    </div>
+                    <button id="hud-close-btn" style="background:#ef4444;color:#fff;border:none;width:24px;height:24px;border-radius:6px;cursor:pointer;">✕</button>
+                </div>
+                <div class="hud-body">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#94a3b8;font-weight:600;">
+                            <span>1. ชี้เป้าจุดที่ต้องการสั่งงาน</span>
+                            <span id="hud-target-tag" style="color:#fbbf24;">ยังไม่ล็อกเป้า</span>
+                        </div>
+                        <button id="hud-pick-btn" class="hud-btn" style="width:100%;background:rgba(6,182,212,0.18);color:#22d3ee;border:1px dashed #06b6d4;">
+                            🎯 คลิกเพื่อชี้เป้าช่องกรอก / ปุ่มบนเว็บ
+                        </button>
+                    </div>
+                    <div>
+                        <div style="margin-bottom:4px;color:#94a3b8;font-weight:600;">2. รูปแบบคำสั่งอัตโนมัติ</div>
+                        <select id="hud-mode-sel" class="hud-sel">
+                            <option value="sequence">➡️ กรอกเรียงทุกช่องในฟอร์ม + กด Enter</option>
+                            <option value="vertical">⬇️ กรอกไล่ลงแนวตั้ง (ตารางเว็บ)</option>
+                            <option value="repeat_click">🖱️ คลิกปุ่มเดิมซ้ำอัตโนมัติ (Auto-Clicker)</option>
+                            <option value="click_all_similar">⚡ คลิกปุ่มประเภทเดียวกันทั้งหมดในหน้านี้</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#94a3b8;font-weight:600;">
+                            <span>3. ข้อมูลที่จะสั่งพิมพ์ (บรรทัดละ 1 รอบ)</span>
+                            <span id="hud-speed-txt" style="color:#22d3ee;">300 ms</span>
+                        </div>
+                        <textarea id="hud-data-ta" rows="3" class="hud-ta" placeholder="วางรายการข้อความ หรือใส่จำนวนรอบคลิก..."></textarea>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button id="hud-start-btn" class="hud-btn" style="flex:1;background:#10b981;color:#022c22;">▶ เริ่มรันบอท</button>
+                        <button id="hud-stop-btn" class="hud-btn" style="display:none;background:#ef4444;color:#fff;">⏹ หยุด</button>
+                    </div>
+                    <div id="hud-status-box" style="background:#020617;border:1px solid #1e293b;padding:8px;border-radius:8px;color:#38bdf8;font-size:11px;">
+                        💡 ชี้เป้าองค์ประกอบบนเว็บแล้วกดเริ่มรันได้เลย
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(hud);
+
+            let pickedEl = null;
+            let picking = false;
+            let hudTimer = null;
+            let hoverEl = null;
+
+            // Dragging
+            const dragBar = document.getElementById('hud-drag-bar');
+            let dragging = false, ox = 0, oy = 0;
+            dragBar.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                dragging = true;
+                const r = hud.getBoundingClientRect();
+                ox = e.clientX - r.left;
+                oy = e.clientY - r.top;
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                hud.style.left = Math.max(0, Math.min(window.innerWidth - hud.offsetWidth, e.clientX - ox)) + 'px';
+                hud.style.top = Math.max(0, Math.min(window.innerHeight - 48, e.clientY - oy)) + 'px';
+                hud.style.right = 'auto';
+            });
+            document.addEventListener('mouseup', () => { dragging = false; });
+
+            document.getElementById('hud-close-btn').onclick = () => {
+                if (hudTimer) clearInterval(hudTimer);
+                hud.style.display = 'none';
+            };
+
+            const pickBtn = document.getElementById('hud-pick-btn');
+            pickBtn.onclick = () => {
+                picking = !picking;
+                pickBtn.innerText = picking ? '🔍 คลิกเลือกจุดเป้าหมายบนหน้าเว็บ...' : '🎯 คลิกเพื่อชี้เป้าช่องกรอก / ปุ่มบนเว็บ';
+            };
+
+            document.addEventListener('mouseover', (e) => {
+                if (!picking || hud.contains(e.target)) return;
+                if (hoverEl) hoverEl.classList.remove('hud-highlight');
+                hoverEl = e.target;
+                hoverEl.classList.add('hud-highlight');
+            }, true);
+
+            document.addEventListener('click', (e) => {
+                if (!picking || hud.contains(e.target)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (hoverEl) hoverEl.classList.remove('hud-highlight');
+                picking = false;
+                pickedEl = e.target;
+                document.getElementById('hud-target-tag').innerText = '✔ ' + pickedEl.tagName;
+                document.getElementById('hud-target-tag').style.color = '#34d399';
+                pickBtn.innerText = '🎯 เปลี่ยนเป้าหมายใหม่';
+                document.getElementById('hud-status-box').innerHTML = '🎯 ล็อกเป้าหมายแล้ว กด <b>เริ่มรันบอท</b> ได้เลย';
+            }, true);
+
+            const startBtn = document.getElementById('hud-start-btn');
+            const stopBtn = document.getElementById('hud-stop-btn');
+
+            stopBtn.onclick = () => {
+                if (hudTimer) clearInterval(hudTimer);
+                startBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                document.getElementById('hud-status-box').innerHTML = '⏹ หยุดบอทเรียบร้อยแล้ว';
+            };
+
+            startBtn.onclick = () => {
+                if (!pickedEl) {
+                    document.getElementById('hud-status-box').innerHTML = '⚠️ กรุณากดปุ่ม 🎯 ชี้เป้าบนหน้าเว็บก่อนครับ';
+                    return;
+                }
+                const mode = document.getElementById('hud-mode-sel').value;
+                const raw = document.getElementById('hud-data-ta').value.trim();
+                const lines = raw ? raw.split('\n').map(s => s.trim()) : ['Auto-1', 'Auto-2', 'Auto-3'];
+
+                let targets = [pickedEl];
+                const allInputs = Array.from(document.querySelectorAll('input, textarea, select')).filter(el => !hud.contains(el) && !el.disabled);
+                if (mode === 'sequence') {
+                    const i = allInputs.indexOf(pickedEl);
+                    targets = i !== -1 ? allInputs.slice(i) : allInputs;
+                } else if (mode === 'vertical') {
+                    const rx = pickedEl.getBoundingClientRect().left;
+                    targets = allInputs.filter(el => Math.abs(el.getBoundingClientRect().left - rx) < 30);
+                } else if (mode === 'click_all_similar') {
+                    const tag = pickedEl.tagName;
+                    targets = Array.from(document.querySelectorAll(tag)).filter(el => !hud.contains(el));
+                }
+
+                let idx = 0;
+                const maxSteps = mode === 'repeat_click' ? lines.length : Math.min(lines.length, Math.max(1, targets.length));
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+
+                hudTimer = setInterval(() => {
+                    if (idx >= maxSteps) {
+                        clearInterval(hudTimer);
+                        startBtn.style.display = 'inline-block';
+                        stopBtn.style.display = 'none';
+                        document.getElementById('hud-status-box').innerHTML = `✅ สั่งการเสร็จสิ้น ${idx} รายการ!`;
+                        return;
+                    }
+                    const el = mode === 'repeat_click' ? pickedEl : (targets[idx] || pickedEl);
+                    const val = lines[idx % lines.length];
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.focus();
+                    if (el.tagName === 'BUTTON' || mode === 'repeat_click' || mode === 'click_all_similar') {
+                        el.click();
+                    } else {
+                        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+                        if (setter && el.tagName === 'INPUT') setter.call(el, val);
+                        else el.value = val;
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true }));
+                    }
+                    idx++;
+                    document.getElementById('hud-status-box').innerHTML = `🚀 กำลังรันขั้นตอนที่ ${idx}/${maxSteps}...`;
+                }, 320);
+            };
+        }
+
+        // ==========================================
+        // CODE & BOOKMARKLET GENERATORS
+        // ==========================================
+        function getBookmarkletCode() {
+            return 'javascript:(' + launchUniversalFloatingHud.toString() + ')();';
+        }
+
+        function updateExportedScriptPreview() {
+            const bmLink = document.getElementById('bookmarkletDragLink');
+            if (bmLink) bmLink.href = getBookmarkletCode();
+
+            const format = document.getElementById('exportScriptFormat')?.value || 'console';
+            const targetUrl = document.getElementById('targetWebsiteUrl')?.value || 'https://example.com';
+            const box = document.getElementById('exportedCodeBox');
+            if (!box) return;
+
+            if (format === 'console') {
+                box.value = `// วางโค้ดนี้ในหน้าต่าง Inspect -> Console (F12) บนเว็บ: ${targetUrl}\n(${launchUniversalFloatingHud.toString()})();`;
+            } else {
+                const stepsCode = pipelineSteps.map(s => {
+                    if (s.action === 'fill') return `    await page.fill('${s.selector}', '${s.value}');`;
+                    if (s.action === 'click') return `    await page.click('${s.selector}');`;
+                    if (s.action === 'select') return `    await page.selectOption('${s.selector}', '${s.value}');`;
+                    if (s.action === 'keypress') return `    await page.keyboard.press('${s.value || 'Enter'}');`;
+                    return `    await page.waitForTimeout(350);`;
+                }).join('\n');
+
+                box.value = `// สคริปต์ Node.js Playwright สั่งการเว็บอัตโนมัติ (พัฒนาโดย นายเมธาวัฒน์ พงสะพัง)
+const { chromium } = require('playwright');
+
+(async () => {
+  const browser = await chromium.launch({ headless: false });
+  const page = await browser.newPage();
+  await page.goto('${targetUrl}');
+
+  const batchData = ${JSON.stringify(batchRows)};
+  for (const row of batchData) {
+${stepsCode}
+    await page.waitForTimeout(350);
+  }
+})();`;
+            }
+        }
+
+        function downloadTampermonkeyScript() {
+            const targetUrl = document.getElementById('targetWebsiteUrl').value.trim() || '*://*/*';
+            const content = `// ==UserScript==
+// @name         AiLab Universal Web Auto-Commander
+// @namespace    https://ailabv2.vercel.app/
+// @version      4.0
+// @description  ระบบสั่งการเว็บไซต์อัตโนมัติทุกเว็บ (พัฒนาโดย นายเมธาวัฒน์ พงสะพัง)
+// @author       นายเมธาวัฒน์ พงสะพัง
+// @match        *://*/*
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+    // Target Website: ${targetUrl}
+    ${launchUniversalFloatingHud.toString()}
+
+    const btn = document.createElement('button');
+    btn.innerHTML = '🤖 AiLab AutoBot';
+    btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483645;background:linear-gradient(135deg,#06b6d4,#4f46e5);color:#fff;border:2px solid #fff;border-radius:999px;padding:8px 14px;font-weight:bold;font-size:12px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,0.4);';
+    btn.onclick = launchUniversalFloatingHud;
+    document.body.appendChild(btn);
+})();`;
+
+            const blob = new Blob([content], { type: 'text/javascript;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ailab-universal-web-autobot.user.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('ดาวน์โหลดไฟล์ .user.js สำหรับฝังทุกเว็บเรียบร้อย!');
+        }
+
+        // ==========================================
+        // INITIALIZE ALL LISTENERS
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initTargetSimulators();
+            renderPipeline();
+            renderBatchTable();
+            updateExportedScriptPreview();
+            logBotEvent('💡 ระบบ AiLab Universal Web Auto-Commander พร้อมสั่งการเว็บไซต์เป้าหมายแล้ว');
+
+            // Top View Navigation
+            document.querySelectorAll('.nav-view-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const viewId = btn.getAttribute('data-view');
+                    document.querySelectorAll('.app-view').forEach(v => {
+                        v.classList.toggle('hidden', v.id !== viewId);
+                    });
+                    document.querySelectorAll('.nav-view-btn').forEach(b => {
+                        b.className = b === btn
+                            ? 'nav-view-btn bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow'
+                            : 'nav-view-btn text-slate-300 hover:bg-slate-800/80 font-semibold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2';
+                    });
+                });
+            });
+
+            // Quick Target Website Chips
+            document.querySelectorAll('.quick-url-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const url = btn.getAttribute('data-url');
+                    const sim = btn.getAttribute('data-sim');
+                    document.getElementById('targetWebsiteUrl').value = url;
+                    document.getElementById('browserAddressText').innerText = url;
+                    switchSimTemplate(sim);
+                    updateExportedScriptPreview();
+                    showToast(`ตั้งค่าเว็บเป้าหมายเป็น ${url} แล้ว`);
+                });
+            });
+
+            document.getElementById('btnConnectSimulatedWeb').addEventListener('click', () => {
+                const url = document.getElementById('targetWebsiteUrl').value.trim() || 'https://example.com';
+                document.getElementById('browserAddressText').innerText = url;
+                updateExportedScriptPreview();
+                logBotEvent(`🌐 เชื่อมต่อโครงสร้างหน้าเว็บเป้าหมาย: ${url}`);
+                showToast('ซิงค์ลิงก์เว็บไซต์เข้าหน้าต่างจำลองแล้ว');
+            });
+
+            document.getElementById('btnOpenRealWebTab').addEventListener('click', () => {
+                const url = document.getElementById('targetWebsiteUrl').value.trim() || 'https://www.google.com';
+                copyText(`(${launchUniversalFloatingHud.toString()})();`);
+                window.open(url, '_blank', 'noopener,noreferrer');
+                showToast('เปิดเว็บเป้าหมายในแท็บใหม่ + คัดลอกสคริปต์ AutoBot ให้พร้อมวางแล้ว!');
+            });
+
+            // Macro Preset Buttons
+            document.querySelectorAll('.macro-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchSimTemplate(btn.getAttribute('data-macro'));
+                    showToast('เปลี่ยนชุดคำสั่งอัตโนมัติเรียบร้อย');
+                });
+            });
+
+            document.getElementById('simTemplateSwitcher').addEventListener('change', (e) => {
+                switchSimTemplate(e.target.value);
+            });
+
+            // Variable Chips
+            document.querySelectorAll('.var-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.getElementById('stepParamValue').value = chip.getAttribute('data-var');
+                });
+            });
+
+            // Add Custom Step
+            document.getElementById('btnAddCommandStep').addEventListener('click', () => {
+                const action = document.getElementById('stepActionType').value;
+                const selector = document.getElementById('stepTargetSelector').value.trim() || '.target-input-1';
+                const value = document.getElementById('stepParamValue').value.trim() || '{{var1}}';
+                pipelineSteps.push({ action, selector, value });
+                renderPipeline();
+                showToast('เพิ่มคำสั่งลงในคิวอัตโนมัติแล้ว');
+            });
+
+            document.getElementById('btnClearPipeline').addEventListener('click', () => {
+                pipelineSteps = [];
+                renderPipeline();
+                showToast('ล้างคิวคำสั่งทั้งหมดแล้ว');
+            });
+
+            // Visual Target Picker inside Sandbox Viewport
+            const pickStepBtn = document.getElementById('btnVisualPickStep');
+            pickStepBtn.addEventListener('click', () => {
+                isPickingSelector = !isPickingSelector;
+                pickStepBtn.innerText = isPickingSelector ? '🔍 คลิกจุดที่ต้องการในหน้าเว็บจำลอง...' : '🎯 ชี้เป้าบนหน้าเว็บ';
+                if (isPickingSelector) showToast('คลิกเลือกช่องกรอกหรือปุ่มในหน้าเว็บจำลองด้านขวาได้เลยครับ');
+            });
+
+            document.getElementById('targetWebViewport').addEventListener('click', (e) => {
+                if (isPickingSelector) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isPickingSelector = false;
+                    pickStepBtn.innerText = '🎯 ชี้เป้าบนหน้าเว็บ';
+                    const el = e.target;
+                    let sel = el.tagName.toLowerCase();
+                    if (el.id) sel = `#${el.id}`;
+                    else if (el.classList.length > 0) sel = `.${el.classList[0]}`;
+                    document.getElementById('stepTargetSelector').value = sel;
+                    showToast(`ดึง Selector เป้าหมาย "${sel}" สำเร็จ!`);
+                    return;
+                }
+
+                if (isRecording && (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT')) {
+                    const el = e.target;
+                    const sel = el.id ? `#${el.id}` : (el.classList.length > 0 ? `.${el.classList[0]}` : el.tagName.toLowerCase());
+                    if (el.tagName === 'BUTTON') {
+                        pipelineSteps.push({ action: 'click', selector: sel, value: 'คลิกซ้าย' });
+                        renderPipeline();
+                        logBotEvent(`🔴 [บันทึกสด] เพิ่มคำสั่งคลิกปุ่ม ${sel}`);
+                    }
+                }
+            }, true);
+
+            document.getElementById('targetWebViewport').addEventListener('change', (e) => {
+                if (!isRecording) return;
+                const el = e.target;
+                const sel = el.id ? `#${el.id}` : (el.classList.length > 0 ? `.${el.classList[0]}` : el.tagName.toLowerCase());
+                pipelineSteps.push({
+                    action: el.tagName === 'SELECT' ? 'select' : 'fill',
+                    selector: sel,
+                    value: el.value
+                });
+                renderPipeline();
+                logBotEvent(`🔴 [บันทึกสด] เพิ่มคำสั่งกรอกค่า "${el.value}" ที่ ${sel}`);
+            });
+
+            // Live Recorder Toggle
+            document.getElementById('btnToggleRecord').addEventListener('click', () => {
+                isRecording = !isRecording;
+                const label = document.getElementById('recordBtnLabel');
+                const dot = document.getElementById('recordDot');
+                if (isRecording) {
+                    label.innerText = 'กำลังบันทึก... (คลิกเพื่อหยุด)';
+                    dot.classList.add('animate-ping');
+                    showToast('เริ่มโหมดบันทึกสด! ลองพิมพ์หรือคลิกปุ่มในหน้าเว็บจำลองด้านขวาได้เลย');
+                } else {
+                    label.innerText = 'บันทึกการคลิก/พิมพ์สด';
+                    dot.classList.remove('animate-ping');
+                    showToast('หยุดการบันทึกสดแล้ว');
+                }
+            });
+
+            // Speed & Run Controls
+            const speedSlider = document.getElementById('botSpeedSlider');
+            speedSlider.addEventListener('input', () => {
+                document.getElementById('botSpeedText').innerText = `${speedSlider.value} ms`;
+            });
+
+            document.getElementById('btnRunCurrentWorkflow').addEventListener('click', executeWorkflowInSandbox);
+            document.getElementById('btnStopWorkflow').addEventListener('click', () => {
+                if (runningTimer) clearInterval(runningTimer);
+                runningTimer = null;
+                document.getElementById('virtualBotCursor').classList.add('hidden');
+                document.getElementById('btnStopWorkflow').classList.add('hidden');
+                logBotEvent('⏹ หยุดการทำงานของบอทแล้ว', 'warn');
+            });
+
+            document.getElementById('btnOpenFloatingHud').addEventListener('click', () => {
+                launchUniversalFloatingHud();
+                const hudTa = document.getElementById('hud-data-ta');
+                if (hudTa && !hudTa.value.trim()) {
+                    hudTa.value = batchRows.map(r => r.var1).join('\n');
+                }
+                showToast('เปิดรีโมท AutoBot ลอยตัวแล้ว!');
+            });
+
+            // Target Web Interactive Handlers
+            document.getElementById('btnEcomSubmit').addEventListener('click', () => {
+                const sku = document.getElementById('ecomSkuInput').value || 'PRO-AUTO';
+                const qty = document.getElementById('ecomQtyInput').value || '100';
+                const st = document.getElementById('ecomStatusSelect').value;
+                ecomSavedCount++;
+                document.getElementById('ecomSavedBadge').innerText = `อัปเดตแล้ว: ${ecomSavedCount} รายการ`;
+                const tbody = document.getElementById('ecomRecordsBody');
+                if (ecomSavedCount === 1) tbody.innerHTML = '';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 text-slate-400 font-mono">${new Date().toLocaleTimeString('th-TH')}</td>
+                    <td class="p-2 font-bold text-cyan-300">${sku}</td>
+                    <td class="p-2 text-white">${qty}</td>
+                    <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300">${st}</span></td>
+                `;
+                tbody.prepend(tr);
+            });
+
+            document.getElementById('btnFormSubmit').addEventListener('click', () => {
+                formSavedCount++;
+                document.getElementById('formSavedBadge').innerText = `ส่งฟอร์มแล้ว: ${formSavedCount} ชุด`;
+            });
+
+            document.getElementById('btnSocialPost').addEventListener('click', () => {
+                const feed = document.getElementById('socialFeedList');
+                const page = document.getElementById('sim-page-social');
+                const cap = page.querySelector('.target-input-1').value || 'โพสต์อัตโนมัติ';
+                const tag = page.querySelector('.target-input-2').value || '#AiLab';
+                const div = document.createElement('div');
+                div.className = 'bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs flex justify-between items-center';
+                div.innerHTML = `<div><span class="text-white font-semibold">${cap}</span> <span class="text-cyan-400 ml-2">${tag}</span></div><span class="text-[10px] text-emerald-400">✔ เผยแพร่แล้ว</span>`;
+                feed.prepend(div);
+            });
+
+            document.getElementById('btnResetTargetWeb').addEventListener('click', () => {
+                ecomSavedCount = 0;
+                formSavedCount = 0;
+                document.getElementById('ecomSavedBadge').innerText = 'อัปเดตแล้ว: 0 รายการ';
+                document.getElementById('formSavedBadge').innerText = 'ส่งฟอร์มแล้ว: 0 ชุด';
+                document.getElementById('ecomRecordsBody').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">รีเซ็ตข้อมูลหน้าเว็บจำลองเรียบร้อย</td></tr>';
+                document.getElementById('socialFeedList').innerHTML = '';
+                initTargetSimulators();
+                showToast('รีเซ็ตหน้าเว็บจำลองแล้ว');
+            });
+
+            // Log Export & Clear
+            document.getElementById('btnClearLogs').addEventListener('click', () => {
+                document.getElementById('botConsoleLog').innerHTML = '';
+            });
+            document.getElementById('btnExportLogs').addEventListener('click', () => {
+                const text = document.getElementById('botConsoleLog').innerText || 'No logs';
+                const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'autobot-execution-log.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('ดาวน์โหลดไฟล์ Log เรียบร้อย');
+            });
+
+            // Batch Queue Controls
+            document.getElementById('btnParseBatch').addEventListener('click', () => {
+                parseBatchData();
+                showToast('อัปเดตตารางชุดข้อมูลลูปเรียบร้อย');
+            });
+            document.getElementById('btnLoadSampleBatch').addEventListener('click', () => {
+                document.getElementById('batchRawInput').value = `PRO-AI-001, 2450, พร้อมจัดส่ง\nPRO-AI-002, 1890, อนุมัติด่วน\nPRO-AI-003, 5400, พร้อมจัดส่ง\nPRO-AI-004, 990, รอดำเนินการ\nPRO-AI-005, 3200, อนุมัติด่วน`;
+                parseBatchData();
+                showToast('โหลดข้อมูลตัวอย่างเข้าคิวเรียบร้อย');
+            });
+
+            // Export & Bookmarklet Controls
+            document.getElementById('bookmarkletDragLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                launchUniversalFloatingHud();
+                showToast('เปิดรีโมทบอทแล้ว! (ลากปุ่มสีทองนี้ไปวางที่แถบ Bookmarks เพื่อกดใช้บนเว็บอื่น)');
+            });
+            document.getElementById('btnCopyBookmarkletUrl').addEventListener('click', () => {
+                copyText(getBookmarkletCode());
+                showToast('คัดลอกลิงก์ Bookmarklet เรียบร้อย!');
+            });
+            document.getElementById('btnDownloadTampermonkey').addEventListener('click', downloadTampermonkeyScript);
+            document.getElementById('exportScriptFormat').addEventListener('change', updateExportedScriptPreview);
+            document.getElementById('btnCopyExportedCode').addEventListener('click', () => {
+                copyText(document.getElementById('exportedCodeBox').value);
+                showToast('คัดลอกสคริปต์สั่งการเรียบร้อยแล้ว!');
+            });
+        });
+    </script>
+</body>
+</html>
