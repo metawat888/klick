@@ -3,58 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AiLab Real-Web AutoMouse Bot Studio - ใช้งานบนเว็บจริง 100%</title>
+  <title>AiLab AutoMouse Bot - ระบบตั้งคิวเมาส์และคลิกตามพิกัด X,Y ต่อเนื่อง</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --neon-cyan: #06b6d4;
-      --neon-emerald: #10b981;
-      --neon-purple: #8b5cf6;
-      --neon-amber: #f59e0b;
-    }
     body {
       font-family: 'Kanit', 'Inter', sans-serif;
       background-color: #050811;
-      color: #e2e8f0;
+      color: #f1f5f9;
       overflow-x: hidden;
     }
     .mono {
       font-family: 'JetBrains Mono', monospace;
     }
-    .glass-card {
-      background: rgba(15, 23, 42, 0.82);
+    .glass-box {
+      background: rgba(15, 23, 42, 0.88);
       backdrop-filter: blur(16px);
       border: 1px solid rgba(56, 189, 248, 0.22);
-      box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.8);
     }
-    /* Real Full-Screen Floating Hardware Mouse Cursor */
-    #virtual-cursor {
+    /* Real Full-Screen Bot Mouse Cursor */
+    #bot-cursor {
       pointer-events: none;
       position: fixed;
-      top: 180px;
-      left: 550px;
+      top: 84px;
+      left: 24px;
       z-index: 2147483647;
-      transition: top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 0.1s ease;
-      filter: drop-shadow(0 0 14px rgba(16, 185, 129, 1)) drop-shadow(0 0 28px rgba(6, 182, 212, 0.9));
+      transition: top 0.34s cubic-bezier(0.22, 1, 0.36, 1), left 0.34s cubic-bezier(0.22, 1, 0.36, 1), transform 0.1s ease;
+      filter: drop-shadow(0 0 12px rgba(16, 185, 129, 1)) drop-shadow(0 0 24px rgba(6, 182, 212, 0.9));
     }
     .cursor-clicking {
-      transform: scale(0.75) rotate(-8deg) !important;
+      transform: scale(0.74) rotate(-8deg) !important;
     }
     .click-ripple {
       position: fixed;
-      width: 56px;
-      height: 56px;
+      width: 54px;
+      height: 54px;
       border-radius: 9999px;
       border: 3.5px solid #10b981;
       background: radial-gradient(circle, rgba(16, 185, 129, 0.55) 0%, rgba(6, 182, 212, 0.1) 70%, transparent 100%);
-      box-shadow: 0 0 24px #10b981;
+      box-shadow: 0 0 22px #10b981;
       transform: translate(-50%, -50%) scale(0.2);
-      animation: rippleAnim 0.55s ease-out forwards;
+      animation: rippleAnim 0.52s ease-out forwards;
       pointer-events: none;
       z-index: 2147483646;
+    }
+    @keyframes rippleAnim {
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
     }
     .click-spark-label {
       position: fixed;
@@ -65,731 +63,485 @@
       font-weight: 800;
       font-size: 11px;
       font-family: 'JetBrains Mono', monospace;
-      transform: translate(-50%, -140%);
-      animation: floatUpFade 0.65s ease-out forwards;
+      transform: translate(-50%, -130%);
+      animation: floatUpFade 0.6s ease-out forwards;
       pointer-events: none;
       z-index: 2147483647;
-      box-shadow: 0 0 15px rgba(16, 185, 129, 0.9);
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.9);
     }
     @keyframes floatUpFade {
-      0% { opacity: 1; transform: translate(-50%, -110%) scale(0.9); }
-      100% { opacity: 0; transform: translate(-50%, -220%) scale(1.1); }
+      0% { opacity: 1; transform: translate(-50%, -100%) scale(0.9); }
+      100% { opacity: 0; transform: translate(-50%, -210%) scale(1.08); }
     }
-    /* Embedded Floating HUD Controller */
-    #embedded-hud-panel {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 355px;
-      z-index: 2147483645;
-      background: rgba(6, 11, 25, 0.96);
-      backdrop-filter: blur(20px);
-      border: 1.5px solid rgba(16, 185, 129, 0.65);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(16, 185, 129, 0.25);
-      border-radius: 18px;
-      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
-    }
-    .hud-picking-cursor * {
+    /* Coordinate Finder Crosshair Overlay */
+    .coord-finder-active, .coord-finder-active * {
       cursor: crosshair !important;
     }
-    @keyframes rippleAnim {
-      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
+    #coord-pin-marker {
+      pointer-events: none;
+      position: fixed;
+      width: 22px;
+      height: 22px;
+      border: 2.5px solid #f59e0b;
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.25);
+      transform: translate(-50%, -50%);
+      z-index: 2147483640;
+      box-shadow: 0 0 14px #f59e0b;
     }
-    .target-highlight {
-      outline: 2px solid #10b981 !important;
-      box-shadow: 0 0 18px rgba(16, 185, 129, 0.7) !important;
+    /* Floating Embedded HUD */
+    #embedded-hud-panel {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      width: 340px;
+      z-index: 2147483645;
+      background: rgba(6, 11, 23, 0.96);
+      backdrop-filter: blur(18px);
+      border: 1.5px solid rgba(16, 185, 129, 0.7);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 24px rgba(16, 185, 129, 0.25);
+      border-radius: 16px;
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #090d16; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-slate-950">
+<body class="min-h-screen flex flex-col selection:bg-emerald-500 selection:text-slate-950">
 
-  <!-- Top Header -->
-  <header class="sticky top-0 z-40 glass-card border-b border-cyan-500/25 px-4 py-2.5">
-    <div class="max-w-[1640px] mx-auto flex flex-wrap items-center justify-between gap-3">
+  <!-- Full-Screen Bot Mouse Cursor -->
+  <div id="bot-cursor">
+    <div class="relative">
+      <span class="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-emerald-400/80 animate-ping"></span>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+        <path d="M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z" fill="#10b981" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div id="cursor-action-tag" class="mt-0.5 px-2 py-0.5 rounded bg-slate-950/95 border border-emerald-400 text-[10px] font-bold text-emerald-300 mono whitespace-nowrap shadow-xl">
+      🖱️ READY
+    </div>
+  </div>
+
+  <!-- Pin Marker for Last Picked X,Y Coordinate -->
+  <div id="coord-pin-marker" class="hidden"></div>
+
+  <!-- Compact Header + Dynamic AutoMouse Bookmarklet Button -->
+  <header class="sticky top-0 z-40 glass-box border-b border-emerald-500/25 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-          <svg class="w-6 h-6 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-          </svg>
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-extrabold text-lg shadow-lg shadow-emerald-500/25">
+          🖱️
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-wide bg-gradient-to-r from-emerald-300 via-cyan-200 to-sky-300 bg-clip-text text-transparent">
-              AiLab Real-Web AutoMouse Bot (รุ่นใช้งานบนเว็บจริง 100%)
+            <h1 class="text-base sm:text-lg font-bold text-white">
+              AiLab AutoMouse Queue & Coordinate Bot
             </h1>
-            <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-              <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span id="status-badge-text">REAL-DOM ENGINE</span>
+            <span id="run-status-pill" class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mono">
+              IDLE
             </span>
           </div>
-          <p class="text-xs text-slate-400">สร้างสคริปต์ฝังหน้าเว็บจริง (Bookmarklet / Tampermonkey / Console) + บอทบังคับเมาส์จริงระดับ OS</p>
+          <p class="text-xs text-slate-400">
+            ระบบค้นหาพิกัดเมาส์ (X, Y) • ตั้งกล่องขั้นตอนรันต่อเนื่องไม่หยุด • ปุ่ม AutoMouse อัปเดตตามคิวที่คุณสร้างอัตโนมัติ
+          </p>
         </div>
       </div>
 
-      <!-- Mode Switcher -->
+      <!-- Dynamic AutoMouse Button (Automatically updates its code whenever the queue changes!) -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="flex items-center bg-slate-900/95 border border-slate-700/80 rounded-xl p-1 text-xs">
-          <button id="tab-btn-workspace" class="px-3 py-1.5 rounded-lg font-semibold transition bg-emerald-500 text-slate-950 shadow">
-            1. ตั้งค่าบอท & โหลดเว็บจริง
-          </button>
-          <button id="tab-btn-export" class="px-3 py-1.5 rounded-lg font-semibold transition text-slate-300 hover:text-white">
-            2. ติดตั้งลงเว็บจริง (Bookmarklet / Tampermonkey / Python)
-          </button>
-        </div>
-        <div class="hidden xl:flex items-center gap-2 text-xs bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-lg">
-          <span class="text-slate-400">พัฒนาโดย:</span>
-          <span class="text-cyan-300 font-semibold">Ai Lab Studio dev (นายเมธาวัฒน์ พงสะพัง)</span>
-        </div>
+        <a id="dynamic-automouse-btn" href="javascript:void(0)" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/30 hover:scale-105 transition flex items-center gap-1.5 cursor-grab active:cursor-grabbing" title="ลากปุ่มนี้ไปวางที่แถบบุ๊กมาร์ก โค้ดข้างในจะปรับตามคิวที่คุณสร้างอัตโนมัติ">
+          <span>⚡</span>
+          <span id="dynamic-btn-label">ปุ่ม AutoMouse (0 ขั้นตอน - ลากไปวางบุ๊กมาร์ก)</span>
+        </a>
+        <button id="btn-embed-hud" class="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 font-bold text-xs transition">
+          📌 ฝังแผงควบคุมลอย + คัดลอกโค้ดคิวนี้
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- Instant Real-Web Bookmarklet Banner (Works on ANY Website without security blocks) -->
-  <div class="bg-gradient-to-r from-emerald-950/90 via-cyan-950/90 to-slate-900 border-b border-emerald-500/30 px-4 py-2.5">
-    <div class="max-w-[1640px] mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-      <div class="flex items-center gap-2.5">
-        <span class="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-extrabold uppercase">ใช้งานจริงทันที</span>
-        <span class="text-slate-200">
-          ลากปุ่มสีเขียวนี้ไปวางไว้ที่ <strong>แถบบุ๊กมาร์ก (Bookmarks Bar)</strong> ของเบราว์เซอร์ แล้วเปิดเว็บจริงที่คุณต้องการ (เช่น SGS, Facebook, หรือเว็บระบบงาน) จากนั้นคลิกบุ๊กมาร์กนี้ ตัวเมาส์บอทพร้อมแผงควบคุมจะลอยขึ้นมาทำงานบนเว็บจริงทันที!
-        </span>
-      </div>
-      <div class="flex items-center gap-2">
-        <a id="bookmarklet-drag-link" href="javascript:void(0)" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold shadow-lg shadow-emerald-500/25 hover:scale-105 transition flex items-center gap-1.5 cursor-grab active:cursor-grabbing">
-          <span>🖱️</span> AiLab AutoMouse Bot (ลากไปวางแถบบุ๊กมาร์ก)
-        </a>
-        <button id="btn-launch-popup-window" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 font-semibold transition">
-          ↗ เปิดเว็บเป้าหมายในหน้าต่างจริง + คัดลอกบอทอัตโนมัติ
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- Unified Single-Screen Main Content (No Tabs, No Clutter) -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-5 space-y-4">
 
-  <!-- MAIN VIEW 1: Real Target Configurator + Live Web Frame / Interactive Target -->
-  <main id="view-workspace" class="flex-1 max-w-[1640px] w-full mx-auto p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
-
-    <!-- LEFT COLUMN (5 cols): Real Selector & Credential Configuration -->
-    <section class="lg:col-span-5 flex flex-col gap-3.5">
-
-      <!-- Box 1: Real Website URL, ID, Password, Message & Real CSS Selectors -->
-      <div class="glass-card rounded-2xl p-4">
-        <div class="flex items-center justify-between mb-2.5">
-          <h2 class="text-sm font-bold text-emerald-300 flex items-center gap-2">
-            <span>🔐</span> 1. ข้อมูลเข้าสู่ระบบ & คำสั่งสำหรับเว็บจริง
-          </h2>
-          <div class="flex items-center gap-1.5">
-            <button data-site-preset="ailab" class="site-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-cyan-300 border border-slate-700">เว็บ AiLab V2</button>
-            <button data-site-preset="sgs" class="site-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-amber-300 border border-slate-700">ระบบ SGS สพฐ.</button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-          <div class="sm:col-span-2">
-            <label class="block text-slate-400 mb-1">URL เว็บจริงที่ต้องการให้บอททำงาน (ใส่ https://...)</label>
-            <div class="flex gap-1.5">
-              <input id="cfg-url" type="text" value="https://ailabv2.vercel.app/" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-300 focus:outline-none focus:border-emerald-400 mono" />
-              <button id="btn-load-real-iframe" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition shrink-0">
-                โหลดเว็บจริงเข้าจอขวา
-              </button>
-            </div>
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-1">User ID / Username / Email</label>
-            <input id="cfg-userid" type="text" value="metawat_ai" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-cyan-300 focus:outline-none focus:border-cyan-400 mono" />
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-1">Password (รหัสผ่านเว็บจริง)</label>
-            <input id="cfg-password" type="text" value="AiLab@2026#Pro" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-amber-300 focus:outline-none focus:border-cyan-400 mono" />
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block text-slate-400 mb-1">ข้อความ / คำสั่ง / ข้อมูลที่จะให้บอทพิมพ์อัตโนมัติ</label>
-            <input id="cfg-message" type="text" value="รันระบบประมวลผลอัตโนมัติ AiLab V2 แบบไม่หยุดพัก" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-200 focus:outline-none focus:border-emerald-400" />
-          </div>
-        </div>
-
-        <!-- Real DOM Selector Mapping -->
-        <details class="mt-2.5 bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 text-xs">
-          <summary class="cursor-pointer font-semibold text-cyan-300 select-none">
-            🎯 ตั้งค่าตัวจับปุ่มบนหน้าเว็บจริงอัตโนมัติ (Smart CSS / Text Selectors)
-          </summary>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2.5">
-            <div>
-              <label class="text-slate-400 block mb-0.5">ตัวค้นหาช่อง ID บนเว็บจริง</label>
-              <input id="sel-real-user" type="text" value="input[type='text'], input[type='email'], input[name*='user'], input[id*='user'], #sim-input-user" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mono text-[11px]" />
-            </div>
-            <div>
-              <label class="text-slate-400 block mb-0.5">ตัวค้นหาช่อง Password บนเว็บจริง</label>
-              <input id="sel-real-pass" type="text" value="input[type='password'], input[name*='pass'], input[id*='pass'], #sim-input-pass" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mono text-[11px]" />
-            </div>
-            <div>
-              <label class="text-slate-400 block mb-0.5">คำบนปุ่ม Login หรือ Selector</label>
-              <input id="sel-real-login" type="text" value="login|เข้าสู่ระบบ|ลงชื่อเข้าใช้|#sim-btn-login" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mono text-[11px]" />
-            </div>
-            <div>
-              <label class="text-slate-400 block mb-0.5">คำบนปุ่ม Play / ส่งคำสั่ง</label>
-              <input id="sel-real-play" type="text" value="play|เล่น|เริ่ม|ส่ง|ตกลง|บันทึก|#sim-btn-play" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mono text-[11px]" />
-            </div>
-          </div>
-        </details>
-
-        <!-- One-Click Embed Control Panel CTA -->
-        <div class="mt-3 pt-3 border-t border-emerald-500/25 flex flex-col sm:flex-row gap-2">
-          <button id="btn-embed-hud-now" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition transform active:scale-95">
-            <span>⚡</span> ตั้งค่าเสร็จ! กดฝังแผงควบคุมบอททันที (Embed HUD)
-          </button>
-          <button id="btn-embed-and-open-external" class="py-2.5 px-3 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-400/50 font-bold text-xs flex items-center justify-center gap-1.5 transition" title="คัดลอกแผงควบคุมและเปิดเว็บเป้าหมาย">
-            <span>🚀</span> ฝังลงเว็บนอก
-          </button>
-        </div>
-        <div id="embed-success-banner" class="hidden mt-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-[11px] font-medium flex items-center justify-between">
-          <span>✓ ฝังแผงควบคุมลอย (HUD) มุมขวาล่าง + คัดลอกโค้ดพร้อมวางบนเว็บจริงแล้ว!</span>
-          <button id="btn-focus-hud" class="underline text-cyan-300 font-bold ml-2">ดูแผงควบคุม</button>
-        </div>
-      </div>
-
-      <!-- Box 2: Natural Language Command Input -->
-      <div class="glass-card rounded-2xl p-4">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-sm font-bold text-purple-300 flex items-center gap-2">
-            <span>💬</span> 2. ช่องรับคำสั่งบอท (พิมพ์สั่งงานได้อิสระ)
-          </h2>
-          <button id="btn-parse-nl" class="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition shadow">
-            อัปเดตคำสั่งลงบอทจริง
-          </button>
-        </div>
-
-        <textarea id="nl-command-input" rows="2" class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-400 leading-relaxed">คลิกช่อง id พิมพ์ id คลิกช่อง password พิมพ์ password คลิกปุ่ม login แล้วพิมพ์ข้อความ คลิกปุ่ม play ทำซ้ำไม่หยุดพัก</textarea>
-
-        <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
-          <span class="text-slate-400">รูปแบบคำสั่ง:</span>
-          <button data-preset="full-loop" class="preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700">
-            Login + พิมพ์ข้อมูล + กด Play วนลูปไม่หยุด
-          </button>
-          <button data-preset="rapid-play" class="preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700">
-            พิมพ์ข้อความ + กด Play รัวๆ
-          </button>
-          <button data-preset="re-login" class="preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700">
-            ล็อกอินอัตโนมัติ + กด Play
-          </button>
-        </div>
-      </div>
-
-      <!-- Box 3: Action Queue & Execution Controls -->
-      <div class="glass-card rounded-2xl p-4 flex-1 flex flex-col min-h-[270px]">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-          <h2 class="text-sm font-bold text-cyan-300">
-            ⚡ 3. คิวคำสั่งเมาส์บอท (<span id="step-count">0</span> ขั้นตอน)
-          </h2>
-          <div class="flex items-center gap-1.5">
-            <button id="btn-record-mode" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-medium flex items-center gap-1 transition">
-              <span id="record-dot" class="w-2 h-2 rounded-full bg-rose-400"></span>
-              <span id="record-label">อัดตำแหน่งการคลิก</span>
-            </button>
-            <button id="btn-add-step-modal" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-medium transition">
-              + เพิ่มคำสั่ง
-            </button>
-          </div>
-        </div>
-
-        <!-- Inline Add Step Bar -->
-        <div id="add-step-bar" class="hidden mb-3 p-2.5 rounded-xl bg-slate-900/95 border border-cyan-500/30 text-xs space-y-2">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div>
-              <label class="text-slate-400 block mb-0.5">การกระทำ</label>
-              <select id="new-step-action" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200">
-                <option value="click">คลิกเมาส์ซ้าย (Click)</option>
-                <option value="type">พิมพ์ข้อความ (Type)</option>
-                <option value="press_enter">กดปุ่ม Enter</option>
-                <option value="wait">หน่วงเวลา (Wait)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-slate-400 block mb-0.5">เป้าหมาย (CSS Selector / ปุ่ม)</label>
-              <select id="new-step-target" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200">
-                <option value="#sim-input-user">ช่อง User ID</option>
-                <option value="#sim-input-pass">ช่อง Password</option>
-                <option value="#sim-btn-login">ปุ่ม Login</option>
-                <option value="#sim-input-prompt">ช่องพิมพ์งาน / ข้อความ</option>
-                <option value="#sim-btn-send">ปุ่มส่งคำสั่ง</option>
-                <option value="#sim-btn-play">ปุ่ม PLAY</option>
-                <option value="#sim-btn-bonus">ปุ่มเสริม / โบนัส</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-slate-400 block mb-0.5">ข้อมูลที่จะพิมพ์ / เวลา (ms)</label>
-              <input id="new-step-value" type="text" value="{{MESSAGE}}" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200" />
-            </div>
-          </div>
-          <div class="flex justify-end gap-2">
-            <button id="btn-cancel-step" class="px-2.5 py-1 rounded bg-slate-800 text-slate-400 hover:text-white">ยกเลิก</button>
-            <button id="btn-Confirm-step" class="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-bold">เพิ่มลงคิว</button>
-          </div>
-        </div>
-
-        <!-- Step List -->
-        <div id="steps-container" class="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[240px]"></div>
-
-        <!-- Bot Run Controls -->
-        <div class="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-3 text-xs">
-            <label class="flex items-center gap-1.5 cursor-pointer select-none">
-              <input id="chk-infinite-loop" type="checkbox" checked class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0" />
-              <span class="text-emerald-300 font-semibold">ทำซ้ำไม่หยุดพัก 24/7</span>
-            </label>
-            <div class="flex items-center gap-1">
-              <span class="text-slate-400">ความเร็ว:</span>
-              <select id="sel-speed" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300">
-                <option value="1">ปกติ (1x)</option>
-                <option value="2" selected>เร็ว (2x)</option>
-                <option value="4">เทอร์โบ (4x)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button id="btn-start-bot" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 transition">
-              <span>▶</span> <span id="btn-start-text">เดินบอททันที</span>
-            </button>
-            <button id="btn-stop-bot" disabled class="px-3 py-2 rounded-xl bg-rose-600/30 text-rose-300 border border-rose-500/40 font-semibold text-xs disabled:opacity-40 hover:bg-rose-600 hover:text-white transition">
-              หยุด (Stop)
-            </button>
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- RIGHT COLUMN (7 cols): Live Real Web Iframe + Active DOM Target -->
-    <section class="lg:col-span-7 flex flex-col gap-3.5">
-
-      <!-- KPI Row -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div class="glass-card rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div class="text-[11px] text-slate-400">รอบการทำงานสำเร็จ</div>
-            <div id="kpi-cycles" class="text-xl font-bold text-cyan-300 mono">0</div>
-          </div>
-          <div class="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">⟳</div>
-        </div>
-        <div class="glass-card rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div class="text-[11px] text-slate-400">คลิกเมาส์จริงทั้งหมด</div>
-            <div id="kpi-clicks" class="text-xl font-bold text-emerald-300 mono">0</div>
-          </div>
-          <div class="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">🖱️</div>
-        </div>
-        <div class="glass-card rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div class="text-[11px] text-slate-400">ตัวอักษรที่พิมพ์</div>
-            <div id="kpi-typed" class="text-xl font-bold text-purple-300 mono">0</div>
-          </div>
-          <div class="w-8 h-8 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">⌨️</div>
-        </div>
-        <div class="glass-card rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div class="text-[11px] text-slate-400">พิกัดเมาส์บอท (X, Y)</div>
-            <div id="kpi-coords" class="text-base font-bold text-amber-300 mono">X: 50, Y: 50</div>
-          </div>
-          <div class="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">🎯</div>
-        </div>
-      </div>
-
-      <!-- Browser Stage with Mode Switch: Active DOM Target vs Live External Website Iframe -->
-      <div class="glass-card rounded-2xl overflow-hidden flex flex-col border border-emerald-500/30 relative">
-        <!-- Browser Top Bar -->
-        <div class="bg-slate-900/95 border-b border-slate-800 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 text-[11px]">
-              <button id="stage-mode-dom" class="px-2.5 py-1 rounded-md font-semibold bg-emerald-500 text-slate-950 transition">
-                หน้าต่างรับคำสั่งตรง (Active DOM)
-              </button>
-              <button id="stage-mode-iframe" class="px-2.5 py-1 rounded-md font-semibold text-slate-300 hover:text-white transition">
-                แสดงหน้าเว็บจริงสด (Live Web Iframe)
-              </button>
-            </div>
-          </div>
-
-          <div class="flex-1 min-w-[200px] bg-slate-950 border border-slate-800 rounded-lg px-3 py-1 text-xs flex items-center justify-between mono text-slate-300">
-            <span id="browser-url-bar" class="truncate">https://ailabv2.vercel.app/</span>
-            <span id="sim-auth-pill" class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">พร้อมรันบอท</span>
-          </div>
-
-          <button id="btn-reset-sim" class="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
-            รีเซ็ตค่า
-          </button>
-        </div>
-
-        <!-- Stage Container -->
-        <div id="browser-stage" class="relative min-h-[390px] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/60 p-4 select-none overflow-hidden">
-
-          <!-- Virtual Hardware Mouse Cursor (Full-Screen Fixed & High Visibility) -->
-          <div id="virtual-cursor">
-            <div class="relative">
-              <span class="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-emerald-400/80 animate-ping"></span>
-              <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
-                <path d="M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z" fill="#10b981" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div id="cursor-action-tag" class="mt-1 px-2.5 py-1 rounded-md bg-slate-950/95 border-2 border-emerald-400 text-[11px] font-bold text-emerald-300 mono whitespace-nowrap shadow-xl">
-              🖱️ AUTO-BOT ACTIVE
-            </div>
-          </div>
-
-          <!-- Sub-View A: Direct DOM Target (Allows 100% unrestricted DOM mouse & keyboard dispatch) -->
-          <div id="subview-dom-arena" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch h-full">
-            <!-- Login Form -->
-            <div class="md:col-span-5 bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">1. ฟอร์ม Login รับค่าจริง</span>
-                  <span id="login-indicator" class="text-[11px] text-slate-400">รอล็อกอิน</span>
-                </div>
-                <div class="space-y-2.5 text-xs">
-                  <div>
-                    <label class="text-slate-400 block mb-1">Username / ID</label>
-                    <input id="sim-input-user" data-bot-name="ช่อง User ID" type="text" placeholder="บอทจะคลิกและพิมพ์ ID..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-cyan-200 mono focus:outline-none" />
-                  </div>
-                  <div>
-                    <label class="text-slate-400 block mb-1">Password</label>
-                    <input id="sim-input-pass" data-bot-name="ช่อง Password" type="text" placeholder="บอทจะคลิกและพิมพ์ Password..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-200 mono focus:outline-none" />
-                  </div>
-                  <button id="sim-btn-login" data-bot-name="ปุ่ม Login" class="w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold transition shadow-md">
-                    เข้าสู่ระบบ (LOGIN)
-                  </button>
-                </div>
-              </div>
-              <div id="sim-user-profile" class="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                <span>ผู้ใช้งาน: <strong id="session-user-text" class="text-slate-200">Guest</strong></span>
-                <button id="sim-btn-logout" data-bot-name="ปุ่ม Logout" class="text-rose-400 hover:underline">Logout</button>
-              </div>
-            </div>
-
-            <!-- Command & Play Box -->
-            <div class="md:col-span-7 bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">2. ช่องพิมพ์คำสั่ง & ปุ่ม PLAY อัตโนมัติ</span>
-                  <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                    Play Count: <strong id="sim-play-counter">0</strong>
-                  </span>
-                </div>
-
-                <div class="space-y-2 text-xs">
-                  <label class="text-slate-400 block">ช่องรับข้อความที่บอทพิมพ์ลงหน้าเว็บ</label>
-                  <div class="flex gap-2">
-                    <input id="sim-input-prompt" data-bot-name="ช่องพิมพ์งาน" type="text" placeholder="บอทจะคลิกแล้วพิมพ์คำสั่งที่นี่..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-emerald-200 focus:outline-none" />
-                    <button id="sim-btn-send" data-bot-name="ปุ่มส่งคำสั่ง" class="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold transition">
-                      ส่งข้อมูล
-                    </button>
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2.5 mt-3">
-                  <button id="sim-btn-play" data-bot-name="ปุ่ม PLAY" class="py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition">
-                    <span>▶</span> PLAY (คลิกทำงานต่อเนื่อง)
-                  </button>
-                  <button id="sim-btn-bonus" data-bot-name="ปุ่มเสริม" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition">
-                    <span>⚡</span> คลิกปุ่มเสริม (<span id="sim-bonus-counter">0</span>)
-                  </button>
-                </div>
-              </div>
-
-              <div class="mt-3 pt-2.5 border-t border-slate-800">
-                <div class="text-[11px] text-slate-400 mb-1">ประวัติการสั่งงานจริงล่าสุด:</div>
-                <div id="sim-live-feed" class="bg-slate-950 border border-slate-800 rounded-lg p-2 h-24 overflow-y-auto text-[11px] mono space-y-1 text-slate-300">
-                  <div class="text-emerald-400">[พร้อมทำงาน] กดปุ่ม "เดินบอททันที" หรือลากปุ่ม Bookmarklet ด้านบนไปรันในหน้าเว็บจริงได้เลย</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sub-View B: Live External Website Iframe -->
-          <div id="subview-real-iframe" class="hidden flex-col h-[390px] rounded-xl overflow-hidden border border-cyan-500/30 bg-slate-950">
-            <div class="bg-slate-900 px-3 py-1.5 text-[11px] text-slate-300 flex items-center justify-between border-b border-slate-800">
-              <span>🌐 แสดงหน้าเว็บจริงจาก URL: <strong id="iframe-current-url" class="text-emerald-300 mono">https://ailabv2.vercel.app/</strong></span>
-              <span class="text-amber-300">ทิป: หากเว็บปลายทางบล็อกการแสดงผลในกรอบ ให้กดปุ่ม "เปิดเว็บเป้าหมายในหน้าต่างจริง" ด้านบน แล้วคลิก Bookmarklet</span>
-            </div>
-            <iframe id="real-web-iframe" src="https://ailabv2.vercel.app/" class="w-full flex-1 bg-white"></iframe>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Real-Time Bot Execution Log -->
-      <div class="glass-card rounded-2xl p-3.5 flex-1 flex flex-col">
-        <div class="flex items-center justify-between mb-1.5">
-          <span class="text-xs font-semibold text-emerald-300 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            บันทึกเหตุการณ์เมาส์บอทแบบเรียลไทม์ (Real-Time Execution Log)
+    <!-- SECTION A: Mouse Coordinate Finder & Quick Step Creator -->
+    <section class="glass-box rounded-2xl p-4 sm:p-5 border border-emerald-500/30">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs mono">
+            🎯 ระบบหาพิกัดเมาส์ (X, Y)
           </span>
-          <button id="btn-clear-log" class="text-[11px] text-slate-400 hover:text-white">ล้างประวัติ</button>
+          <div class="text-xs text-slate-300">
+            พิกัดเมาส์ปัจจุบัน: <strong id="live-mouse-xy" class="text-amber-300 mono text-sm">X: 0, Y: 0</strong>
+          </div>
         </div>
-        <div id="bot-console-log" class="bg-slate-950/90 border border-slate-800/90 rounded-xl p-2.5 h-28 overflow-y-auto mono text-[11px] space-y-1 text-slate-300"></div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-pick-xy" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-md transition flex items-center gap-1.5">
+            <span>🎯</span> <span id="pick-xy-text">กดเพื่อจิ้มหาพิกัดเมาส์บนหน้าจอ (หรือกดปุ่ม F2)</span>
+          </button>
+          <button id="btn-test-xy-click" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 font-semibold text-xs transition">
+            🖱️ ทดสอบเลื่อนเมาส์ไปคลิกพิกัด X,Y ที่เลือก
+          </button>
+        </div>
       </div>
 
-    </section>
-  </main>
-
-  <!-- SECOND VIEW: 3 Real-World Execution Methods (Bookmarklet, Tampermonkey Userscript, Python OS Bot) -->
-  <section id="view-export" class="hidden flex-1 max-w-[1640px] w-full mx-auto p-3 sm:p-4 space-y-4">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-      <!-- Method 1: Live Floating Widget Injector for ANY Website -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-              วิธีที่ 1: สคริปต์ฝังแผงควบคุมเมาส์บอทลงหน้าเว็บจริง (Console / Bookmarklet)
+      <!-- Precision Coordinate Screen Simulator (จอจำลองระบุพิกัดแม่นยำสูง พร้อมเส้นเล็ง Crosshair, ตารางพิกัด และอัปโหลดภาพหน้าจอเว็บจริง) -->
+      <div class="mb-4 rounded-2xl bg-slate-950/95 border border-cyan-500/35 p-3 sm:p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">
+              🖥️ จอจำลองระบุพิกัดแม่นยำสูง (Precision Coordinate Radar)
             </span>
-            <button id="btn-copy-js" class="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
-              คัดลอกโค้ด JS
+            <span class="text-slate-400 hidden sm:inline">คลิกหรือลากบนจอจำลองเพื่อล็อกพิกัด (X, Y) หรือวางรูปแคปหน้าจอเว็บจริงเพื่อจิ้มจุดเป๊ะๆ</span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1">
+              <span class="text-slate-400">สเกลจอจริง:</span>
+              <select id="sim-screen-res" class="bg-slate-950 text-cyan-300 mono font-semibold rounded px-1.5 py-0.5 border border-slate-700">
+                <option value="window">ตามหน้าต่างปัจจุบัน (Auto)</option>
+                <option value="1920x1080">1920 × 1080 (Full HD)</option>
+                <option value="1440x900">1440 × 900 (MacBook)</option>
+                <option value="1366x768">1366 × 768 (Laptop)</option>
+              </select>
+            </div>
+
+            <label class="px-2.5 py-1 rounded-lg bg-purple-600/25 hover:bg-purple-600/40 text-purple-200 border border-purple-400/40 font-semibold cursor-pointer transition flex items-center gap-1">
+              <span>🖼️</span> ใส่ภาพหน้าจอเว็บจริง
+              <input id="sim-bg-upload" type="file" accept="image/*" class="hidden" />
+            </label>
+            <button id="btn-clear-sim-bg" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] transition">
+              รีเซ็ตพื้นหลัง
             </button>
           </div>
-          <p class="text-xs text-slate-300 mb-2.5 leading-relaxed">
-            เมื่อรันบนหน้าเว็บจริง จะสร้าง <strong>แผงควบคุมลอย + ตัวชี้เมาส์บอทสีเขียวมรกต</strong> บนหน้าเว็บนั้นทันที สามารถกรอก ID/Password สั่งพิมพ์ข้อความ และกดปุ่ม Play วนซ้ำไม่หยุดพักบน DOM จริงของเว็บนั้นโดยตรง
-          </p>
-          <pre id="export-js-code" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] mono text-emerald-200 overflow-x-auto h-80"></pre>
         </div>
-        <div id="copy-toast-js" class="hidden mt-2 text-xs text-emerald-400 font-semibold">✓ คัดลอกโค้ดฝังหน้าเว็บจริงเรียบร้อยแล้ว! เปิดเว็บจริงแล้วกด F12 > Console วางได้เลย</div>
-      </div>
 
-      <!-- Method 2: Tampermonkey Auto-Run Extension Script -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-              วิธีที่ 2: สคริปต์ Tampermonkey (เข้าเว็บปุ๊บ เมาส์บอททำงานเองอัตโนมัติ)
-            </span>
-            <button id="btn-copy-tm" class="px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition">
-              คัดลอก Userscript
-            </button>
-          </div>
-          <p class="text-xs text-slate-300 mb-2.5 leading-relaxed">
-            ติดตั้งลงส่วนขยาย <strong>Tampermonkey</strong> บน Chrome/Edge เมื่อเปิดหน้าเว็บเป้าหมาย หรือเว็บรีเฟรชหน้าใหม่ บอทจะทำงานต่อเองอัตโนมัติแบบไม่ต้องกดเริ่มใหม่
-          </p>
-          <pre id="export-tm-code" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] mono text-cyan-200 overflow-x-auto h-80"></pre>
-        </div>
-        <div id="copy-toast-tm" class="hidden mt-2 text-xs text-cyan-400 font-semibold">✓ คัดลอกโค้ด Tampermonkey เรียบร้อยแล้ว!</div>
-      </div>
-
-      <!-- Method 3: Python OS Hardware Mouse + Playwright Real Browser Bot -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-              วิธีที่ 3: บอทบังคับเมาส์จริงบนเครื่อง Mac/Windows (Python Playwright + PyAutoGUI)
-            </span>
-            <div class="flex gap-1.5">
-              <button id="btn-download-py" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-500/40 font-semibold text-xs transition">
-                ดาวน์โหลด .py
-              </button>
-              <button id="btn-copy-py" class="px-3 py-1 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs transition">
-                คัดลอก Python
-              </button>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+          <!-- Interactive Radar Canvas (9 cols) -->
+          <div class="lg:col-span-9 relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 h-[270px] select-none">
+            <canvas id="precision-screen-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+            <div class="absolute top-2 left-2 pointer-events-none flex items-center gap-1.5 bg-slate-950/85 border border-slate-800 px-2.5 py-1 rounded-lg text-[11px] mono">
+              <span class="text-slate-400">ชี้ที่:</span>
+              <span id="canvas-hover-xy" class="text-cyan-300 font-bold">X: 0, Y: 0</span>
+              <span class="text-slate-600">|</span>
+              <span class="text-slate-400">ล็อกเป้า:</span>
+              <span id="canvas-locked-xy" class="text-amber-300 font-bold">X: 520, Y: 340</span>
+            </div>
+            <div class="absolute bottom-2 right-2 pointer-events-none bg-slate-950/85 border border-slate-800 px-2.5 py-1 rounded-lg text-[10px] text-slate-400">
+              คลิกซ้าย = ล็อกพิกัด X,Y • ดับเบิลคลิก = เพิ่มลงกล่องขั้นตอนทันที
             </div>
           </div>
-          <p class="text-xs text-slate-300 mb-2.5 leading-relaxed">
-            เปิด Chrome จริงขึ้นมาเข้า URL เป้าหมาย ล็อกอินด้วย ID/Password พิมพ์ข้อความ และคลิกปุ่ม Play วนซ้ำไม่หยุดพัก 24 ชม. ทะลุทุกข้อจำกัดของเบราว์เซอร์
-          </p>
-          <pre id="export-py-code" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] mono text-purple-200 overflow-x-auto h-80"></pre>
+
+          <!-- Magnifier Loupe & Fine 1px Nudge Controls (3 cols) -->
+          <div class="lg:col-span-3 bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex flex-col justify-between text-xs">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="font-bold text-amber-300 text-[11px]">🔍 แว่นขยายเล็งพิกัด (4x Zoom)</span>
+                <span id="loupe-percent-xy" class="text-[10px] mono text-slate-400">50% , 50%</span>
+              </div>
+              <div class="relative w-full h-28 rounded-lg overflow-hidden border border-amber-500/40 bg-slate-950 mb-2">
+                <canvas id="precision-loupe-canvas" width="220" height="112" class="w-full h-full block"></canvas>
+                <!-- Center Red Crosshair -->
+                <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div class="w-full h-[1px] bg-amber-400/60"></div>
+                </div>
+                <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div class="h-full w-[1px] bg-amber-400/60"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fine 1px / 10px Nudge D-Pad -->
+            <div>
+              <div class="text-[11px] text-slate-400 mb-1 text-center">ปรับขยับพิกัดละเอียด (ทีละ 1px / 10px)</div>
+              <div class="grid grid-cols-3 gap-1 text-[11px] mono font-bold">
+                <button data-dx="-10" data-dy="0" class="nudge-xy-btn py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">-10X</button>
+                <button data-dx="0" data-dy="-1" class="nudge-xy-btn py-1 rounded bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-amber-300">▲ Y-1</button>
+                <button data-dx="10" data-dy="0" class="nudge-xy-btn py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">+10X</button>
+
+                <button data-dx="-1" data-dy="0" class="nudge-xy-btn py-1 rounded bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-amber-300">◀ X-1</button>
+                <button id="btn-center-xy" class="py-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px]">กลางจอ</button>
+                <button data-dx="1" data-dy="0" class="nudge-xy-btn py-1 rounded bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-amber-300">X+1 ▶</button>
+
+                <button data-dx="0" data-dy="-10" class="nudge-xy-btn py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">-10Y</button>
+                <button data-dx="0" data-dy="1" class="nudge-xy-btn py-1 rounded bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-amber-300">▼ Y+1</button>
+                <button data-dx="0" data-dy="10" class="nudge-xy-btn py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">+10Y</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="copy-toast-py" class="hidden mt-2 text-xs text-purple-400 font-semibold">✓ คัดลอกสคริปต์ Python เรียบร้อยแล้ว!</div>
       </div>
 
-    </div>
-  </section>
-
-
-  <!-- FLOATING EMBEDDED HUD CONTROL PANEL (Appears when user clicks "กดฝังแผงควบคุมบอททันที") -->
-  <div id="embedded-hud-panel" class="p-3.5 text-xs select-none">
-    <!-- Draggable Header -->
-    <div id="hud-drag-handle" class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800 cursor-move">
-      <div class="flex items-center gap-2">
-        <span id="hud-live-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-        <span class="font-extrabold text-emerald-300 tracking-wide text-xs">🖱️ AiLab Floating HUD Controller</span>
-      </div>
-      <div class="flex items-center gap-1">
-        <span id="hud-cycle-pill" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mono text-[10px] font-bold">RUN #0</span>
-        <button id="hud-btn-minimize" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]" title="ย่อ/ขยาย">_</button>
-        <button id="hud-btn-close" class="px-1.5 py-0.5 rounded bg-rose-900/60 hover:bg-rose-600 text-rose-200 text-[10px]" title="ซ่อนแผงควบคุม">✕</button>
-      </div>
-    </div>
-
-    <!-- HUD Body -->
-    <div id="hud-body-content" class="space-y-2">
-      <div class="grid grid-cols-2 gap-1.5">
-        <div>
-          <label class="text-[10px] text-slate-400 block">User ID (ซิงค์สด)</label>
-          <input id="hud-input-uid" type="text" value="metawat_ai" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-cyan-300 mono text-[11px] focus:outline-none focus:border-cyan-400" />
-        </div>
-        <div>
-          <label class="text-[10px] text-slate-400 block">Password</label>
-          <input id="hud-input-pwd" type="text" value="AiLab@2026#Pro" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-amber-300 mono text-[11px] focus:outline-none focus:border-amber-400" />
-        </div>
-      </div>
-
-      <div>
-        <label class="text-[10px] text-slate-400 block">ข้อความ / คำสั่งที่บอทพิมพ์อัตโนมัติ</label>
-        <input id="hud-input-msg" type="text" value="รันระบบประมวลผลอัตโนมัติ AiLab V2 แบบไม่หยุดพัก" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-emerald-200 text-[11px] focus:outline-none focus:border-emerald-400" />
-      </div>
-
-      <!-- HUD Speed & Target Picker -->
-      <div class="flex items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5">
-        <div class="flex items-center gap-1.5">
-          <span class="text-[10px] text-slate-400">ความเร็ว:</span>
-          <select id="hud-sel-speed" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 text-[11px]">
-            <option value="1">1x</option>
-            <option value="2" selected>2x</option>
-            <option value="4">4x เทอร์โบ</option>
+      <!-- Unified Add Step Form (Supports X,Y Click, Selector Click, Typing ID/Pass/Text, Enter, Wait) -->
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end text-xs">
+        <div class="sm:col-span-3">
+          <label class="block text-slate-400 mb-1 font-medium">1. เลือกประเภทคำสั่งบอท</label>
+          <select id="step-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-emerald-300 font-semibold focus:outline-none focus:border-emerald-400">
+            <option value="click_xy">🖱️ คลิกตามพิกัดเมาส์ (X, Y)</option>
+            <option value="dblclick_xy">🖱️🖱️ ดับเบิลคลิกพิกัด (X, Y)</option>
+            <option value="click_ type_xy">⌨️ คลิกพิกัด (X, Y) แล้วพิมพ์ข้อความ</option>
+            <option value="click_selector">🔎 คลิกปุ่มอัจฉริยะ (ชื่อปุ่ม / CSS)</option>
+            <option value="type_selector">📝 พิมพ์ข้อความลงช่อง (ID / Pass / คำสั่ง)</option>
+            <option value="wait_for_element">👁️ รอจนกว่าปุ่ม/ช่องจะปรากฏบนเว็บ</option>
+            <option value="scroll_page">📜 เลื่อนหน้าจอเว็บ (พิกเซล เช่น 400 หรือ -400)</option>
+            <option value="press_enter">↵ กดปุ่ม Enter</option>
+            <option value="wait">⏱️ หน่วงเวลารอ (วินาที)</option>
           </select>
         </div>
-        <button id="hud-btn-pick-target" class="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-semibold flex items-center gap-1 transition">
-          <span>🎯</span> ชี้เป้าคลิกบนเว็บ
+
+        <!-- Coordinate X, Y Inputs -->
+        <div id="group-xy" class="sm:col-span-3 grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 mb-1">พิกัดแนวนอน (X)</label>
+            <input id="input-x" type="number" value="520" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-amber-300 mono font-bold focus:outline-none focus:border-amber-400" />
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">พิกัดแนวตั้ง (Y)</label>
+            <input id="input-y" type="number" value="340" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-amber-300 mono font-bold focus:outline-none focus:border-amber-400" />
+          </div>
+        </div>
+
+        <!-- Selector Input (Hidden when using X,Y) -->
+        <div id="group-selector" class="hidden sm:col-span-3">
+          <label class="block text-slate-400 mb-1">ชื่อปุ่ม หรือ CSS Selector</label>
+          <input id="input-selector" type="text" value="Play|เล่น|Login|เข้าสู่ระบบ" placeholder="เช่น Play หรือ #login-btn" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-cyan-300 mono focus:outline-none focus:border-cyan-400" />
+        </div>
+
+        <!-- Value / Text to Type / Delay -->
+        <div class="sm:col-span-4">
+          <label id="label-step-value" class="block text-slate-400 mb-1">ข้อมูลที่จะพิมพ์ / หมายเหตุขั้นตอน</label>
+          <input id="input-value" type="text" value="คลิกปุ่ม Play" placeholder="ใส่ ID, รหัสผ่าน, หรือข้อความที่จะพิมพ์..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-400" />
+        </div>
+
+        <div class="sm:col-span-2">
+          <button id="btn-add-to-queue" class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition">
+            + เพิ่มลงกล่องขั้นตอน
+          </button>
+        </div>
+      </div>
+
+      <!-- Smart Automation Variables, Rotating List & Profile Saver -->
+      <div class="mt-3 pt-3 border-t border-slate-800/80 space-y-2.5 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-slate-400 font-semibold">ตัวแปรอัจฉริยะ:</span>
+            <input id="quick-id" type="text" value="metawat_ai" placeholder="ID / Username" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-cyan-300 mono w-28" />
+            <input id="quick-pass" type="text" value="AiLab@2026" placeholder="Password" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-amber-300 mono w-28" />
+            <input id="quick-text" type="text" value="สั่งรันงานอัตโนมัติ รอบที่ {{CYCLE}}" placeholder="ข้อความ (ใช้ {{CYCLE}}, {{TIME}}, {{LIST}} ได้)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-emerald-300 w-56" />
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button id="btn-load-login-play-template" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">
+              ⚡ สร้างชุดคำสั่งมาตรฐาน (5+ ขั้นตอน)
+            </button>
+            <button id="btn-save-profile" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-semibold transition">
+              💾 บันทึกชุดคิวนี้ไว้ใช้ถาวร
+            </button>
+            <button id="btn-clear-queue" class="px-2.5 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/50 transition">
+              ล้างคิว
+            </button>
+          </div>
+        </div>
+
+        <!-- Smart Rotating Data List & Auto-Conditionals -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 bg-slate-900/70 border border-slate-800 rounded-xl p-2.5">
+          <div class="md:col-span-7">
+            <label class="text-[11px] text-cyan-300 font-semibold block mb-1">
+              📋 ชุดข้อมูลสลับพิมพ์อัตโนมัติทีละบรรทัด (ใช้คีย์เวิร์ด <code class="bg-slate-950 px-1 rounded text-amber-300">{{LIST}}</code> ในกล่องขั้นตอน)
+            </label>
+            <textarea id="smart-rotating-list" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-[11px] text-slate-200 mono focus:outline-none focus:border-cyan-400" placeholder="ใส่ข้อความบรรทัดละ 1 รายการ บอทจะหยิบไปพิมพ์เรียงทีละบรรทัดในแต่ละรอบ...">งานชิ้นที่ 1: ตรวจสอบระบบอัตโนมัติ
+งานชิ้นที่ 2: ประมวลผลข้อมูลประจำวัน
+งานชิ้นที่ 3: ส่งรายงานสถานะสำเร็จ</textarea>
+          </div>
+          <div class="md:col-span-5 flex flex-col justify-between text-[11px] space-y-1.5">
+            <label class="flex items-center gap-2 cursor-pointer text-slate-200">
+              <input id="chk-human-jitter" type="checkbox" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500" />
+              <span>จำลองจังหวะมนุษย์จริง (สุ่มหน่วงเวลาเล็กน้อยกันระบบจับบอท)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-slate-200">
+              <input id="chk-smart-retry" type="checkbox" checked class="rounded bg-slate-950 border-slate-700 text-emerald-500" />
+              <span>รออัจฉริยะ (ถ้าหน้าเว็บยังโหลดไม่เสร็จ ให้รอปุ่มโผล่ก่อนคลิก)</span>
+            </label>
+            <div id="save-profile-toast" class="hidden text-emerald-400 font-bold">
+              ✓ บันทึกชุดคิวลงเครื่องเรียบร้อย! เปิดเว็บครั้งหน้าคิวจะอยู่ครบ
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION B: Continuous Step Execution Box (กล่องขั้นตอนที่รันต่อเนื่องเรื่อยๆ) -->
+    <section class="glass-box rounded-2xl p-4 sm:p-5 border border-cyan-500/30">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-sm sm:text-base font-bold text-emerald-300 flex items-center gap-2">
+            <span>🔄</span> กล่องขั้นตอนการทำงานต่อเนื่อง — ไม่จำกัดจำนวน (<span id="queue-total-count">0</span> ขั้นตอน)
+          </h2>
+          <p class="text-xs text-slate-400">
+            เพิ่มได้ไม่จำกัดขั้นตอน (10, 50, 100+ กล่อง) • เลื่อนลำดับขึ้น-ลง • ทำซ้ำกล่อง • ตั้งให้ทำเฉพาะรอบแรก (เช่น Login) หรือทำทุกรอบได้
+          </p>
+        </div>
+
+        <!-- Master Loop Controls -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-xs">
+            <span class="text-slate-400">รอบที่รันสำเร็จ:</span>
+            <strong id="stat-cycles" class="text-emerald-400 mono text-sm">0</strong>
+            <span class="text-slate-600">|</span>
+            <span class="text-slate-400">คลิกสะสม:</span>
+            <strong id="stat-clicks" class="text-cyan-400 mono text-sm">0</strong>
+          </div>
+
+          <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl text-xs">
+            <span class="text-slate-400">ความเร็ว:</span>
+            <select id="loop-speed" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 font-semibold">
+              <option value="1">1x ปกติ</option>
+              <option value="2" selected>2x เร็ว</option>
+              <option value="4">4x เทอร์โบ</option>
+            </select>
+          </div>
+
+          <button id="btn-start-loop" class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/25 transition flex items-center gap-1.5">
+            <span>▶</span> <span id="start-loop-label">เริ่มทำงาน (รันคิวต่อเนื่อง)</span>
+          </button>
+          <button id="btn-stop-loop" disabled class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm disabled:opacity-40 transition">
+            ⏹ หยุด
+          </button>
+        </div>
+      </div>
+
+      <!-- Visual Step Cards Flow Container -->
+      <div id="step-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    </section>
+
+    <!-- SECTION C: Interactive Target Pad (สำหรับทดสอบพิกัด X,Y และการพิมพ์ของบอทในหน้านี้ หรือคัดลอกโค้ดไปวางเว็บจริง) -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+      <!-- Left (7 cols): Test Target Pad -->
+      <div class="lg:col-span-7 glass-box rounded-2xl p-4 border border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-cyan-300">
+            🎯 แผงเป้าหมายสำหรับทดสอบให้เมาส์บอทคลิกตามพิกัด X,Y และพิมพ์ข้อมูล
+          </span>
+          <span class="text-[11px] text-slate-400">
+            Play Counter: <strong id="target-play-count" class="text-emerald-400 mono text-sm">0</strong>
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+          <div>
+            <label class="text-slate-400 block mb-1">ช่อง ID (ทดสอบพิกัด/พิมพ์)</label>
+            <input id="test-box-id" type="text" placeholder="รอเมาส์คลิกพิมพ์ ID..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-cyan-300 mono" />
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">ช่อง Password</label>
+            <input id="test-box-pass" type="text" placeholder="รอเมาส์คลิกพิมพ์รหัส..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-300 mono" />
+          </div>
+          <div class="flex items-end">
+            <button id="test-btn-login" class="w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold transition">
+              ปุ่ม Login (#test-btn-login)
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-2.5 grid grid-cols-1 sm:grid-cols-12 gap-2.5 text-xs items-center">
+          <div class="sm:col-span-8">
+            <input id="test-box-msg" type="text" placeholder="ช่องรับข้อความที่บอทพิมพ์อัตโนมัติ..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-emerald-300" />
+          </div>
+          <div class="sm:col-span-4">
+            <button id="test-btn-play" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold text-sm shadow-md active:scale-95 transition">
+              ▶ ปุ่ม PLAY (#test-btn-play)
+            </button>
+          </div>
+        </div>
+
+        <div id="target-last-action" class="mt-2.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[11px] mono text-slate-300 truncate">
+          สถานะล่าสุด: รอเมาส์บอทคลิก...
+        </div>
+      </div>
+
+      <!-- Right (5 cols): Auto-Updated Script Box (Matches exact queue!) -->
+      <div class="lg:col-span-5 glass-box rounded-2xl p-4 border border-slate-800 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-emerald-300">
+              📋 โค้ด AutoMouse ที่ปรับตามคิวของคุณอัตโนมัติ
+            </span>
+            <button id="btn-copy-script" class="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+              คัดลอกโค้ดไปวางเว็บจริง
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mb-2">
+            ทุกครั้งที่คุณเพิ่ม/ลบขั้นตอน หรือเปลี่ยนพิกัด X,Y โค้ดด้านล่างและปุ่มลากวางด้านบนจะอัปเดตตามทันที นำไปวางใน Console (F12) ของเว็บจริงได้ทุกเว็บ
+          </p>
+          <pre id="live-generated-code" class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-[10px] mono text-emerald-200 overflow-x-auto h-28"></pre>
+        </div>
+        <div id="copy-status-toast" class="hidden mt-1.5 text-[11px] text-emerald-400 font-bold">
+          ✓ คัดลอกโค้ดตามคิวปัจจุบันเรียบร้อยแล้ว!
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FLOATING EMBEDDED HUD PANEL (Synced with Dynamic Queue & Coordinate Finder) -->
+  <div id="embedded-hud-panel" class="p-3.5 text-xs select-none">
+    <div id="hud-drag-bar" class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 cursor-move">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="font-extrabold text-emerald-300">🖱️ แผงควบคุม AutoMouse (ลากย้ายได้)</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <span id="hud-loop-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 mono text-[10px] font-bold">รอบ #0</span>
+        <button id="hud-minimize" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">_</button>
+      </div>
+    </div>
+
+    <div id="hud-body" class="space-y-2">
+      <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5">
+        <span class="text-[11px] text-slate-300">พิกัดเมาส์: <strong id="hud-xy-readout" class="text-amber-300 mono">X:0 Y:0</strong></span>
+        <button id="hud-btn-pick-xy" class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[10px] hover:bg-amber-400 transition">
+          🎯 จิ้มหาพิกัด X,Y
         </button>
       </div>
 
-      <!-- HUD Primary Action Buttons -->
-      <div class="flex items-center gap-1.5 pt-1">
-        <button id="hud-btn-run" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs shadow-md transition">
-          ▶ เดินบอท 24/7
-        </button>
-        <button id="hud-btn-pause" class="px-3 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs transition">
-          หยุดพัก
-        </button>
-        <button id="hud-btn-step" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-bold text-xs transition" title="คลิกทีละขั้นตอน">
-          +1 คลิก
-        </button>
+      <div class="text-[11px] text-slate-300 flex items-center justify-between">
+        <span>คิวทำงาน: <strong id="hud-queue-count" class="text-cyan-300">0</strong> ขั้นตอน</span>
+        <span id="hud-active-step-name" class="text-emerald-300 mono truncate max-w-[170px]">พร้อมรัน...</span>
       </div>
 
-      <!-- HUD Live Status Bar -->
-      <div class="bg-slate-950 border border-slate-800/90 rounded-lg px-2.5 py-1.5 flex items-center justify-between text-[10px] mono">
-        <span id="hud-status-line" class="text-emerald-300 truncate">พร้อมสั่งการเมาส์บอท...</span>
-        <span id="hud-coords-line" class="text-amber-300 shrink-0 ml-2">X:0 Y:0</span>
+      <div class="flex gap-1.5">
+        <button id="hud-btn-start" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-extrabold text-xs shadow">
+          ▶ เริ่มทำงาน
+        </button>
+        <button id="hud-btn-stop" class="px-3 py-2 rounded-xl bg-rose-600 text-white font-bold text-xs">
+          หยุด
+        </button>
+        <button id="hud-btn-next" class="px-2.5 py-2 rounded-xl bg-slate-800 text-cyan-300 border border-slate-700 font-bold text-xs" title="รันทีละกล่อง">
+          +1
+        </button>
       </div>
     </div>
   </div>
 
   <script>
-    // --- Core Application State ---
+    // --- State Management (Unlimited Steps + Smart Human-Like Automation) ---
     const state = {
       running: false,
-      recording: false,
-      currentStepIndex: 0,
-      cyclesCompleted: 0,
-      totalClicks: 0,
-      totalTypedChars: 0,
-      playCount: 0,
-      bonusCount: 0,
-      loggedInUser: null,
-      steps: [
-        { id: 1, action: 'click', target: '#sim-input-user', label: 'คลิกเมาส์ที่ช่อง User ID', value: '' },
-        { id: 2, action: 'type', target: '#sim-input-user', label: 'พิมพ์ชื่อผู้ใช้ (ID)', value: '{{USER_ID}}' },
-        { id: 3, action: 'click', target: '#sim-input-pass', label: 'คลิกเมาส์ที่ช่อง Password', value: '' },
-        { id: 4, action: 'type', target: '#sim-input-pass', label: 'พิมพ์รหัสผ่าน (Password)', value: '{{PASSWORD}}' },
-        { id: 5, action: 'click', target: '#sim-btn-login', label: 'คลิกปุ่มเข้าสู่ระบบ (Login)', value: '' },
-        { id: 6, action: 'click', target: '#sim-input-prompt', label: 'คลิกช่องพิมพ์ข้อความ/คำสั่ง', value: '' },
-        { id: 7, action: 'type', target: '#sim-input-prompt', label: 'พิมพ์ข้อความอัตโนมัติ', value: '{{MESSAGE}}' },
-        { id: 8, action: 'click', target: '#sim-btn-send', label: 'คลิกปุ่มส่งข้อมูล', value: '' },
-        { id: 9, action: 'click', target: '#sim-btn-play', label: 'คลิกปุ่ม PLAY เพื่อรันงาน', value: '' }
-      ]
+      pickingXY: false,
+      currentIndex: 0,
+      cycles: 0,
+      clicks: 0,
+      playHits: 0,
+      lastMouseX: 520,
+      lastMouseY: 340,
+      queue: []
     };
 
-    function appendBotLog(msg, tone = 'info') {
-      const box = document.getElementById('bot-console-log');
-      const now = new Date().toLocaleTimeString('th-TH', { hour12: false });
-      const colorMap = {
-        info: 'text-cyan-300',
-        success: 'text-emerald-300',
-        warn: 'text-amber-300',
-        action: 'text-purple-300'
-      };
-      const line = document.createElement('div');
-      line.className = `${colorMap[tone] || 'text-slate-300'}`;
-      line.textContent = `[${now}] ${msg}`;
-      box.appendChild(line);
-      box.scrollTop = box.scrollHeight;
-    }
-
-    function appendSimFeed(msg) {
-      const feed = document.getElementById('sim-live-feed');
-      const now = new Date().toLocaleTimeString('th-TH', { hour12: false });
-      const item = document.createElement('div');
-      item.innerHTML = `<span class="text-emerald-400">[${now}]</span> ${msg}`;
-      feed.prepend(item);
-    }
-
-    function resolveValue(rawVal) {
-      const uid = document.getElementById('cfg-userid').value.trim();
-      const pwd = document.getElementById('cfg-password').value.trim();
-      const msg = document.getElementById('cfg-message').value.trim();
-      return String(rawVal || '')
-        .replace('{{USER_ID}}', uid)
-        .replace('{{PASSWORD}}', pwd)
-        .replace('{{MESSAGE}}', msg);
-    }
-
-    function renderSteps() {
-      const container = document.getElementById('steps-container');
-      document.getElementById('step-count').textContent = state.steps.length;
-      container.innerHTML = '';
-
-      state.steps.forEach((step, idx) => {
-        const isCurrent = state.running && state.currentStepIndex === idx;
-        const row = document.createElement('div');
-        row.className = `flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-xs transition ${
-          isCurrent
-            ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-md'
-            : 'bg-slate-900/75 border-slate-800 text-slate-300 hover:border-slate-700'
-        }`;
-
-        const badgeMap = {
-          click: '<span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 mono text-[10px]">CLICK</span>',
-          type: '<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 mono text-[10px]">TYPE</span>',
-          press_enter: '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 mono text-[10px]">ENTER</span>',
-          wait: '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 mono text-[10px]">WAIT</span>'
-        };
-
-        const resolvedPreview = step.value ? ` → "${resolveValue(step.value)}"` : '';
-
-        row.innerHTML = `
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-[10px] mono shrink-0">${idx + 1}</span>
-            ${badgeMap[step.action] || ''}
-            <span class="truncate font-medium">${step.label}</span>
-            <span class="text-slate-400 truncate mono text-[11px]">${resolvedPreview}</span>
-          </div>
-          <div class="flex items-center gap-1 shrink-0">
-            <button data-run-idx="${idx}" class="run-single-step px-1.5 py-0.5 rounded bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-[10px] transition" title="รันขั้นตอนนี้ทันที">▶</button>
-            <button data-del-idx="${idx}" class="del-step px-1.5 py-0.5 rounded bg-slate-800 hover:bg-rose-500 hover:text-white text-[10px] transition" title="ลบ">✕</button>
-          </div>
-        `;
-        container.appendChild(row);
-      });
-
-      container.querySelectorAll('.run-single-step').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const i = parseInt(e.currentTarget.getAttribute('data-run-idx'), 10);
-          executeStep(state.steps[i]);
-        });
-      });
-      container.querySelectorAll('.del-step').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const i = parseInt(e.currentTarget.getAttribute('data-del-idx'), 10);
-          state.steps.splice(i, 1);
-          if (state.currentStepIndex >= state.steps.length) state.currentStepIndex = 0;
-          renderSteps();
-          updateExportCodes();
-        });
-      });
-    }
-
-    // Web Audio API Synthesized Mouse Click Sound (Optional & Safe)
+    // Web Audio Click Feedback
     let audioCtx = null;
-    function playClickSound(freq = 900) {
+    function playClickTone(freq = 950) {
       try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -797,7 +549,7 @@
         const gain = audioCtx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.045);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -806,81 +558,15 @@
       } catch (e) {}
     }
 
-    function moveCursorToElement(selector, actionLabel) {
-      const stage = document.getElementById('browser-stage');
-      const cursor = document.getElementById('virtual-cursor');
-      const tag = document.getElementById('cursor-action-tag');
-      let targetEl = document.querySelector(selector);
-
-      document.querySelectorAll('.target-highlight').forEach(el => el.classList.remove('target-highlight'));
-
-      // Check if targetEl is currently hidden (e.g. when Live Iframe view is active)
-      const isVisible = targetEl && targetEl.offsetParent !== null && targetEl.getBoundingClientRect().width > 0;
-
-      if (!isVisible) {
-        const iframeBox = document.getElementById('real-web-iframe');
-        if (iframeBox && iframeBox.offsetParent !== null) {
-          const r = iframeBox.getBoundingClientRect();
-          const randX = Math.round(r.left + r.width * (0.28 + (state.currentStepIndex % 5) * 0.12));
-          const randY = Math.round(r.top + r.height * (0.25 + (state.currentStepIndex % 4) * 0.16));
-          cursor.style.left = `${randX}px`;
-          cursor.style.top = `${randY}px`;
-          tag.textContent = `🖱️ ${actionLabel}`;
-          document.getElementById('kpi-coords').textContent = `X: ${randX}, Y: ${randY}`;
-          return { x: randX, y: randY, el: targetEl || iframeBox };
-        }
-        return { x: 400, y: 300, el: targetEl };
-      }
-
-      targetEl.classList.add('target-highlight');
-      const targetRect = targetEl.getBoundingClientRect();
-
-      const x = Math.round(targetRect.left + targetRect.width * 0.45);
-      const y = Math.round(targetRect.top + targetRect.height * 0.52);
-
-      cursor.style.left = `${x}px`;
-      cursor.style.top = `${y}px`;
-      tag.textContent = `🖱️ ${actionLabel}`;
-
-      document.getElementById('kpi-coords').textContent = `X: ${x}, Y: ${y}`;
-      const hudCoords = document.getElementById('hud-coords-line');
-      if (hudCoords) hudCoords.textContent = `X:${x} Y:${y}`;
-      const hudStatus = document.getElementById('hud-status-line');
-      if (hudStatus) hudStatus.textContent = actionLabel;
-      return { x, y, el: targetEl };
-    }
-
-    function spawnClickRipple(x, y, labelText = 'CLICK!') {
-      const cursor = document.getElementById('virtual-cursor');
-      cursor.classList.add('cursor-clicking');
-      setTimeout(() => cursor.classList.remove('cursor-clicking'), 150);
-      playClickSound(980);
-
-      const ripple = document.createElement('div');
-      ripple.className = 'click-ripple';
-      ripple.style.left = `${x}px`;
-      ripple.style.top = `${y}px`;
-      document.body.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 580);
-
-      const spark = document.createElement('div');
-      spark.className = 'click-spark-label';
-      spark.style.left = `${x}px`;
-      spark.style.top = `${y}px`;
-      spark.textContent = labelText;
-      document.body.appendChild(spark);
-      setTimeout(() => spark.remove(), 650);
-    }
-
-    // Real React/Vue/DOM Native Value Setter
-    function setNativeInputValue(el, value) {
-      const valueSetter = Object.getOwnPropertyDescriptor(el, 'value')?.set;
-      const prototype = Object.getPrototypeOf(el);
-      const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
-      if (valueSetter && valueSetter !== prototypeValueSetter) {
-        prototypeValueSetter.call(el, value);
-      } else if (valueSetter) {
-        valueSetter.call(el, value);
+    function setNativeValue(el, value) {
+      if (!el) return;
+      const setter = Object.getOwnPropertyDescriptor(el, 'value')?.set;
+      const proto = Object.getPrototypeOf(el);
+      const protoSetter = proto ? Object.getOwnPropertyDescriptor(proto, 'value')?.set : null;
+      if (setter && protoSetter && setter !== protoSetter) {
+        protoSetter.call(el, value);
+      } else if (setter) {
+        setter.call(el, value);
       } else {
         el.value = value;
       }
@@ -888,808 +574,1029 @@
       el.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    async function executeStep(step) {
-      if (!step) return;
-      const speedMultiplier = parseFloat(document.getElementById('sel-speed').value) || 1;
-      const baseDelay = Math.max(140, Math.round(480 / speedMultiplier));
+    function resolveSmartText(rawText) {
+      const uid = document.getElementById('quick-id')?.value.trim() || 'metawat_ai';
+      const pwd = document.getElementById('quick-pass')?.value.trim() || 'AiLab@2026';
+      const msg = document.getElementById('quick-text')?.value.trim() || '';
+      const listRaw = document.getElementById('smart-rotating-list')?.value || '';
+      const lines = listRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const listVal = lines.length > 0 ? lines[state.cycles % lines.length] : '';
+      const nowTime = new Date().toLocaleTimeString('th-TH', { hour12: false });
 
-      if (step.action === 'wait') {
-        const ms = parseInt(resolveValue(step.value), 10) || 500;
-        appendBotLog(`หน่วงเวลารอ ${ms} ms`, 'warn');
-        await new Promise(r => setTimeout(r, Math.min(ms, 2000)));
-        return;
-      }
+      return String(rawText || '')
+        .replace(/\{\{USER_ID\}\}/g, uid)
+        .replace(/\{\{PASSWORD\}\}/g, pwd)
+        .replace(/\{\{MESSAGE\}\}/g, msg)
+        .replace(/\{\{CYCLE\}\}/g, String(state.cycles + 1))
+        .replace(/\{\{TIME\}\}/g, nowTime)
+        .replace(/\{\{LIST\}\}/g, listVal);
+    }
 
-      const { x, y, el } = moveCursorToElement(step.target, `${step.action.toUpperCase()} -> ${step.target}`);
-      await new Promise(r => setTimeout(r, baseDelay));
+    function saveQueueToStorage() {
+      try {
+        localStorage.setItem('ailab_unlimited_queue_v3', JSON.stringify({
+          queue: state.queue,
+          quickId: document.getElementById('quick-id').value,
+          quickPass: document.getElementById('quick-pass').value,
+          quickText: document.getElementById('quick-text').value,
+          rotatingList: document.getElementById('smart-rotating-list').value
+        }));
+      } catch (e) {}
+    }
 
-      if (!el) {
-        appendBotLog(`ไม่พบองค์ประกอบ ${step.target}`, 'warn');
-        return;
-      }
-
-      if (step.action === 'click') {
-        spawnClickRipple(x, y, '🖱️ CLICK! (' + step.label + ')');
-        state.totalClicks++;
-        document.getElementById('kpi-clicks').textContent = state.totalClicks;
-        el.focus();
-        el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-        el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-        el.click();
-        appendBotLog(`คลิกเมาส์จริงที่ [${step.label}] พิกัด (${x}, ${y})`, 'action');
-      } else if (step.action === 'type') {
-        spawnClickRipple(x, y, '⌨️ พิมพ์ข้อมูล...');
-        const textToType = resolveValue(step.value);
-        el.focus();
-        setNativeInputValue(el, '');
-        const charDelay = Math.max(10, Math.round(32 / speedMultiplier));
-        let currentStr = '';
-        for (let i = 0; i < textToType.length; i++) {
-          currentStr += textToType[i];
-          setNativeInputValue(el, currentStr);
-          state.totalTypedChars++;
-          document.getElementById('kpi-typed').textContent = state.totalTypedChars;
-          await new Promise(r => setTimeout(r, charDelay));
+    function loadQueueFromStorage() {
+      try {
+        const raw = localStorage.getItem('ailab_unlimited_queue_v3');
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.queue) && data.queue.length > 0) {
+          state.queue = data.queue;
+          if (data.quickId !== undefined) document.getElementById('quick-id').value = data.quickId;
+          if (data.quickPass !== undefined) document.getElementById('quick-pass').value = data.quickPass;
+          if (data.quickText !== undefined) document.getElementById('quick-text').value = data.quickText;
+          if (data.rotatingList !== undefined) document.getElementById('smart-rotating-list').value = data.rotatingList;
+          return true;
         }
-        appendBotLog(`พิมพ์ข้อมูลจริง "${textToType}" ลงใน [${step.label}]`, 'info');
-      } else if (step.action === 'press_enter') {
-        spawnClickRipple(x, y);
-        el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-        document.getElementById('sim-btn-send').click();
-        appendBotLog(`กดปุ่ม Enter ที่ [${step.label}]`, 'success');
+      } catch (e) {}
+      return false;
+    }
+
+    function initDefaultQueueFromTargets() {
+      const idBox = document.getElementById('test-box-id').getBoundingClientRect();
+      const passBox = document.getElementById('test-box-pass').getBoundingClientRect();
+      const loginBtn = document.getElementById('test-btn-login').getBoundingClientRect();
+      const msgBox = document.getElementById('test-box-msg').getBoundingClientRect();
+      const playBtn = document.getElementById('test-btn-play').getBoundingClientRect();
+
+      state.queue = [
+        {
+          id: Date.now() + 1,
+          type: 'click_ type_xy',
+          x: Math.round(idBox.left + idBox.width * 0.5),
+          y: Math.round(idBox.top + idBox.height * 0.5),
+          selector: '#test-box-id',
+          value: '{{USER_ID}}',
+          note: 'กรอก User ID (ทำเฉพาะรอบแรก)',
+          runOnce: true,
+          enabled: true
+        },
+        {
+          id: Date.now() + 2,
+          type: 'click_ type_xy',
+          x: Math.round(passBox.left + passBox.width * 0.5),
+          y: Math.round(passBox.top + passBox.height * 0.5),
+          selector: '#test-box-pass',
+          value: '{{PASSWORD}}',
+          note: 'กรอก Password (ทำเฉพาะรอบแรก)',
+          runOnce: true,
+          enabled: true
+        },
+        {
+          id: Date.now() + 3,
+          type: 'click_xy',
+          x: Math.round(loginBtn.left + loginBtn.width * 0.5),
+          y: Math.round(loginBtn.top + loginBtn.height * 0.5),
+          selector: '#test-btn-login',
+          value: 'คลิกปุ่ม Login',
+          note: 'กดเข้าสู่ระบบ (ทำเฉพาะรอบแรก)',
+          runOnce: true,
+          enabled: true
+        },
+        {
+          id: Date.now() + 4,
+          type: 'click_ type_xy',
+          x: Math.round(msgBox.left + msgBox.width * 0.5),
+          y: Math.round(msgBox.top + msgBox.height * 0.5),
+          selector: '#test-box-msg',
+          value: '{{LIST}} (รอบ #{{CYCLE}})',
+          note: 'พิมพ์ข้อความสลับบรรทัดอัตโนมัติ',
+          runOnce: false,
+          enabled: true
+        },
+        {
+          id: Date.now() + 5,
+          type: 'click_xy',
+          x: Math.round(playBtn.left + playBtn.width * 0.5),
+          y: Math.round(playBtn.top + playBtn.height * 0.5),
+          selector: '#test-btn-play',
+          value: 'คลิกปุ่ม PLAY',
+          note: 'คลิกปุ่ม PLAY วนต่อเนื่อง',
+          runOnce: false,
+          enabled: true
+        },
+        {
+          id: Date.now() + 6,
+          type: 'wait',
+          x: 0,
+          y: 0,
+          selector: '',
+          value: '0.6',
+          note: 'พักสั้นๆ ก่อนเริ่มรอบถัดไป',
+          runOnce: false,
+          enabled: true
+        }
+      ];
+      state.currentIndex = 0;
+      renderQueueCards();
+      syncDynamicAutoMouseCode();
+      saveQueueToStorage();
+    }
+
+    function moveBotCursor(x, y, labelText) {
+      const cursor = document.getElementById('bot-cursor');
+      const tag = document.getElementById('cursor-action-tag');
+      cursor.style.left = `${x}px`;
+      cursor.style.top = `${y}px`;
+      tag.textContent = labelText;
+    }
+
+    function triggerClickVisual(x, y, sparkText) {
+      const cursor = document.getElementById('bot-cursor');
+      cursor.classList.add('cursor-clicking');
+      setTimeout(() => cursor.classList.remove('cursor-clicking'), 140);
+      playClickTone(980);
+
+      const ripple = document.createElement('div');
+      ripple.className = 'click-ripple';
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      document.body.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 550);
+
+      const spark = document.createElement('div');
+      spark.className = 'click-spark-label';
+      spark.style.left = `${x}px`;
+      spark.style.top = `${y}px`;
+      spark.textContent = sparkText;
+      document.body.appendChild(spark);
+      setTimeout(() => spark.remove(), 620);
+    }
+
+    function findTargetElement(step) {
+      if (step.type === 'click_selector' || step.type === 'type_selector' || step.type === 'wait_for_element') {
+        const parts = String(step.selector || '').split('|').map(s => s.trim()).filter(Boolean);
+        for (const p of parts) {
+          if (p.startsWith('#') || p.startsWith('.') || p.startsWith('input') || p.startsWith('button')) {
+            try {
+              const el = document.querySelector(p);
+              if (el) return el;
+            } catch (e) {}
+          }
+        }
+        const regex = new RegExp(parts.join('|'), 'i');
+        const all = Array.from(document.querySelectorAll('button, a, input, textarea, [role="button"]'));
+        const matched = all.find(el => regex.test((el.innerText || el.value || el.placeholder || '').trim()));
+        if (matched) return matched;
+      }
+
+      const elAtPoint = document.elementFromPoint(step.x, step.y);
+      if (elAtPoint && (elAtPoint.tagName === 'INPUT' || elAtPoint.tagName === 'BUTTON' || elAtPoint.tagName === 'TEXTAREA')) {
+        return elAtPoint;
+      }
+      if (step.selector) {
+        try {
+          const fallbackEl = document.querySelector(step.selector);
+          if (fallbackEl) return fallbackEl;
+        } catch (e) {}
+      }
+      return elAtPoint;
+    }
+
+    async function executeStepItem(step, index) {
+      if (!step || step.enabled === false) return;
+
+      // Smart Run-Once Check (e.g. Login only on cycle 0)
+      if (step.runOnce && state.cycles > 0) {
+        return;
+      }
+
+      const speed = parseFloat(document.getElementById('loop-speed').value) || 2;
+      const jitter = document.getElementById('chk-human-jitter')?.checked ? (Math.random() * 140 - 40) : 0;
+      const moveWait = Math.max(120, Math.round((440 / speed) + jitter));
+
+      document.getElementById('hud-active-step-name').textContent = `#${index + 1}: ${step.note || step.value}`;
+
+      if (step.type === 'wait') {
+        const sec = parseFloat(resolveSmartText(step.value)) || 1;
+        moveBotCursor(state.lastMouseX, state.lastMouseY, `⏱️ รอ ${sec} วินาที`);
+        await new Promise(r => setTimeout(r, Math.min(sec * 1000, 5000)));
+        return;
+      }
+
+      if (step.type === 'scroll_page') {
+        const px = parseInt(resolveSmartText(step.value), 10) || 350;
+        window.scrollBy({ top: px, behavior: 'smooth' });
+        moveBotCursor(state.lastMouseX, state.lastMouseY, `📜 เลื่อนจอ ${px}px`);
+        await new Promise(r => setTimeout(r, moveWait));
+        return;
+      }
+
+      if (step.type === 'wait_for_element') {
+        const smartRetry = document.getElementById('chk-smart-retry')?.checked;
+        const maxTries = smartRetry ? 12 : 1;
+        for (let t = 0; t < maxTries && state.running; t++) {
+          const found = findTargetElement(step);
+          if (found && found.offsetParent !== null) {
+            const r = found.getBoundingClientRect();
+            moveBotCursor(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2), '👁️ พบปุ่มแล้ว!');
+            return;
+          }
+          await new Promise(r => setTimeout(r, 350));
+        }
+        return;
+      }
+
+      let targetEl = findTargetElement(step);
+      let targetX = Number(step.x) || 400;
+      let targetY = Number(step.y) || 300;
+
+      if ((step.type === 'click_selector' || step.type === 'type_selector' || step.selector) && targetEl) {
+        const r = targetEl.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          targetX = Math.round(r.left + r.width * 0.5);
+          targetY = Math.round(r.top + r.height * 0.5);
+        }
+      }
+
+      moveBotCursor(targetX, targetY, `🖱️ #${index + 1} (${targetX}, ${targetY})`);
+      await new Promise(r => setTimeout(r, moveWait));
+
+      if (!targetEl) {
+        targetEl = document.elementFromPoint(targetX, targetY);
+      }
+
+      if (step.type === 'click_xy' || step.type === 'click_selector') {
+        triggerClickVisual(targetX, targetY, `🖱️ CLICK (${targetX}, ${targetY})`);
+        state.clicks++;
+        document.getElementById('stat-clicks').textContent = state.clicks;
+        if (targetEl) {
+          targetEl.focus();
+          targetEl.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: targetX, clientY: targetY }));
+          targetEl.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: targetX, clientY: targetY }));
+          targetEl.click();
+        }
+      } else if (step.type === 'dblclick_xy') {
+        triggerClickVisual(targetX, targetY, `🖱️🖱️ 2x CLICK (${targetX}, ${targetY})`);
+        state.clicks += 2;
+        document.getElementById('stat-clicks').textContent = state.clicks;
+        if (targetEl) {
+          targetEl.focus();
+          targetEl.click();
+          targetEl.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: targetX, clientY: targetY }));
+        }
+      } else if (step.type === 'click_ type_xy' || step.type === 'type_selector') {
+        const resolvedText = resolveSmartText(step.value);
+        triggerClickVisual(targetX, targetY, `⌨️ พิมพ์: "${resolvedText}"`);
+        state.clicks++;
+        document.getElementById('stat-clicks').textContent = state.clicks;
+        if (targetEl && ('value' in targetEl)) {
+          targetEl.focus();
+          setNativeValue(targetEl, '');
+          const charWait = Math.max(8, Math.round(28 / speed));
+          let cur = '';
+          for (let i = 0; i < resolvedText.length; i++) {
+            cur += resolvedText[i];
+            setNativeValue(targetEl, cur);
+            await new Promise(r => setTimeout(r, charWait));
+          }
+        }
+      } else if (step.type === 'press_enter') {
+        triggerClickVisual(targetX, targetY, '↵ ENTER');
+        if (targetEl) {
+          targetEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+        }
       }
     }
 
-    async function runBotLoop() {
+    async function runContinuousQueue() {
       while (state.running) {
-        if (state.steps.length === 0) {
-          stopBot();
+        if (state.queue.length === 0) {
+          stopQueueLoop();
           break;
         }
-        renderSteps();
-        const step = state.steps[state.currentStepIndex];
-        await executeStep(step);
+        renderQueueCards();
+        const step = state.queue[state.currentIndex];
+        await executeStepItem(step, state.currentIndex);
 
         if (!state.running) break;
 
-        state.currentStepIndex++;
-        if (state.currentStepIndex >= state.steps.length) {
-          state.cyclesCompleted++;
-          document.getElementById('kpi-cycles').textContent = state.cyclesCompleted;
-          const hudCycle = document.getElementById('hud-cycle-pill');
-          if (hudCycle) hudCycle.textContent = `RUN #${state.cyclesCompleted}`;
-          appendBotLog(`=== จบรอบการทำงานที่ #${state.cyclesCompleted} สำเร็จ ===`, 'success');
-
-          if (document.getElementById('chk-infinite-loop').checked) {
-            state.currentStepIndex = 0;
-          } else {
-            stopBot();
-            break;
-          }
+        state.currentIndex++;
+        if (state.currentIndex >= state.queue.length) {
+          state.cycles++;
+          document.getElementById('stat-cycles').textContent = state.cycles;
+          document.getElementById('hud-loop-badge').textContent = `รอบ #${state.cycles}`;
+          state.currentIndex = 0;
         }
       }
     }
 
-    function startBot() {
+    function startQueueLoop() {
       if (state.running) return;
       state.running = true;
-      document.getElementById('btn-start-bot').disabled = true;
-      document.getElementById('btn-start-bot').classList.add('opacity-50');
-      document.getElementById('btn-stop-bot').disabled = false;
-      document.getElementById('status-badge-text').textContent = 'RUNNING 24/7';
-      document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-      appendBotLog('เริ่มเดินเครื่องเมาส์บอทอัตโนมัติ (ทำงานต่อเนื่องไม่หยุดพัก)', 'success');
-      runBotLoop();
+      document.getElementById('btn-start-loop').disabled = true;
+      document.getElementById('btn-start-loop').classList.add('opacity-50');
+      document.getElementById('btn-stop-loop').disabled = false;
+      document.getElementById('run-status-pill').textContent = 'RUNNING 24/7';
+      document.getElementById('run-status-pill').className = 'px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-500 text-slate-950 mono animate-pulse';
+      runContinuousQueue();
     }
 
-    function stopBot() {
+    function stopQueueLoop() {
       state.running = false;
-      document.getElementById('btn-start-bot').disabled = false;
-      document.getElementById('btn-start-bot').classList.remove('opacity-50');
-      document.getElementById('btn-stop-bot').disabled = true;
-      document.getElementById('status-badge-text').textContent = 'PAUSED';
-      document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-amber-400';
-      document.getElementById('cursor-action-tag').textContent = 'PAUSED';
-      renderSteps();
-      appendBotLog('หยุดพักการทำงานของเมาส์บอทแล้ว', 'warn');
+      document.getElementById('btn-start-loop').disabled = false;
+      document.getElementById('btn-start-loop').classList.remove('opacity-50');
+      document.getElementById('btn-stop-loop').disabled = true;
+      document.getElementById('run-status-pill').textContent = 'PAUSED';
+      document.getElementById('run-status-pill').className = 'px-2 py-0.5 text-[11px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 mono';
+      renderQueueCards();
     }
 
-    function parseThaiCommandToSteps(text) {
-      const steps = [];
-      const lower = text.toLowerCase();
+    function renderQueueCards() {
+      const container = document.getElementById('step-cards-container');
+      document.getElementById('queue-total-count').textContent = state.queue.length;
+      document.getElementById('hud-queue-count').textContent = state.queue.length;
+      container.innerHTML = '';
 
-      if (lower.includes('login') || lower.includes('ล็อกอิน') || lower.includes('id') || lower.includes('password')) {
-        steps.push(
-          { id: Date.now() + 1, action: 'click', target: '#sim-input-user', label: 'คลิกเมาส์ที่ช่อง User ID', value: '' },
-          { id: Date.now() + 2, action: 'type', target: '#sim-input-user', label: 'พิมพ์ชื่อผู้ใช้ (ID)', value: '{{USER_ID}}' },
-          { id: Date.now() + 3, action: 'click', target: '#sim-input-pass', label: 'คลิกเมาส์ที่ช่อง Password', value: '' },
-          { id: Date.now() + 4, action: 'type', target: '#sim-input-pass', label: 'พิมพ์รหัสผ่าน (Password)', value: '{{PASSWORD}}' },
-          { id: Date.now() + 5, action: 'click', target: '#sim-btn-login', label: 'คลิกปุ่มเข้าสู่ระบบ (Login)', value: '' }
-        );
-      }
-      if (lower.includes('พิมพ์') || lower.includes('ข้อความ') || lower.includes('ส่ง')) {
-        steps.push(
-          { id: Date.now() + 6, action: 'click', target: '#sim-input-prompt', label: 'คลิกช่องพิมพ์ข้อความ/คำสั่ง', value: '' },
-          { id: Date.now() + 7, action: 'type', target: '#sim-input-prompt', label: 'พิมพ์ข้อความอัตโนมัติ', value: '{{MESSAGE}}' },
-          { id: Date.now() + 8, action: 'click', target: '#sim-btn-send', label: 'คลิกปุ่มส่งข้อมูล', value: '' }
-        );
-      }
-      if (lower.includes('play') || lower.includes('เพลย์') || lower.includes('เล่น') || lower.includes('คลิกปุ่ม')) {
-        steps.push(
-          { id: Date.now() + 9, action: 'click', target: '#sim-btn-play', label: 'คลิกปุ่ม PLAY เพื่อรันงาน', value: '' }
-        );
-      }
-      if (lower.includes('โบนัส') || lower.includes('แต้ม') || lower.includes('เสริม')) {
-        steps.push(
-          { id: Date.now() + 10, action: 'click', target: '#sim-btn-bonus', label: 'คลิกปุ่มเสริม', value: '' }
-        );
-      }
-      if (steps.length === 0) {
-        steps.push(
-          { id: Date.now() + 11, action: 'click', target: '#sim-input-prompt', label: 'คลิกช่องพิมพ์งาน', value: '' },
-          { id: Date.now() + 12, action: 'type', target: '#sim-input-prompt', label: 'พิมพ์คำสั่งที่กำหนด', value: text },
-          { id: Date.now() + 13, action: 'click', target: '#sim-btn-play', label: 'คลิกปุ่ม PLAY', value: '' }
-        );
-      }
+      const typeBadge = {
+        'click_xy': '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold mono">🖱️ คลิก X,Y</span>',
+        'dblclick_xy': '<span class="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/40 text-[10px] font-bold mono">🖱️🖱️ 2xคลิก</span>',
+        'click_ type_xy': '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold mono">⌨️ X,Y+พิมพ์</span>',
+        'click_selector': '<span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold mono">🔎 คลิกปุ่ม</span>',
+        'type_selector': '<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold mono">📝 พิมพ์</span>',
+        'wait_for_element': '<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold mono">👁️ รอปุ่ม</span>',
+        'scroll_page': '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] font-bold mono">📜 เลื่อนจอ</span>',
+        'press_enter': '<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold mono">↵ Enter</span>',
+        'wait': '<span class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 text-[10px] font-bold mono">⏱️ รอ</span>'
+      };
 
-      state.steps = steps;
-      state.currentStepIndex = 0;
-      renderSteps();
-      updateExportCodes();
-      appendBotLog(`อัปเดตคิวคำสั่งเมาส์บอท ${steps.length} ขั้นตอนเรียบร้อย`, 'success');
-    }
+      state.queue.forEach((step, idx) => {
+        const active = state.running && state.currentIndex === idx;
+        const isDisabled = step.enabled === false;
+        const card = document.createElement('div');
+        card.className = `rounded-xl p-3 border transition flex flex-col justify-between gap-2 ${
+          isDisabled ? 'opacity-45 bg-slate-950 border-slate-800' :
+          active
+            ? 'bg-emerald-950/60 border-2 border-emerald-400 shadow-lg shadow-emerald-500/20'
+            : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+        }`;
 
-    // Build Real Self-Contained Floating Bot Overlay Script for ANY Real Website
-    function buildRealWebInjectorScript() {
-      const uid = document.getElementById('cfg-userid').value.trim();
-      const pwd = document.getElementById('cfg-password').value.trim();
-      const msg = document.getElementById('cfg-message').value.trim();
-      const userSel = document.getElementById('sel-real-user').value.trim();
-      const passSel = document.getElementById('sel-real-pass').value.trim();
-      const loginKeywords = document.getElementById('sel-real-login').value.trim();
-      const playKeywords = document.getElementById('sel-real-play').value.trim();
+        const usesXY = step.type === 'click_xy' || step.type === 'dblclick_xy' || step.type === 'click_ type_xy';
+        const usesSel = step.type === 'click_selector' || step.type === 'type_selector' || step.type === 'wait_for_element';
 
-      return `(function(){
-  if(document.getElementById('ailab-real-bot-panel')){console.log('AiLab Bot กำลังทำงานอยู่แล้วบนหน้านี้');return;}
-  const CFG = {
-    userId: ${JSON.stringify(uid)},
-    password: ${JSON.stringify(pwd)},
-    message: ${JSON.stringify(msg)},
-    userSel: ${JSON.stringify(userSel)},
-    passSel: ${JSON.stringify(passSel)},
-    loginKey: ${JSON.stringify(loginKeywords)},
-    playKey: ${JSON.stringify(playKeywords)},
-    running: false,
-    cycles: 0
-  };
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-2">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="w-6 h-6 rounded-lg shrink-0 ${active ? 'bg-emerald-400 text-slate-950 font-extrabold' : 'bg-slate-800 text-slate-300 font-bold'} flex items-center justify-center text-xs mono">
+                  ${idx + 1}
+                </span>
+                ${typeBadge[step.type] || ''}
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button data-up-idx="${idx}" class="btn-card-up px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300" title="เลื่อนขึ้น">▲</button>
+                <button data-down-idx="${idx}" class="btn-card-down px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300" title="เลื่อนลง">▼</button>
+                <button data-dup-idx="${idx}" class="btn-card-dup px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-[10px] text-cyan-300" title="ทำซ้ำกล่องนี้">⧉</button>
+                <button data-test-idx="${idx}" class="btn-card-test px-1.5 py-0.5 rounded bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-[10px] font-bold text-emerald-300" title="ทดสอบขั้นตอนนี้">▶</button>
+                <button data-del-idx="${idx}" class="btn-card-del px-1.5 py-0.5 rounded bg-slate-800 hover:bg-rose-600 text-[10px] font-bold text-slate-400 hover:text-white" title="ลบ">✕</button>
+              </div>
+            </div>
 
-  // สร้างเคอร์เซอร์เมาส์จริงบนหน้าเว็บ
-  const cur = document.createElement('div');
-  cur.id = 'ailab-real-cursor';
-  cur.style.cssText = 'position:fixed;top:60px;left:60px;width:26px;height:26px;z-index:2147483647;pointer-events:none;transition:top 0.32s cubic-bezier(0.22,1,0.36,1),left 0.32s cubic-bezier(0.22,1,0.36,1),transform 0.1s;filter:drop-shadow(0 0 8px #10b981);';
-  cur.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z" fill="#10b981" stroke="#fff" stroke-width="1.8"/></svg><div id="ailab-cur-tag" style="background:#050811;color:#6ee7b7;border:1px solid #10b981;font-size:10px;padding:1px 5px;border-radius:4px;white-space:nowrap;font-family:monospace;">READY</div>';
-  document.body.appendChild(cur);
+            ${usesXY ? `
+              <div class="grid grid-cols-2 gap-1.5 mb-2 text-[11px]">
+                <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg px-2 py-1">
+                  <span class="text-slate-400 mr-1.5 mono">X:</span>
+                  <input data-edit-x="${idx}" type="number" value="${step.x || 0}" class="edit-step-x w-full bg-transparent text-amber-300 font-bold mono focus:outline-none" />
+                </div>
+                <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg px-2 py-1">
+                  <span class="text-slate-400 mr-1.5 mono">Y:</span>
+                  <input data-edit-y="${idx}" type="number" value="${step.y || 0}" class="edit-step-y w-full bg-transparent text-amber-300 font-bold mono focus:outline-none" />
+                </div>
+              </div>
+            ` : usesSel ? `
+              <div class="mb-2 text-[11px]">
+                <input data-edit-sel="${idx}" type="text" value="${step.selector || ''}" placeholder="CSS Selector / ชื่อปุ่ม" class="edit-step-sel w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-cyan-300 mono focus:outline-none" />
+              </div>
+            ` : ''}
 
-  // สร้างแผงควบคุมลอยบนเว็บจริง
-  const panel = document.createElement('div');
-  panel.id = 'ailab-real-bot-panel';
-  panel.style.cssText = 'position:fixed;bottom:18px;right:18px;width:330px;background:rgba(9,13,22,0.96);color:#f1f5f9;border:1.5px solid #10b981;border-radius:14px;padding:12px;z-index:2147483646;font-family:sans-serif;box-shadow:0 15px 35px rgba(0,0,0,0.8);font-size:12px;';
-  panel.innerHTML = \`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #1e293b;padding-bottom:6px;">
-      <strong style="color:#34d399;font-size:13px;">🖱️ AiLab AutoMouse (เว็บจริง)</strong>
-      <span id="ab-stat" style="background:#065f46;color:#a7f3d0;padding:2px 6px;border-radius:99px;font-size:10px;">IDLE</span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <input id="ab-uid" value="\${CFG.userId}" placeholder="User ID" style="background:#0f172a;border:1px solid #334155;color:#38bdf8;padding:4px 6px;border-radius:6px;font-size:11px;"/>
-      <input id="ab-pwd" value="\${CFG.password}" placeholder="Password" style="background:#0f172a;border:1px solid #334155;color:#fbbf24;padding:4px 6px;border-radius:6px;font-size:11px;"/>
-    </div>
-    <input id="ab-msg" value="\${CFG.message}" placeholder="ข้อความที่จะพิมพ์..." style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;color:#6ee7b7;padding:5px 6px;border-radius:6px;font-size:11px;margin-bottom:8px;"/>
-    <div style="display:flex;gap:6px;">
-      <button id="ab-start" style="flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;font-weight:800;border:none;padding:7px;border-radius:8px;cursor:pointer;">▶ เริ่มเดินบอท 24/7</button>
-      <button id="ab-stop" style="background:#be123c;color:#fff;font-weight:700;border:none;padding:7px 10px;border-radius:8px;cursor:pointer;">หยุด</button>
-    </div>
-    <div id="ab-log" style="margin-top:8px;font-family:monospace;font-size:10px;color:#94a3b8;max-height:55px;overflow-y:auto;">พร้อมทำงานบนหน้าเว็บนี้...</div>
-  \`;
-  document.body.appendChild(panel);
+            <div class="text-[11px]">
+              <input data-edit-val="${idx}" type="text" value="${step.value || ''}" placeholder="ข้อมูลที่พิมพ์ / เวลา / พิกเซล..." class="edit-step-val w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-emerald-200 focus:outline-none focus:border-emerald-500" />
+            </div>
+          </div>
 
-  function setNativeValue(el, val) {
-    const setter = Object.getOwnPropertyDescriptor(el, 'value')?.set;
-    const protoSetter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')?.set;
-    if (setter && setter !== protoSetter) protoSetter.call(el, val);
-    else if (setter) setter.call(el, val);
-    else el.value = val;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-
-  function findByKeywordOrSel(ruleStr) {
-    const parts = ruleStr.split('|').map(s => s.trim()).filter(Boolean);
-    for (const p of parts) {
-      if (p.startsWith('#') || p.startsWith('.') || p.startsWith('input') || p.startsWith('button')) {
-        try { const found = document.querySelector(p); if (found) return found; } catch(e){}
-      }
-    }
-    const regex = new RegExp(parts.join('|'), 'i');
-    const candidates = Array.from(document.querySelectorAll('button, a, input[type="submit"], input[type="button"], [role="button"]'));
-    return candidates.find(el => !panel.contains(el) && regex.test((el.innerText || el.value || el.getAttribute('aria-label') || '').trim()));
-  }
-
-  async function moveAndAct(el, action, text) {
-    if (!el) return false;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await new Promise(r => setTimeout(r, 220));
-    const rect = el.getBoundingClientRect();
-    const x = Math.round(rect.left + rect.width * 0.5);
-    const y = Math.round(rect.top + rect.height * 0.5);
-    cur.style.left = x + 'px';
-    cur.style.top = y + 'px';
-    document.getElementById('ailab-cur-tag').textContent = action.toUpperCase();
-    await new Promise(r => setTimeout(r, 380));
-    cur.style.transform = 'scale(0.8)';
-    setTimeout(() => cur.style.transform = 'scale(1)', 140);
-    el.focus();
-    if (action === 'click') {
-      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-      el.click();
-    } else if (action === 'type') {
-      setNativeValue(el, text);
-      el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-    }
-    return true;
-  }
-
-  async function loop() {
-    const logEl = document.getElementById('ab-log');
-    while (CFG.running) {
-      CFG.userId = document.getElementById('ab-uid').value;
-      CFG.password = document.getElementById('ab-pwd').value;
-      CFG.message = document.getElementById('ab-msg').value;
-
-      const uEl = document.querySelector(CFG.userSel);
-      const pEl = document.querySelector(CFG.passSel);
-      if (uEl && pEl && !panel.contains(uEl) && !pEl.value) {
-        logEl.textContent = 'กำลังกรอก ID และ Password...';
-        await moveAndAct(uEl, 'type', CFG.userId);
-        await moveAndAct(pEl, 'type', CFG.password);
-        const lBtn = findByKeywordOrSel(CFG.loginKey);
-        if (lBtn) await moveAndAct(lBtn, 'click');
-        await new Promise(r => setTimeout(r, 1200));
-      }
-
-      const textInputs = Array.from(document.querySelectorAll('textarea, input[type="text"], input[type="search"], [contenteditable="true"]'))
-        .filter(el => !panel.contains(el) && el !== uEl && el !== pEl && el.offsetParent !== null);
-      if (textInputs.length > 0 && CFG.message) {
-        logEl.textContent = 'กำลังพิมพ์ข้อความลงหน้าเว็บ...';
-        await moveAndAct(textInputs[0], 'type', CFG.message);
-      }
-
-      const playBtn = findByKeywordOrSel(CFG.playKey);
-      if (playBtn) {
-        logEl.textContent = 'กำลังคลิกปุ่ม Play / ส่งคำสั่ง...';
-        await moveAndAct(playBtn, 'click');
-      }
-
-      CFG.cycles++;
-      document.getElementById('ab-stat').textContent = 'RUN #' + CFG.cycles;
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-
-  document.getElementById('ab-start').onclick = () => {
-    if (CFG.running) return;
-    CFG.running = true;
-    document.getElementById('ab-stat').textContent = 'RUNNING';
-    loop();
-  };
-  document.getElementById('ab-stop').onclick = () => {
-    CFG.running = false;
-    document.getElementById('ab-stat').textContent = 'PAUSED';
-    document.getElementById('ab-log').textContent = 'หยุดพักบอทแล้ว';
-  };
-  document.getElementById('ab-start').click();
-})();`;
-    }
-
-    function updateExportCodes() {
-      const url = document.getElementById('cfg-url').value.trim();
-      const uid = document.getElementById('cfg-userid').value.trim();
-      const pwd = document.getElementById('cfg-password').value.trim();
-      const msg = document.getElementById('cfg-message').value.trim();
-
-      const rawInjector = buildRealWebInjectorScript();
-      document.getElementById('export-js-code').textContent = rawInjector;
-
-      // Update Bookmarklet Drag href
-      const bookmarkletHref = 'javascript:' + encodeURIComponent(rawInjector);
-      document.getElementById('bookmarklet-drag-link').setAttribute('href', bookmarkletHref);
-
-      // Tampermonkey Userscript
-      const tmCode = `// ==UserScript==
-// @name         AiLab Real-Web AutoMouse Bot 24/7
-// @namespace    https://ailabv2.vercel.app/
-// @version      2.0
-// @description  บอทเมาส์ล็อกอิน พิมพ์ข้อความ และคลิกปุ่ม Play อัตโนมัติแบบไม่หยุดพักบนเว็บจริง
-// @author       Ai Lab Studio dev (นายเมธาวัฒน์ พงสะพัง)
-// @match        *://*/*
-// @grant        none
-// ==/UserScript==
-
-${rawInjector}`;
-      document.getElementById('export-tm-code').textContent = tmCode;
-
-      // Python Playwright + PyAutoGUI Real Browser & OS Mouse Script
-      const pyCode = `# === AiLab Real-Web & Hardware Mouse Bot (Python Playwright + PyAutoGUI) ===
-# ใช้งานบนเว็บจริง 100% เปิดเบราว์เซอร์จริง ล็อกอิน พิมพ์คำสั่ง และคลิกปุ่ม Play ไม่หยุดพัก
-# 1. ติดตั้ง: pip install playwright pyautogui && playwright install chromium
-# 2. รันบอท: python ailab_real_bot.py
-
-import time
-from playwright.sync_api import sync_playwright
-
-TARGET_URL = ${JSON.stringify(url)}
-USER_ID    = ${JSON.stringify(uid)}
-PASSWORD   = ${JSON.stringify(pwd)}
-MESSAGE    = ${JSON.stringify(msg)}
-
-def run_real_web_bot():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
-        page = browser.new_page()
-        print(f"[AiLab Real Bot] กำลังเปิดเว็บจริง: {TARGET_URL}")
-        page.goto(TARGET_URL)
-
-        cycle = 0
-        while True:
-            cycle += 1
-            print(f"=== รอบการทำงานบนเว็บจริง #{cycle} ===")
-            try:
-                # 1. ตรวจหาช่อง User ID และ Password บนหน้าเว็บจริง
-                user_input = page.locator("input[type='text'], input[type='email'], input[name*='user'], input[id*='user']").first
-                pass_input = page.locator("input[type='password']").first
-                if user_input.is_visible() and pass_input.is_visible():
-                    user_input.click()
-                    user_input.fill(USER_ID)
-                    pass_input.click()
-                    pass_input.fill(PASSWORD)
-                    login_btn = page.locator("button:has-text('Login'), button:has-text('เข้าสู่ระบบ'), button[type='submit']").first
-                    if login_btn.is_visible():
-                        login_btn.click()
-                        page.wait_for_timeout(1500)
-
-                # 2. คลิกช่องรับคำสั่งและพิมพ์ข้อความ
-                msg_box = page.locator("textarea, input[type='text'], input[type='search']").first
-                if msg_box.is_visible():
-                    msg_box.click()
-                    msg_box.fill(MESSAGE)
-                    msg_box.press("Enter")
-
-                # 3. คลิกปุ่ม Play บนหน้าเว็บจริง
-                play_btn = page.locator("button:has-text('Play'), button:has-text('PLAY'), button:has-text('เล่น'), button:has-text('เริ่ม')").first
-                if play_btn.is_visible():
-                    play_btn.click()
-
-            except Exception as err:
-                print(f"[แจ้งเตือน] รอองค์ประกอบหน้าเว็บ: {err}")
-
-            time.sleep(1.2)
-
-if __name__ == "__main__":
-    run_real_web_bot()`;
-
-      document.getElementById('export-py-code').textContent = pyCode;
-    }
-
-    function setupTargetHandlers() {
-      document.getElementById('sim-btn-login').addEventListener('click', () => {
-        const u = document.getElementById('sim-input-user').value || document.getElementById('cfg-userid').value;
-        state.loggedInUser = u;
-        document.getElementById('sim-auth-pill').textContent = `ล็อกอินสำเร็จ: ${u}`;
-        document.getElementById('sim-auth-pill').className = 'px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0';
-        document.getElementById('login-indicator').textContent = '✓ เข้าสู่ระบบแล้ว';
-        document.getElementById('login-indicator').className = 'text-[11px] text-emerald-400 font-semibold';
-        document.getElementById('session-user-text').textContent = u;
-        appendSimFeed(`เข้าสู่ระบบสำเร็จด้วย ID: <strong class="text-cyan-300">${u}</strong>`);
+          <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-800/80 gap-2">
+            <label class="flex items-center gap-1 cursor-pointer select-none">
+              <input data-once-idx="${idx}" type="checkbox" ${step.runOnce ? 'checked' : ''} class="chk-step-once rounded bg-slate-950 border-slate-700 text-amber-400" />
+              <span class="${step.runOnce ? 'text-amber-300 font-bold' : 'text-slate-400'}">ทำเฉพาะรอบแรก</span>
+            </label>
+            <label class="flex items-center gap-1 cursor-pointer select-none">
+              <input data-en-idx="${idx}" type="checkbox" ${step.enabled !== false ? 'checked' : ''} class="chk-step-en rounded bg-slate-950 border-slate-700 text-emerald-400" />
+              <span class="text-emerald-400 font-semibold">เปิดใช้ → #${((idx + 1) % state.queue.length) + 1}</span>
+            </label>
+          </div>
+        `;
+        container.appendChild(card);
       });
 
-      document.getElementById('sim-btn-logout').addEventListener('click', () => {
-        state.loggedInUser = null;
-        document.getElementById('sim-input-user').value = '';
-        document.getElementById('sim-input-pass').value = '';
-        document.getElementById('sim-auth-pill').textContent = 'ออกจากระบบแล้ว';
-        document.getElementById('login-indicator').textContent = 'รอล็อกอิน';
-        document.getElementById('session-user-text').textContent = 'Guest';
-        appendSimFeed('ออกจากระบบแล้ว (Logged Out)');
+      // Bind inline edits and unlimited queue controls
+      container.querySelectorAll('.edit-step-x').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          const i = parseInt(e.target.getAttribute('data-edit-x'), 10);
+          state.queue[i].x = parseInt(e.target.value, 10) || 0;
+          syncDynamicAutoMouseCode(); saveQueueToStorage();
+        });
       });
-
-      document.getElementById('sim-btn-send').addEventListener('click', () => {
-        const val = document.getElementById('sim-input-prompt').value || '(ข้อความว่าง)';
-        appendSimFeed(`ส่งคำสั่งแล้ว: <span class="text-emerald-300">"${val}"</span>`);
+      container.querySelectorAll('.edit-step-y').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          const i = parseInt(e.target.getAttribute('data-edit-y'), 10);
+          state.queue[i].y = parseInt(e.target.value, 10) || 0;
+          syncDynamicAutoMouseCode(); saveQueueToStorage();
+        });
       });
-
-      document.getElementById('sim-btn-play').addEventListener('click', () => {
-        state.playCount++;
-        document.getElementById('sim-play-counter').textContent = state.playCount;
-        appendSimFeed(`▶ คลิกปุ่ม <strong>PLAY</strong> สำเร็จ! (ครั้งที่ #${state.playCount})`);
+      container.querySelectorAll('.edit-step-sel').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          const i = parseInt(e.target.getAttribute('data-edit-sel'), 10);
+          state.queue[i].selector = e.target.value;
+          syncDynamicAutoMouseCode(); saveQueueToStorage();
+        });
       });
-
-      document.getElementById('sim-btn-bonus').addEventListener('click', () => {
-        state.bonusCount += 1;
-        document.getElementById('sim-bonus-counter').textContent = state.bonusCount;
-        appendSimFeed(`⚡ คลิกปุ่มเสริมสำเร็จ (#${state.bonusCount})`);
+      container.querySelectorAll('.edit-step-val').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          const i = parseInt(e.target.getAttribute('data-edit-val'), 10);
+          state.queue[i].value = e.target.value;
+          syncDynamicAutoMouseCode(); saveQueueToStorage();
+        });
       });
-
-      const recordableSelectors = [
-        '#sim-input-user', '#sim-input-pass', '#sim-btn-login',
-        '#sim-input-prompt', '#sim-btn-send', '#sim-btn-play', '#sim-btn-bonus'
-      ];
-      recordableSelectors.forEach(sel => {
-        const el = document.querySelector(sel);
-        if (!el) return;
-        el.addEventListener('mousedown', () => {
-          if (!state.recording) return;
-          const name = el.getAttribute('data-bot-name') || sel;
-          state.steps.push({
-            id: Date.now(),
-            action: 'click',
-            target: sel,
-            label: `คลิกที่ ${name}`,
-            value: ''
-          });
-          renderSteps();
-          updateExportCodes();
-          appendBotLog(`[บันทึกตำแหน่งคลิก] เพิ่มคำสั่งคลิก ${name} ลงคิว`, 'action');
+      container.querySelectorAll('.chk-step-once').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const i = parseInt(e.target.getAttribute('data-once-idx'), 10);
+          state.queue[i].runOnce = e.target.checked;
+          renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage();
+        });
+      });
+      container.querySelectorAll('.chk-step-en').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const i = parseInt(e.target.getAttribute('data-en-idx'), 10);
+          state.queue[i].enabled = e.target.checked;
+          renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage();
+        });
+      });
+      container.querySelectorAll('.btn-card-up').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.currentTarget.getAttribute('data-up-idx'), 10);
+          if (i > 0) {
+            const tmp = state.queue[i - 1]; state.queue[i - 1] = state.queue[i]; state.queue[i] = tmp;
+            renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage();
+          }
+        });
+      });
+      container.querySelectorAll('.btn-card-down').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.currentTarget.getAttribute('data-down-idx'), 10);
+          if (i < state.queue.length - 1) {
+            const tmp = state.queue[i + 1]; state.queue[i + 1] = state.queue[i]; state.queue[i] = tmp;
+            renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage();
+          }
+        });
+      });
+      container.querySelectorAll('.btn-card-dup').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.currentTarget.getAttribute('data-dup-idx'), 10);
+          const copy = { ...state.queue[i], id: Date.now() + Math.random() };
+          state.queue.splice(i + 1, 0, copy);
+          renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage();
+        });
+      });
+      container.querySelectorAll('.btn-card-test').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.currentTarget.getAttribute('data-test-idx'), 10);
+          executeStepItem(state.queue[i], i);
+        });
+      });
+      container.querySelectorAll('.btn-card-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.currentTarget.getAttribute('data-del-idx'), 10);
+          state.queue.splice(i, 1);
+          if (state.currentIndex >= state.queue.length) state.currentIndex = 0;
+          renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage();
         });
       });
     }
 
-    function copyTextToClipboard(text, toastId) {
+    function generateStandaloneQueueScript() {
+      const uid = document.getElementById('quick-id')?.value.trim() || '';
+      const pwd = document.getElementById('quick-pass')?.value.trim() || '';
+      const msg = document.getElementById('quick-text')?.value.trim() || '';
+      const listRaw = document.getElementById('smart-rotating-list')?.value || '';
+      const lines = listRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      const serializedQueue = JSON.stringify(state.queue.filter(s => s.enabled !== false).map(s => ({
+        type: s.type,
+        x: s.x,
+        y: s.y,
+        selector: s.selector || '',
+        value: s.value || '',
+        note: s.note || '',
+        runOnce: Boolean(s.runOnce)
+      })));
+
+      return `(function(){
+  const QUEUE = ${serializedQueue};
+  const VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)} };
+  let running = false, idx = 0, cycles = 0;
+  let cur = document.getElementById('ailab-q-cursor');
+  if (!cur) {
+    cur = document.createElement('div');
+    cur.id = 'ailab-q-cursor';
+    cur.style.cssText = 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:all 0.3s ease;filter:drop-shadow(0 0 10px #10b981);';
+    cur.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24"><path d="M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z" fill="#10b981" stroke="#fff" stroke-width="2"/></svg>';
+    document.body.appendChild(cur);
+  }
+  let hud = document.getElementById('ailab-q-hud');
+  if (!hud) {
+    hud = document.createElement('div');
+    hud.id = 'ailab-q-hud';
+    hud.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:#060b17;color:#ecfdf5;border:2px solid #10b981;border-radius:14px;padding:10px 14px;font-family:sans-serif;font-size:12px;box-shadow:0 12px 30px rgba(0,0,0,0.8);';
+    hud.innerHTML = '<div style="font-weight:800;color:#34d399;margin-bottom:6px;">🖱️ Smart AutoMouse (' + QUEUE.length + ' ขั้นตอน)</div><div id="aq-stat" style="font-family:monospace;font-size:11px;margin-bottom:8px;">ตั้งค่าพร้อมแล้ว กดเริ่มทำงาน</div><div style="display:flex;gap:6px;"><button id="aq-start" style="background:#10b981;color:#020617;border:none;padding:5px 12px;border-radius:8px;font-weight:800;cursor:pointer;">▶ เริ่มทำงาน</button><button id="aq-stop" style="background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:8px;font-weight:700;cursor:pointer;">⏹ หยุด</button></div>';
+    document.body.appendChild(hud);
+    document.getElementById('aq-start').onclick = () => { if (!running) { running = true; loop(); } };
+    document.getElementById('aq-stop').onclick = () => { running = false; document.getElementById('aq-stat').textContent = 'หยุดพัก (รอบ #' + cycles + ')'; };
+  }
+  function resolveVal(raw) {
+    const lv = VARS.list.length ? VARS.list[cycles % VARS.list.length] : '';
+    return String(raw || '').replace(/\{\{USER_ID\}\}/g, VARS.uid).replace(/\{\{PASSWORD\}\}/g, VARS.pwd).replace(/\{\{MESSAGE\}\}/g, VARS.msg).replace(/\{\{CYCLE\}\}/g, String(cycles + 1)).replace(/\{\{LIST\}\}/g, lv);
+  }
+  function setVal(el, v) {
+    const s = Object.getOwnPropertyDescriptor(el, 'value')?.set;
+    if (s) s.call(el, v); else el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  async function loop() {
+    while (running && QUEUE.length > 0) {
+      const step = QUEUE[idx];
+      if (!(step.runOnce && cycles > 0)) {
+        const val = resolveVal(step.value);
+        if (step.type === 'wait') {
+          await new Promise(r => setTimeout(r, (parseFloat(val) || 1) * 1000));
+        } else if (step.type === 'scroll_page') {
+          window.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
+        } else {
+          let x = step.x || 300, y = step.y || 300;
+          let el = document.elementFromPoint(x, y);
+          if (step.selector) { try { const q = document.querySelector(step.selector); if (q) { el = q; const r = q.getBoundingClientRect(); x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); } } catch(e){} }
+          cur.style.left = x + 'px'; cur.style.top = y + 'px';
+          document.getElementById('aq-stat').textContent = 'ขั้น #' + (idx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
+          await new Promise(r => setTimeout(r, 380));
+          if (el) {
+            el.focus();
+            el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
+            el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
+            el.click();
+            if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: x, clientY: y }));
+            if (step.type.includes('type') && ('value' in el)) setVal(el, val);
+          }
+        }
+      }
+      idx++;
+      if (idx >= QUEUE.length) { idx = 0; cycles++; }
+      await new Promise(r => setTimeout(r, 420));
+    }
+  }
+})();`;
+    }
+
+    function syncDynamicAutoMouseCode() {
+      const code = generateStandaloneQueueScript();
+      document.getElementById('live-generated-code').textContent = code;
+      const btn = document.getElementById('dynamic-automouse-btn');
+      btn.setAttribute('href', 'javascript:' + encodeURIComponent(code));
+      document.getElementById('dynamic-btn-label').textContent = `ปุ่ม AutoMouse (${state.queue.length} ขั้นตอน - ลากไปวางบุ๊กมาร์ก)`;
+    }
+
+    function copyCodeToClipboard() {
+      const code = generateStandaloneQueueScript();
       const ta = document.createElement('textarea');
-      ta.value = text;
+      ta.value = code;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
       ta.remove();
-      if (toastId) {
-        const toast = document.getElementById(toastId);
-        toast.classList.remove('hidden');
-        setTimeout(() => toast.classList.add('hidden'), 3000);
-      }
+      const toast = document.getElementById('copy-status-toast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2600);
     }
 
+    // --- Event Listeners ---
     window.addEventListener('DOMContentLoaded', () => {
-      setupTargetHandlers();
-      renderSteps();
-      updateExportCodes();
-      appendBotLog('🚀 เริ่มเดินเมาส์บอทอัตโนมัติทันที! สังเกตลูกศรเมาส์สีเขียววิ่งไปคลิกและพิมพ์ข้อมูลจริงบนหน้าเว็บ...', 'success');
-      setTimeout(() => {
-        startBot();
-      }, 350);
-
-      // Top Navigation Tabs
-      const tabWorkspace = document.getElementById('tab-btn-workspace');
-      const tabExport = document.getElementById('tab-btn-export');
-      const viewWorkspace = document.getElementById('view-workspace');
-      const viewExport = document.getElementById('view-export');
-
-      tabWorkspace.addEventListener('click', () => {
-        viewWorkspace.classList.remove('hidden');
-        viewExport.classList.add('hidden');
-        tabWorkspace.className = 'px-3 py-1.5 rounded-lg font-semibold transition bg-emerald-500 text-slate-950 shadow';
-        tabExport.className = 'px-3 py-1.5 rounded-lg font-semibold transition text-slate-300 hover:text-white';
-      });
-
-      tabExport.addEventListener('click', () => {
-        updateExportCodes();
-        viewWorkspace.classList.add('hidden');
-        viewExport.classList.remove('hidden');
-        tabExport.className = 'px-3 py-1.5 rounded-lg font-semibold transition bg-emerald-500 text-slate-950 shadow';
-        tabWorkspace.className = 'px-3 py-1.5 rounded-lg font-semibold transition text-slate-300 hover:text-white';
-      });
-
-      // Stage Mode Switch (Active DOM vs Real Web Iframe)
-      const btnModeDom = document.getElementById('stage-mode-dom');
-      const btnModeIframe = document.getElementById('stage-mode-iframe');
-      const subDom = document.getElementById('subview-dom-arena');
-      const subIframe = document.getElementById('subview-real-iframe');
-
-      btnModeDom.addEventListener('click', () => {
-        subDom.classList.remove('hidden');
-        subIframe.classList.add('hidden');
-        btnModeDom.className = 'px-2.5 py-1 rounded-md font-semibold bg-emerald-500 text-slate-950 transition';
-        btnModeIframe.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-300 hover:text-white transition';
-      });
-
-      btnModeIframe.addEventListener('click', () => {
-        const url = document.getElementById('cfg-url').value.trim();
-        document.getElementById('real-web-iframe').src = url;
-        document.getElementById('iframe-current-url').textContent = url;
-        subDom.classList.add('hidden');
-        subIframe.classList.remove('hidden');
-        subIframe.classList.add('flex');
-        btnModeIframe.className = 'px-2.5 py-1 rounded-md font-semibold bg-emerald-500 text-slate-950 transition';
-        btnModeDom.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-300 hover:text-white transition';
-      });
-
-      document.getElementById('btn-load-real-iframe').addEventListener('click', () => {
-        btnModeIframe.click();
-        appendBotLog(`โหลดหน้าเว็บจริง ${document.getElementById('cfg-url').value} เข้าสู่กรอบแสดงผลแล้ว`, 'info');
-      });
-
-      // Open Real Popup Window + Copy Injector Script Automatically
-      document.getElementById('btn-launch-popup-window').addEventListener('click', () => {
-        updateExportCodes();
-        const code = buildRealWebInjectorScript();
-        copyTextToClipboard(code);
-        const targetUrl = document.getElementById('cfg-url').value.trim();
-        window.open(targetUrl, '_blank');
-        appendBotLog(`เปิดหน้าเว็บจริง (${targetUrl}) ในแท็บใหม่ และคัดลอกโค้ดเมาส์บอทลงคลิปบอร์ดให้แล้ว! กด F12 > Console แล้ววาง (Ctrl+V) เพื่อรันบอทบนเว็บนั้นได้เลย`, 'success');
-      });
-
-      // Site Presets
-      document.querySelectorAll('.site-preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const type = btn.getAttribute('data-site-preset');
-          if (type === 'ailab') {
-            document.getElementById('cfg-url').value = 'https://ailabv2.vercel.app/';
-            document.getElementById('cfg-message').value = 'ฟิสิกส์';
-          } else if (type === 'sgs') {
-            document.getElementById('cfg-url').value = 'https://sgs.bopp-obec.info/sgs/TblTranscripts/Edit-TblTranscripts-Table.aspx';
-            document.getElementById('cfg-message').value = '80';
-          }
-          document.getElementById('browser-url-bar').textContent = document.getElementById('cfg-url').value;
-          updateExportCodes();
-          appendBotLog(`ตั้งค่าเว็บเป้าหมายเป็น ${document.getElementById('cfg-url').value}`, 'info');
-        });
-      });
-
-      // Start / Stop
-      document.getElementById('btn-start-bot').addEventListener('click', startBot);
-      document.getElementById('btn-stop-bot').addEventListener('click', stopBot);
-
-      // Parse NL
-      document.getElementById('btn-parse-nl').addEventListener('click', () => {
-        const text = document.getElementById('nl-command-input').value.trim();
-        if (text) parseThaiCommandToSteps(text);
-      });
-
-      document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const preset = btn.getAttribute('data-preset');
-          if (preset === 'full-loop') {
-            document.getElementById('nl-command-input').value = 'คลิกช่อง id พิมพ์ id คลิกช่อง password พิมพ์ password คลิกปุ่ม login แล้วพิมพ์ข้อความ คลิกปุ่ม play ทำซ้ำไม่หยุดพัก';
-          } else if (preset === 'rapid-play') {
-            document.getElementById('nl-command-input').value = 'พิมพ์ข้อความ ส่งข้อมูล แล้วคลิกปุ่ม play วนซ้ำไม่หยุด';
-          } else if (preset === 're-login') {
-            document.getElementById('nl-command-input').value = 'คลิกช่อง id พิมพ์ id คลิกช่อง password พิมพ์ password คลิกปุ่ม login คลิกปุ่ม play';
-          }
-          parseThaiCommandToSteps(document.getElementById('nl-command-input').value);
-        });
-      });
-
-      // Record Mode
-      document.getElementById('btn-record-mode').addEventListener('click', () => {
-        state.recording = !state.recording;
-        const label = document.getElementById('record-label');
-        const dot = document.getElementById('record-dot');
-        if (state.recording) {
-          label.textContent = 'กำลังอัดคลิก (คลิกปุ่มฝั่งขวาได้เลย)';
-          dot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-ping';
-          appendBotLog('เปิดโหมดอัดการคลิก: คลิกช่องหรือปุ่มในหน้าต่างฝั่งขวาเพื่อบันทึกเป็นขั้นตอนบอท', 'warn');
-        } else {
-          label.textContent = 'อัดตำแหน่งการคลิก';
-          dot.className = 'w-2 h-2 rounded-full bg-rose-400';
-          appendBotLog('ปิดโหมดอัดการคลิกแล้ว', 'info');
-        }
-      });
-
-      // Add Step Modal
-      document.getElementById('btn-add-step-modal').addEventListener('click', () => {
-        document.getElementById('add-step-bar').classList.toggle('hidden');
-      });
-      document.getElementById('btn-cancel-step').addEventListener('click', () => {
-        document.getElementById('add-step-bar').classList.add('hidden');
-      });
-      document.getElementById('btn-Confirm-step').addEventListener('click', () => {
-        const action = document.getElementById('new-step-action').value;
-        const target = document.getElementById('new-step-target').value;
-        const val = document.getElementById('new-step-value').value;
-        const targetText = document.getElementById('new-step-target').selectedOptions[0].text;
-        state.steps.push({
-          id: Date.now(),
-          action,
-          target,
-          label: `${action.toUpperCase()} ที่ ${targetText}`,
-          value: action === 'click' ? '' : val
-        });
-        document.getElementById('add-step-bar').classList.add('hidden');
-        renderSteps();
-        updateExportCodes();
-      });
-
-      // Sync Config Inputs
-      ['cfg-url', 'cfg-userid', 'cfg-password', 'cfg-message', 'sel-real-user', 'sel-real-pass', 'sel-real-login', 'sel-real-play'].forEach(id => {
-        document.getElementById(id).addEventListener('input', () => {
-          document.getElementById('browser-url-bar').textContent = document.getElementById('cfg-url').value;
-          renderSteps();
-          updateExportCodes();
-        });
-      });
-
-      // Reset
-      document.getElementById('btn-reset-sim').addEventListener('click', () => {
-        document.getElementById('sim-btn-logout').click();
-        document.getElementById('sim-input-prompt').value = '';
-        state.playCount = 0;
-        state.bonusCount = 0;
-        document.getElementById('sim-play-counter').textContent = '0';
-        document.getElementById('sim-bonus-counter').textContent = '0';
-        appendBotLog('รีเซ็ตสถานะหน้าเว็บเรียบร้อยแล้ว', 'info');
-      });
-
-      document.getElementById('btn-clear-log').addEventListener('click', () => {
-        document.getElementById('bot-console-log').innerHTML = '';
-      });
-
-      // Export Copy & Download
-      document.getElementById('btn-copy-js').addEventListener('click', () => copyTextToClipboard(document.getElementById('export-js-code').textContent, 'copy-toast-js'));
-      document.getElementById('btn-copy-tm').addEventListener('click', () => copyTextToClipboard(document.getElementById('export-tm-code').textContent, 'copy-toast-tm'));
-      document.getElementById('btn-copy-py').addEventListener('click', () => copyTextToClipboard(document.getElementById('export-py-code').textContent, 'copy-toast-py'));
-
-      document.getElementById('btn-download-py').addEventListener('click', () => {
-        const blob = new Blob([document.getElementById('export-py-code').textContent], { type: 'text/x-python' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'ailab_real_bot.py';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
-
-      // --- Floating Embedded HUD Controller Logic ---
-      const hudPanel = document.getElementById('embedded-hud-panel');
-      const hudBody = document.getElementById('hud-body-content');
-      const hudUid = document.getElementById('hud-input-uid');
-      const hudPwd = document.getElementById('hud-input-pwd');
-      const hudMsg = document.getElementById('hud-input-msg');
-      const hudSpeed = document.getElementById('hud-sel-speed');
-
-      function syncMainToHud() {
-        hudUid.value = document.getElementById('cfg-userid').value;
-        hudPwd.value = document.getElementById('cfg-password').value;
-        hudMsg.value = document.getElementById('cfg-message').value;
-        hudSpeed.value = document.getElementById('sel-speed').value;
+      if (!loadQueueFromStorage()) {
+        initDefaultQueueFromTargets();
+      } else {
+        renderQueueCards();
+        syncDynamicAutoMouseCode();
       }
-      function syncHudToMain() {
-        document.getElementById('cfg-userid').value = hudUid.value;
-        document.getElementById('cfg-password').value = hudPwd.value;
-        document.getElementById('cfg-message').value = hudMsg.value;
-        document.getElementById('sel-speed').value = hudSpeed.value;
-        renderSteps();
-        updateExportCodes();
+
+      window.addEventListener('mousemove', (e) => {
+        state.lastMouseX = e.clientX;
+        state.lastMouseY = e.clientY;
+        document.getElementById('live-mouse-xy').textContent = `X: ${e.clientX}, Y: ${e.clientY}`;
+        document.getElementById('hud-xy-readout').textContent = `X:${e.clientX} Y:${e.clientY}`;
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'F2') {
+          e.preventDefault();
+          lockCoordinate(state.lastMouseX, state.lastMouseY);
+        }
+      });
+
+      function lockCoordinate(x, y) {
+        document.getElementById('input-x').value = x;
+        document.getElementById('input-y').value = y;
+        const pin = document.getElementById('coord-pin-marker');
+        pin.style.left = `${x}px`;
+        pin.style.top = `${y}px`;
+        pin.classList.remove('hidden');
+        playClickTone(1200);
       }
-      [hudUid, hudPwd, hudMsg, hudSpeed].forEach(el => el.addEventListener('input', syncHudToMain));
-      ['cfg-userid', 'cfg-password', 'cfg-message', 'sel-speed'].forEach(id => {
-        document.getElementById(id).addEventListener('input', syncMainToHud);
-      });
 
-      // One-Click "ตั้งค่าเสร็จ! กดฝังแผงควบคุมบอททันที"
-      document.getElementById('btn-embed-hud-now').addEventListener('click', () => {
-        syncMainToHud();
-        updateExportCodes();
-        try {
-          localStorage.setItem('ailab_bot_config', JSON.stringify({
-            url: document.getElementById('cfg-url').value,
-            uid: document.getElementById('cfg-userid').value,
-            pwd: document.getElementById('cfg-password').value,
-            msg: document.getElementById('cfg-message').value
-          }));
-        } catch (e) {}
-
-        // Show & highlight floating HUD panel
-        hudPanel.classList.remove('hidden');
-        hudBody.classList.remove('hidden');
-        hudPanel.style.transform = 'scale(1.06)';
-        setTimeout(() => { hudPanel.style.transform = 'scale(1)'; }, 220);
-
-        // Copy real-web injector code to clipboard automatically
-        copyTextToClipboard(buildRealWebInjectorScript());
-        document.getElementById('embed-success-banner').classList.remove('hidden');
-        appendBotLog('⚡ ฝังแผงควบคุมลอย (Floating HUD) สำเร็จ + บันทึกค่าและคัดลอกสคริปต์ลงคลิปบอร์ดพร้อมใช้งาน!', 'success');
-        if (!state.running) startBot();
-      });
-
-      document.getElementById('btn-embed-and-open-external').addEventListener('click', () => {
-        document.getElementById('btn-embed-hud-now').click();
-        const targetUrl = document.getElementById('cfg-url').value.trim();
-        window.open(targetUrl, '_blank');
-      });
-
-      document.getElementById('btn-focus-hud').addEventListener('click', () => {
-        hudPanel.classList.remove('hidden');
-        hudBody.classList.remove('hidden');
-        hudPanel.style.transform = 'scale(1.08)';
-        setTimeout(() => { hudPanel.style.transform = 'scale(1)'; }, 250);
-      });
-
-      document.getElementById('hud-btn-minimize').addEventListener('click', () => {
-        hudBody.classList.toggle('hidden');
-      });
-
-      document.getElementById('hud-btn-close').addEventListener('click', () => {
-        hudPanel.classList.add('hidden');
-      });
-
-      document.getElementById('hud-btn-run').addEventListener('click', startBot);
-      document.getElementById('hud-btn-pause').addEventListener('click', stopBot);
-      document.getElementById('hud-btn-step').addEventListener('click', () => {
-        const step = state.steps[state.currentStepIndex] || state.steps[0];
-        if (step) {
-          executeStep(step);
-          state.currentStepIndex = (state.currentStepIndex + 1) % state.steps.length;
-          renderSteps();
-        }
-      });
-
-      // Crosshair Target Picker from HUD
-      let pickingTarget = false;
-      document.getElementById('hud-btn-pick-target').addEventListener('click', () => {
-        pickingTarget = !pickingTarget;
-        document.body.classList.toggle('hud-picking-cursor', pickingTarget);
-        const btn = document.getElementById('hud-btn-pick-target');
-        if (pickingTarget) {
-          btn.textContent = '🎯 คลิกปุ่มเป้าหมายได้เลย...';
-          document.getElementById('hud-status-line').textContent = 'โหมดชี้เป้า: คลิกปุ่มใดก็ได้เพื่อเพิ่มเข้าคิว';
+      function togglePickXY() {
+        state.pickingXY = !state.pickingXY;
+        document.body.classList.toggle('coord-finder-active', state.pickingXY);
+        const txt = document.getElementById('pick-xy-text');
+        if (state.pickingXY) {
+          txt.textContent = 'กำลังหาพิกัด: คลิกจุดใดก็ได้บนหน้าจอเพื่อล็อกค่า X,Y...';
         } else {
-          btn.innerHTML = '<span>🎯</span> ชี้เป้าคลิกบนเว็บ';
+          txt.textContent = 'กดเพื่อจิ้มหาพิกัดเมาส์บนหน้าจอ (หรือกดปุ่ม F2)';
         }
-      });
+      }
 
-      document.getElementById('browser-stage').addEventListener('click', (e) => {
-        if (!pickingTarget) return;
-        const target = e.target.closest('button, input, textarea, a');
-        if (target && target.id) {
-          const labelName = target.getAttribute('data-bot-name') || target.id;
-          state.steps.push({
-            id: Date.now(),
-            action: target.tagName === 'INPUT' ? 'type' : 'click',
-            target: '#' + target.id,
-            label: `เป้าหมายที่เลือก (${labelName})`,
-            value: target.tagName === 'INPUT' ? '{{MESSAGE}}' : ''
-          });
-          renderSteps();
-          updateExportCodes();
-          appendBotLog(`🎯 ชี้เป้าสำเร็จ: เพิ่ม #${target.id} (${labelName}) เข้าคิวเมาส์บอทแล้ว`, 'action');
-          pickingTarget = false;
-          document.body.classList.remove('hud-picking-cursor');
-          document.getElementById('hud-btn-pick-target').innerHTML = '<span>🎯</span> ชี้เป้าคลิกบนเว็บ';
-        }
+      document.getElementById('btn-pick-xy').addEventListener('click', (e) => { e.stopPropagation(); togglePickXY(); });
+      document.getElementById('hud-btn-pick-xy').addEventListener('click', (e) => { e.stopPropagation(); togglePickXY(); });
+
+      window.addEventListener('click', (e) => {
+        if (!state.pickingXY) return;
+        if (e.target.closest('#btn-pick-xy') || e.target.closest('#hud-btn-pick-xy')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        lockCoordinate(e.clientX, e.clientY);
+        state.pickingXY = false;
+        document.body.classList.remove('coord-finder-active');
+        document.getElementById('pick-xy-text').textContent = `✓ ล็อกพิกัด (X: ${e.clientX}, Y: ${e.clientY}) เรียบร้อย!`;
       }, true);
 
-      // Make HUD Draggable anywhere on screen
-      (function makeHudDraggable() {
-        const handle = document.getElementById('hud-drag-handle');
-        let isDragging = false, startX = 0, startY = 0, initLeft = 0, initTop = 0;
-        handle.addEventListener('mousedown', (e) => {
+      document.getElementById('btn-test-xy-click').addEventListener('click', async () => {
+        const x = parseInt(document.getElementById('input-x').value, 10) || 400;
+        const y = parseInt(document.getElementById('input-y').value, 10) || 300;
+        await executeStepItem({ type: 'click_xy', x, y, value: 'ทดสอบคลิกพิกัด', note: 'ทดสอบพิกัด', enabled: true }, 0);
+      });
+
+      // --- Precision Coordinate Screen Simulator & 4x Magnifier Loupe ---
+      const simCanvas = document.getElementById('precision-screen-canvas');
+      const simCtx = simCanvas.getContext('2d');
+      const loupeCanvas = document.getElementById('precision-loupe-canvas');
+      const loupeCtx = loupeCanvas.getContext('2d');
+      const resSelect = document.getElementById('sim-screen-res');
+      let uploadedBgImg = null;
+      let hoverVirtualX = 520;
+      let hoverVirtualY = 340;
+
+      function getVirtualResolution() {
+        const val = resSelect.value;
+        if (val === 'window') {
+          return { w: Math.max(window.innerWidth, 800), h: Math.max(window.innerHeight, 600) };
+        }
+        const [w, h] = val.split('x').map(Number);
+        return { w: w || 1920, h: h || 1080 };
+      }
+
+      function resizeSimCanvas() {
+        const rect = simCanvas.parentElement.getBoundingClientRect();
+        simCanvas.width = Math.max(300, Math.floor(rect.width));
+        simCanvas.height = Math.max(200, Math.floor(rect.height));
+        drawPrecisionSimulator();
+      }
+
+      function drawPrecisionSimulator() {
+        const cw = simCanvas.width;
+        const ch = simCanvas.height;
+        const { w: vw, h: vh } = getVirtualResolution();
+
+        simCtx.clearRect(0, 0, cw, ch);
+
+        if (uploadedBgImg) {
+          simCtx.drawImage(uploadedBgImg, 0, 0, cw, ch);
+          simCtx.fillStyle = 'rgba(5, 8, 17, 0.25)';
+          simCtx.fillRect(0, 0, cw, ch);
+        } else {
+          const grad = simCtx.createLinearGradient(0, 0, cw, ch);
+          grad.addColorStop(0, '#070c18');
+          grad.addColorStop(1, '#0f172a');
+          simCtx.fillStyle = grad;
+          simCtx.fillRect(0, 0, cw, ch);
+
+          const zones = [
+            { id: 'test-box-id', label: 'ช่อง ID', color: '#06b6d4' },
+            { id: 'test-box-pass', label: 'ช่อง Password', color: '#f59e0b' },
+            { id: 'test-btn-login', label: 'ปุ่ม Login', color: '#38bdf8' },
+            { id: 'test-box-msg', label: 'ช่องพิมพ์ข้อความ', color: '#10b981' },
+            { id: 'test-btn-play', label: '▶ ปุ่ม PLAY', color: '#34d399' }
+          ];
+          zones.forEach(z => {
+            const el = document.getElementById(z.id);
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            const zx = (r.left / vw) * cw;
+            const zy = (r.top / vh) * ch;
+            const zw = Math.max(28, (r.width / vw) * cw);
+            const zh = Math.max(14, (r.height / vh) * ch);
+            simCtx.strokeStyle = z.color;
+            simCtx.lineWidth = 1.2;
+            simCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            simCtx.fillRect(zx, zy, zw, zh);
+            simCtx.strokeRect(zx, zy, zw, zh);
+            simCtx.fillStyle = z.color;
+            simCtx.font = '10px Kanit, sans-serif';
+            simCtx.fillText(z.label, zx + 4, zy + Math.min(12, zh - 3));
+          });
+        }
+
+        simCtx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+        simCtx.lineWidth = 1;
+        const stepX = cw / 10;
+        const stepY = ch / 6;
+        for (let i = 1; i < 10; i++) {
+          const x = Math.round(i * stepX) + 0.5;
+          simCtx.beginPath(); simCtx.moveTo(x, 0); simCtx.lineTo(x, ch); simCtx.stroke();
+          simCtx.fillStyle = 'rgba(148, 163, 184, 0.55)';
+          simCtx.font = '9px JetBrains Mono, monospace';
+          simCtx.fillText(Math.round((i / 10) * vw), x + 2, 10);
+        }
+        for (let j = 1; j < 6; j++) {
+          const y = Math.round(j * stepY) + 0.5;
+          simCtx.beginPath(); simCtx.moveTo(0, y); simCtx.lineTo(cw, y); simCtx.stroke();
+          simCtx.fillStyle = 'rgba(148, 163, 184, 0.55)';
+          simCtx.font = '9px JetBrains Mono, monospace';
+          simCtx.fillText(Math.round((j / 6) * vh), 3, y - 2);
+        }
+
+        const xySteps = state.queue.map((st, idx) => ({ ...st, idx })).filter(st => (st.type === 'click_xy' || st.type === 'dblclick_xy' || st.type === 'click_ type_xy') && st.enabled !== false);
+        if (xySteps.length > 1) {
+          simCtx.strokeStyle = 'rgba(16, 185, 129, 0.45)';
+          simCtx.lineWidth = 1.8;
+          simCtx.setLineDash([4, 4]);
+          simCtx.beginPath();
+          xySteps.forEach((st, i) => {
+            const px = (st.x / vw) * cw;
+            const py = (st.y / vh) * ch;
+            if (i === 0) simCtx.moveTo(px, py);
+            else simCtx.lineTo(px, py);
+          });
+          simCtx.stroke();
+          simCtx.setLineDash([]);
+        }
+
+        xySteps.forEach(st => {
+          const px = (st.x / vw) * cw;
+          const py = (st.y / vh) * ch;
+          const isCurrent = state.running && state.currentIndex === st.idx;
+          simCtx.beginPath();
+          simCtx.arc(px, py, isCurrent ? 9 : 7, 0, Math.PI * 2);
+          simCtx.fillStyle = isCurrent ? '#10b981' : '#0284c7';
+          simCtx.fill();
+          simCtx.lineWidth = 2;
+          simCtx.strokeStyle = '#ffffff';
+          simCtx.stroke();
+
+          simCtx.fillStyle = '#ffffff';
+          simCtx.font = 'bold 9px JetBrains Mono, monospace';
+          simCtx.fillText(String(st.idx + 1), px - 3, py + 3);
+        });
+
+        const lockedX = parseInt(document.getElementById('input-x').value, 10) || 0;
+        const lockedY = parseInt(document.getElementById('input-y').value, 10) || 0;
+        const lx = (lockedX / vw) * cw;
+        const ly = (lockedY / vh) * ch;
+
+        simCtx.strokeStyle = 'rgba(245, 158, 11, 0.85)';
+        simCtx.lineWidth = 1.2;
+        simCtx.beginPath();
+        simCtx.moveTo(lx, 0); simCtx.lineTo(lx, ch);
+        simCtx.moveTo(0, ly); simCtx.lineTo(cw, ly);
+        simCtx.stroke();
+
+        simCtx.beginPath();
+        simCtx.arc(lx, ly, 6, 0, Math.PI * 2);
+        simCtx.strokeStyle = '#f59e0b';
+        simCtx.lineWidth = 2.5;
+        simCtx.stroke();
+
+        loupeCtx.clearRect(0, 0, loupeCanvas.width, loupeCanvas.height);
+        const srcX = ((hoverVirtualX || lockedX) / vw) * cw;
+        const srcY = ((hoverVirtualY || lockedY) / vh) * ch;
+        const sampleW = loupeCanvas.width / 3.2;
+        const sampleH = loupeCanvas.height / 3.2;
+        loupeCtx.drawImage(simCanvas, srcX - sampleW / 2, srcY - sampleH / 2, sampleW, sampleH, 0, 0, loupeCanvas.width, loupeCanvas.height);
+      }
+
+      function setLockedXY(vx, vy) {
+        const { w: vw, h: vh } = getVirtualResolution();
+        const clampedX = Math.max(0, Math.min(vw, Math.round(vx)));
+        const clampedY = Math.max(0, Math.min(vh, Math.round(vy)));
+        document.getElementById('input-x').value = clampedX;
+        document.getElementById('input-y').value = clampedY;
+        document.getElementById('canvas-locked-xy').textContent = `X: ${clampedX}, Y: ${clampedY}`;
+        const pctX = ((clampedX / vw) * 100).toFixed(1);
+        const pctY = ((clampedY / vh) * 100).toFixed(1);
+        document.getElementById('loupe-percent-xy').textContent = `${pctX}% , ${pctY}%`;
+        lockCoordinate(clampedX, clampedY);
+        drawPrecisionSimulator();
+      }
+
+      let isDraggingSim = false;
+      function handleSimPointer(e, shouldLock) {
+        const rect = simCanvas.getBoundingClientRect();
+        const { w: vw, h: vh } = getVirtualResolution();
+        const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+        const relY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+        const vx = Math.round((relX / rect.width) * vw);
+        const vy = Math.round((relY / rect.height) * vh);
+        hoverVirtualX = vx;
+        hoverVirtualY = vy;
+        document.getElementById('canvas-hover-xy').textContent = `X: ${vx}, Y: ${vy}`;
+        if (shouldLock) setLockedXY(vx, vy);
+        else drawPrecisionSimulator();
+      }
+
+      simCanvas.addEventListener('mousedown', (e) => { isDraggingSim = true; handleSimPointer(e, true); });
+      window.addEventListener('mousemove', (e) => { if (isDraggingSim) handleSimPointer(e, true); });
+      window.addEventListener('mouseup', () => { isDraggingSim = false; });
+      simCanvas.addEventListener('mousemove', (e) => { if (!isDraggingSim) handleSimPointer(e, false); });
+      simCanvas.addEventListener('dblclick', (e) => { handleSimPointer(e, true); document.getElementById('btn-add-to-queue').click(); });
+
+      document.querySelectorAll('.nudge-xy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const dx = parseInt(btn.getAttribute('data-dx'), 10) || 0;
+          const dy = parseInt(btn.getAttribute('data-dy'), 10) || 0;
+          const curX = parseInt(document.getElementById('input-x').value, 10) || 0;
+          const curY = parseInt(document.getElementById('input-y').value, 10) || 0;
+          setLockedXY(curX + dx, curY + dy);
+        });
+      });
+
+      document.getElementById('btn-center-xy').addEventListener('click', () => {
+        const { w: vw, h: vh } = getVirtualResolution();
+        setLockedXY(Math.round(vw / 2), Math.round(vh / 2));
+      });
+
+      ['input-x', 'input-y'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+          const x = parseInt(document.getElementById('input-x').value, 10) || 0;
+          const y = parseInt(document.getElementById('input-y').value, 10) || 0;
+          hoverVirtualX = x; hoverVirtualY = y;
+          document.getElementById('canvas-locked-xy').textContent = `X: ${x}, Y: ${y}`;
+          drawPrecisionSimulator();
+        });
+      });
+
+      resSelect.addEventListener('change', drawPrecisionSimulator);
+      window.addEventListener('resize', resizeSimCanvas);
+
+      document.getElementById('sim-bg-upload').addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => { uploadedBgImg = img; drawPrecisionSimulator(); };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      document.getElementById('btn-clear-sim-bg').addEventListener('click', () => {
+        uploadedBgImg = null;
+        document.getElementById('sim-bg-upload').value = '';
+        drawPrecisionSimulator();
+      });
+
+      setTimeout(resizeSimCanvas, 80);
+      setInterval(drawPrecisionSimulator, 350);
+
+      document.getElementById('step-type').addEventListener('change', (e) => {
+        const val = e.target.value;
+        const usesSelector = val === 'click_selector' || val === 'type_selector' || val === 'wait_for_element';
+        document.getElementById('group-xy').classList.toggle('hidden', usesSelector);
+        document.getElementById('group-selector').classList.toggle('hidden', !usesSelector);
+      });
+
+      document.getElementById('btn-add-to-queue').addEventListener('click', () => {
+        const type = document.getElementById('step-type').value;
+        const x = parseInt(document.getElementById('input-x').value, 10) || 0;
+        const y = parseInt(document.getElementById('input-y').value, 10) || 0;
+        const selector = document.getElementById('input-selector').value.trim();
+        const value = document.getElementById('input-value').value.trim();
+
+        state.queue.push({
+          id: Date.now() + Math.random(),
+          type,
+          x,
+          y,
+          selector: (type === 'click_selector' || type === 'type_selector' || type === 'wait_for_element') ? selector : '',
+          value: value || (type === 'wait' ? '1' : type === 'scroll_page' ? '350' : 'คลิกเมาส์'),
+          note: type.includes('xy') ? `พิกัด (${x}, ${y})` : `คำสั่ง ${type}`,
+          runOnce: false,
+          enabled: true
+        });
+        renderQueueCards();
+        syncDynamicAutoMouseCode();
+        saveQueueToStorage();
+      });
+
+      document.getElementById('btn-save-profile').addEventListener('click', () => {
+        saveQueueToStorage();
+        syncDynamicAutoMouseCode();
+        const t = document.getElementById('save-profile-toast');
+        t.classList.remove('hidden');
+        setTimeout(() => t.classList.add('hidden'), 2600);
+      });
+
+      ['quick-id', 'quick-pass', 'quick-text', 'smart-rotating-list'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+          syncDynamicAutoMouseCode();
+          saveQueueToStorage();
+        });
+      });
+
+      document.getElementById('btn-load-login-play-template').addEventListener('click', initDefaultQueueFromTargets);
+      document.getElementById('btn-clear-queue').addEventListener('click', () => {
+        stopQueueLoop();
+        state.queue = [];
+        renderQueueCards();
+        syncDynamicAutoMouseCode();
+        saveQueueToStorage();
+      });
+
+      document.getElementById('btn-start-loop').addEventListener('click', startQueueLoop);
+      document.getElementById('btn-stop-loop').addEventListener('click', stopQueueLoop);
+      document.getElementById('hud-btn-start').addEventListener('click', startQueueLoop);
+      document.getElementById('hud-btn-stop').addEventListener('click', stopQueueLoop);
+      document.getElementById('hud-btn-next').addEventListener('click', () => {
+        if (state.queue.length === 0) return;
+        executeStepItem(state.queue[state.currentIndex], state.currentIndex);
+        state.currentIndex = (state.currentIndex + 1) % state.queue.length;
+        renderQueueCards();
+      });
+
+      document.getElementById('btn-embed-hud').addEventListener('click', () => {
+        syncDynamicAutoMouseCode();
+        copyCodeToClipboard();
+        const hud = document.getElementById('embedded-hud-panel');
+        document.getElementById('hud-body').classList.remove('hidden');
+        hud.style.transform = 'scale(1.06)';
+        setTimeout(() => { hud.style.transform = 'scale(1)'; }, 220);
+      });
+
+      document.getElementById('btn-copy-script').addEventListener('click', copyCodeToClipboard);
+      document.getElementById('hud-minimize').addEventListener('click', () => {
+        document.getElementById('hud-body').classList.toggle('hidden');
+      });
+
+      (function makeDraggable() {
+        const panel = document.getElementById('embedded-hud-panel');
+        const bar = document.getElementById('hud-drag-bar');
+        let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
+        bar.addEventListener('mousedown', (e) => {
           if (e.target.tagName === 'BUTTON') return;
-          isDragging = true;
-          const rect = hudPanel.getBoundingClientRect();
-          hudPanel.style.right = 'auto';
-          hudPanel.style.bottom = 'auto';
-          hudPanel.style.left = rect.left + 'px';
-          hudPanel.style.top = rect.top + 'px';
-          startX = e.clientX;
-          startY = e.clientY;
-          initLeft = rect.left;
-          initTop = rect.top;
+          dragging = true;
+          const r = panel.getBoundingClientRect();
+          panel.style.right = 'auto';
+          panel.style.bottom = 'auto';
+          panel.style.left = r.left + 'px';
+          panel.style.top = r.top + 'px';
+          sx = e.clientX; sy = e.clientY; il = r.left; it = r.top;
         });
         window.addEventListener('mousemove', (e) => {
-          if (!isDragging) return;
-          hudPanel.style.left = Math.max(8, initLeft + (e.clientX - startX)) + 'px';
-          hudPanel.style.top = Math.max(8, initTop + (e.clientY - startY)) + 'px';
+          if (!dragging) return;
+          panel.style.left = Math.max(8, il + (e.clientX - sx)) + 'px';
+          panel.style.top = Math.max(8, it + (e.clientY - sy)) + 'px';
         });
-        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mouseup', () => { dragging = false; });
       })();
 
+      document.getElementById('test-btn-login').addEventListener('click', () => {
+        const u = document.getElementById('test-box-id').value || 'metawat_ai';
+        document.getElementById('target-last-action').textContent = `✓ ล็อกอินสำเร็จด้วย ID: ${u}`;
+      });
+      document.getElementById('test-btn-play').addEventListener('click', () => {
+        state.playHits++;
+        document.getElementById('target-play-count').textContent = state.playHits;
+        const msg = document.getElementById('test-box-msg').value || '(ไม่มีข้อความ)';
+        document.getElementById('target-last-action').textContent = `▶ กดปุ่ม PLAY ครั้งที่ #${state.playHits} พร้อมข้อความ: "${msg}"`;
+      });
+
+      document.getElementById('run-status-pill').textContent = 'รอคำสั่งเริ่มทำงาน (READY)';
+      document.getElementById('hud-active-step-name').textContent = 'ตั้งค่าคิวเสร็จแล้วกด ▶ เริ่มทำงาน';
+      document.getElementById('target-last-action').textContent = 'สถานะล่าสุด: ตั้งค่าพิกัดและกล่องขั้นตอนให้ครบ แล้วกดปุ่ม "▶ เริ่มทำงาน" เพื่อเดินเมาส์บอท';
     });
   </script>
 </body>
