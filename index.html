@@ -1,1452 +1,1696 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AiLab Web Auto-Commander - ระบบสั่งการเว็บไซต์อัตโนมัติ</title>
-    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        body { font-family: 'Sarabun', 'Inter', sans-serif; }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.88);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(56, 189, 248, 0.22);
-        }
-        .neon-glow {
-            box-shadow: 0 0 25px rgba(14, 165, 233, 0.18), inset 0 0 12px rgba(99, 102, 241, 0.12);
-        }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #090d16; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AiLab Real-Web AutoMouse Bot Studio - ใช้งานบนเว็บจริง 100%</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --neon-cyan: #06b6d4;
+      --neon-emerald: #10b981;
+      --neon-purple: #8b5cf6;
+      --neon-amber: #f59e0b;
+    }
+    body {
+      font-family: 'Kanit', 'Inter', sans-serif;
+      background-color: #050811;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+    }
+    /* Real Full-Screen Floating Hardware Mouse Cursor */
+    #virtual-cursor {
+      pointer-events: none;
+      position: fixed;
+      top: 180px;
+      left: 550px;
+      z-index: 2147483647;
+      transition: top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 0.1s ease;
+      filter: drop-shadow(0 0 14px rgba(16, 185, 129, 1)) drop-shadow(0 0 28px rgba(6, 182, 212, 0.9));
+    }
+    .cursor-clicking {
+      transform: scale(0.75) rotate(-8deg) !important;
+    }
+    .click-ripple {
+      position: fixed;
+      width: 56px;
+      height: 56px;
+      border-radius: 9999px;
+      border: 3.5px solid #10b981;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.55) 0%, rgba(6, 182, 212, 0.1) 70%, transparent 100%);
+      box-shadow: 0 0 24px #10b981;
+      transform: translate(-50%, -50%) scale(0.2);
+      animation: rippleAnim 0.55s ease-out forwards;
+      pointer-events: none;
+      z-index: 2147483646;
+    }
+    .click-spark-label {
+      position: fixed;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #10b981;
+      color: #020617;
+      font-weight: 800;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      transform: translate(-50%, -140%);
+      animation: floatUpFade 0.65s ease-out forwards;
+      pointer-events: none;
+      z-index: 2147483647;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.9);
+    }
+    @keyframes floatUpFade {
+      0% { opacity: 1; transform: translate(-50%, -110%) scale(0.9); }
+      100% { opacity: 0; transform: translate(-50%, -220%) scale(1.1); }
+    }
+    /* Embedded Floating HUD Controller */
+    #embedded-hud-panel {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 355px;
+      z-index: 2147483645;
+      background: rgba(6, 11, 25, 0.96);
+      backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(16, 185, 129, 0.65);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(16, 185, 129, 0.25);
+      border-radius: 18px;
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+    }
+    .hud-picking-cursor * {
+      cursor: crosshair !important;
+    }
+    @keyframes rippleAnim {
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
+    }
+    .target-highlight {
+      outline: 2px solid #10b981 !important;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.7) !important;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090d16; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-slate-950">
+<body class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-slate-950">
 
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 border-b border-cyan-500/30 sticky top-0 z-40 shadow-xl">
-        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div class="flex items-center space-x-3.5">
-                <div class="bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 text-slate-950 p-2.5 rounded-2xl shadow-lg shadow-cyan-500/25 flex items-center justify-center w-11 h-11">
-                    <i class="fa-solid fa-robot text-xl"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-200 to-indigo-300 bg-clip-text text-transparent">
-                            AiLab Universal Web Auto-Commander
-                        </h1>
-                        <span class="bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 text-[11px] px-2.5 py-0.5 rounded-full font-semibold">
-                            PRO DOM & Mouse Bot
-                        </span>
-                    </div>
-                    <p class="text-slate-400 text-xs sm:text-sm">
-                        ระบุเว็บไซต์ที่ต้องการ แล้วสั่งคลิกเมาส์ พิมพ์ข้อมูล เลือกเมนู ดึงข้อมูล และรันลูปอัตโนมัติได้ทุกเว็บ
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-between lg:justify-end">
-                <div class="flex items-center space-x-2.5 bg-slate-900/90 px-3 py-1.5 rounded-full border border-cyan-500/30 shadow-sm">
-                    <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white border border-white/60 overflow-hidden shrink-0">
-                        <img src="https://github.com/metawat888/Picture/raw/69f9d3a46e017adc43abb8db3503ea8106ecae61/97488303_2887790847941184_353651305119481856_n.jpg"
-                             alt="Developer"
-                             class="w-full h-full object-cover"
-                             onerror="this.style.display='none'; this.parentElement.innerText='MP';">
-                    </div>
-                    <div class="text-xs leading-tight">
-                        <span class="text-slate-400">คิดค้นและพัฒนาโดย:</span>
-                        <span class="font-bold text-cyan-300 ml-1">นายเมธาวัฒน์ พงสะพัง</span>
-                        <span class="hidden sm:inline-block text-[10px] text-indigo-300 bg-indigo-950 px-1.5 py-0.5 rounded ml-1 border border-indigo-700/50">Ai Lab Studio dev</span>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    <button id="btnOpenFloatingHud" class="bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-950 font-extrabold px-3.5 py-2 rounded-xl text-xs sm:text-sm transition shadow-md shadow-amber-500/15 flex items-center gap-1.5">
-                        <i class="fa-solid fa-satellite-dish"></i> เปิดรีโมทบอทลอยตัว (HUD)
-                    </button>
-                    <button id="btnRunCurrentWorkflow" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-3.5 py-2 rounded-xl text-xs sm:text-sm transition shadow-md shadow-emerald-500/15 flex items-center gap-1.5">
-                        <i class="fa-solid fa-play"></i> รันคำสั่งอัตโนมัติทันที
-                    </button>
-                </div>
-            </div>
+  <!-- Top Header -->
+  <header class="sticky top-0 z-40 glass-card border-b border-cyan-500/25 px-4 py-2.5">
+    <div class="max-w-[1640px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+          <svg class="w-6 h-6 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+          </svg>
         </div>
-    </header>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-wide bg-gradient-to-r from-emerald-300 via-cyan-200 to-sky-300 bg-clip-text text-transparent">
+              AiLab Real-Web AutoMouse Bot (รุ่นใช้งานบนเว็บจริง 100%)
+            </h1>
+            <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+              <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="status-badge-text">REAL-DOM ENGINE</span>
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">สร้างสคริปต์ฝังหน้าเว็บจริง (Bookmarklet / Tampermonkey / Console) + บอทบังคับเมาส์จริงระดับ OS</p>
+        </div>
+      </div>
 
-    <!-- Main Container -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-5 space-y-5">
+      <!-- Mode Switcher -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center bg-slate-900/95 border border-slate-700/80 rounded-xl p-1 text-xs">
+          <button id="tab-btn-workspace" class="px-3 py-1.5 rounded-lg font-semibold transition bg-emerald-500 text-slate-950 shadow">
+            1. ตั้งค่าบอท & โหลดเว็บจริง
+          </button>
+          <button id="tab-btn-export" class="px-3 py-1.5 rounded-lg font-semibold transition text-slate-300 hover:text-white">
+            2. ติดตั้งลงเว็บจริง (Bookmarklet / Tampermonkey / Python)
+          </button>
+        </div>
+        <div class="hidden xl:flex items-center gap-2 text-xs bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-lg">
+          <span class="text-slate-400">พัฒนาโดย:</span>
+          <span class="text-cyan-300 font-semibold">Ai Lab Studio dev (นายเมธาวัฒน์ พงสะพัง)</span>
+        </div>
+      </div>
+    </div>
+  </header>
 
-        <!-- STEP 1: TARGET WEBSITE COMMAND BAR (ระบุเว็บที่ต้องการสั่งการ) -->
-        <section class="glass-panel neon-glow rounded-2xl p-4 sm:p-5 space-y-3.5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-lg bg-cyan-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">1</span>
-                    <h2 class="font-bold text-sm sm:text-base text-white">ระบุเว็บไซต์ที่คุณต้องการสั่งการอัตโนมัติ (Target Website URL)</h2>
-                </div>
-                <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                    <span class="text-slate-400 mr-1">เลือกเว็บด่วน:</span>
-                    <button type="button" data-url="https://docs.google.com/forms/" data-sim="form" class="quick-url-btn bg-slate-800 hover:bg-cyan-500/20 hover:border-cyan-400 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">Google Forms</button>
-                    <button type="button" data-url="https://seller.shopee.co.th/" data-sim="ecommerce" class="quick-url-btn bg-slate-800 hover:bg-cyan-500/20 hover:border-cyan-400 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">ระบบจัดการร้านค้า/สต็อก</button>
-                    <button type="button" data-url="https://business.facebook.com/" data-sim="social" class="quick-url-btn bg-slate-800 hover:bg-cyan-500/20 hover:border-cyan-400 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">ระบบโพสต์โซเชียล</button>
-                    <button type="button" data-url="https://erp.company-portal.com/approvals" data-sim="clicker" class="quick-url-btn bg-slate-800 hover:bg-cyan-500/20 hover:border-cyan-400 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">ระบบกดอนุมัติ/ดึงข้อมูล</button>
-                </div>
-            </div>
+  <!-- Instant Real-Web Bookmarklet Banner (Works on ANY Website without security blocks) -->
+  <div class="bg-gradient-to-r from-emerald-950/90 via-cyan-950/90 to-slate-900 border-b border-emerald-500/30 px-4 py-2.5">
+    <div class="max-w-[1640px] mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-extrabold uppercase">ใช้งานจริงทันที</span>
+        <span class="text-slate-200">
+          ลากปุ่มสีเขียวนี้ไปวางไว้ที่ <strong>แถบบุ๊กมาร์ก (Bookmarks Bar)</strong> ของเบราว์เซอร์ แล้วเปิดเว็บจริงที่คุณต้องการ (เช่น SGS, Facebook, หรือเว็บระบบงาน) จากนั้นคลิกบุ๊กมาร์กนี้ ตัวเมาส์บอทพร้อมแผงควบคุมจะลอยขึ้นมาทำงานบนเว็บจริงทันที!
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="bookmarklet-drag-link" href="javascript:void(0)" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold shadow-lg shadow-emerald-500/25 hover:scale-105 transition flex items-center gap-1.5 cursor-grab active:cursor-grabbing">
+          <span>🖱️</span> AiLab AutoMouse Bot (ลากไปวางแถบบุ๊กมาร์ก)
+        </a>
+        <button id="btn-launch-popup-window" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 font-semibold transition">
+          ↗ เปิดเว็บเป้าหมายในหน้าต่างจริง + คัดลอกบอทอัตโนมัติ
+        </button>
+      </div>
+    </div>
+  </div>
 
-            <div class="flex flex-col md:flex-row gap-2.5">
-                <div class="relative flex-grow">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-cyan-400">
-                        <i class="fa-solid fa-globe"></i>
-                    </div>
-                    <input type="url" id="targetWebsiteUrl" value="https://erp.company-portal.com/automation-workspace"
-                           class="w-full pl-10 pr-4 py-2.5 bg-slate-900/95 border border-slate-700 focus:border-cyan-400 rounded-xl text-xs sm:text-sm text-white outline-none font-mono"
-                           placeholder="พิมพ์หรือวางลิงก์เว็บไซต์ที่ต้องการสั่งการ เช่น https://...">
-                </div>
-                <div class="flex flex-wrap sm:flex-nowrap gap-2 shrink-0">
-                    <button id="btnConnectSimulatedWeb" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 flex-1 sm:flex-initial">
-                        <i class="fa-solid fa-desktop"></i> เชื่อมต่อหน้าต่างจำลอง
-                    </button>
-                    <button id="btnOpenRealWebTab" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 flex-1 sm:flex-initial">
-                        <i class="fa-solid fa-up-right-from-square"></i> เปิดเว็บจริง + คัดลอกบอท
-                    </button>
-                </div>
-            </div>
-        </section>
+  <!-- MAIN VIEW 1: Real Target Configurator + Live Web Frame / Interactive Target -->
+  <main id="view-workspace" class="flex-1 max-w-[1640px] w-full mx-auto p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-        <!-- Mode Switcher Tabs -->
-        <div class="grid grid-cols-3 gap-2.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
-            <button data-view="view-commander" class="nav-view-btn bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow">
-                <i class="fa-solid fa-gamepad"></i> ศูนย์ควบคุม & หน้าเว็บเป้าหมาย
-            </button>
-            <button data-view="view-batchdata" class="nav-view-btn text-slate-300 hover:bg-slate-800/80 font-semibold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-layer-group"></i> ชุดข้อมูลสั่งรันลูป (Batch Queue)
-            </button>
-            <button data-view="view-export" class="nav-view-btn text-slate-300 hover:bg-slate-800/80 font-semibold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-code"></i> นำบอทไปฝังเว็บจริง (Bookmarklet / Playwright)
-            </button>
+    <!-- LEFT COLUMN (5 cols): Real Selector & Credential Configuration -->
+    <section class="lg:col-span-5 flex flex-col gap-3.5">
+
+      <!-- Box 1: Real Website URL, ID, Password, Message & Real CSS Selectors -->
+      <div class="glass-card rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-2.5">
+          <h2 class="text-sm font-bold text-emerald-300 flex items-center gap-2">
+            <span>🔐</span> 1. ข้อมูลเข้าสู่ระบบ & คำสั่งสำหรับเว็บจริง
+          </h2>
+          <div class="flex items-center gap-1.5">
+            <button data-site-preset="ailab" class="site-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-cyan-300 border border-slate-700">เว็บ AiLab V2</button>
+            <button data-site-preset="sgs" class="site-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-amber-300 border border-slate-700">ระบบ SGS สพฐ.</button>
+          </div>
         </div>
 
-        <!-- VIEW 1: COMMANDER STUDIO & INTERACTIVE TARGET BROWSER -->
-        <section id="view-commander" class="app-view grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          <div class="sm:col-span-2">
+            <label class="block text-slate-400 mb-1">URL เว็บจริงที่ต้องการให้บอททำงาน (ใส่ https://...)</label>
+            <div class="flex gap-1.5">
+              <input id="cfg-url" type="text" value="https://ailabv2.vercel.app/" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-300 focus:outline-none focus:border-emerald-400 mono" />
+              <button id="btn-load-real-iframe" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition shrink-0">
+                โหลดเว็บจริงเข้าจอขวา
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">User ID / Username / Email</label>
+            <input id="cfg-userid" type="text" value="metawat_ai" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-cyan-300 focus:outline-none focus:border-cyan-400 mono" />
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Password (รหัสผ่านเว็บจริง)</label>
+            <input id="cfg-password" type="text" value="AiLab@2026#Pro" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-amber-300 focus:outline-none focus:border-cyan-400 mono" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-slate-400 mb-1">ข้อความ / คำสั่ง / ข้อมูลที่จะให้บอทพิมพ์อัตโนมัติ</label>
+            <input id="cfg-message" type="text" value="รันระบบประมวลผลอัตโนมัติ AiLab V2 แบบไม่หยุดพัก" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-200 focus:outline-none focus:border-emerald-400" />
+          </div>
+        </div>
 
-            <!-- Left Column: Workflow Builder & Live Recorder (5 cols) -->
-            <div class="lg:col-span-5 space-y-4">
+        <!-- Real DOM Selector Mapping -->
+        <details class="mt-2.5 bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 text-xs">
+          <summary class="cursor-pointer font-semibold text-cyan-300 select-none">
+            🎯 ตั้งค่าตัวจับปุ่มบนหน้าเว็บจริงอัตโนมัติ (Smart CSS / Text Selectors)
+          </summary>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2.5">
+            <div>
+              <label class="text-slate-400 block mb-0.5">ตัวค้นหาช่อง ID บนเว็บจริง</label>
+              <input id="sel-real-user" type="text" value="input[type='text'], input[type='email'], input[name*='user'], input[id*='user'], #sim-input-user" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mono text-[11px]" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-0.5">ตัวค้นหาช่อง Password บนเว็บจริง</label>
+              <input id="sel-real-pass" type="text" value="input[type='password'], input[name*='pass'], input[id*='pass'], #sim-input-pass" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mono text-[11px]" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-0.5">คำบนปุ่ม Login หรือ Selector</label>
+              <input id="sel-real-login" type="text" value="login|เข้าสู่ระบบ|ลงชื่อเข้าใช้|#sim-btn-login" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mono text-[11px]" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-0.5">คำบนปุ่ม Play / ส่งคำสั่ง</label>
+              <input id="sel-real-play" type="text" value="play|เล่น|เริ่ม|ส่ง|ตกลง|บันทึก|#sim-btn-play" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 mono text-[11px]" />
+            </div>
+          </div>
+        </details>
 
-                <!-- Macro Templates & Live Recorder Bar -->
-                <div class="glass-panel rounded-2xl p-4 space-y-3.5">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                            <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i> รูปแบบคำสั่งอัตโนมัติ (Automation Mode)
-                        </h3>
-                        <button id="btnToggleRecord" class="bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                            <span id="recordDot" class="w-2 h-2 rounded-full bg-rose-500"></span>
-                            <span id="recordBtnLabel">บันทึกการคลิก/พิมพ์สด</span>
-                        </button>
-                    </div>
+        <!-- One-Click Embed Control Panel CTA -->
+        <div class="mt-3 pt-3 border-t border-emerald-500/25 flex flex-col sm:flex-row gap-2">
+          <button id="btn-embed-hud-now" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition transform active:scale-95">
+            <span>⚡</span> ตั้งค่าเสร็จ! กดฝังแผงควบคุมบอททันที (Embed HUD)
+          </button>
+          <button id="btn-embed-and-open-external" class="py-2.5 px-3 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-400/50 font-bold text-xs flex items-center justify-center gap-1.5 transition" title="คัดลอกแผงควบคุมและเปิดเว็บเป้าหมาย">
+            <span>🚀</span> ฝังลงเว็บนอก
+          </button>
+        </div>
+        <div id="embed-success-banner" class="hidden mt-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-[11px] font-medium flex items-center justify-between">
+          <span>✓ ฝังแผงควบคุมลอย (HUD) มุมขวาล่าง + คัดลอกโค้ดพร้อมวางบนเว็บจริงแล้ว!</span>
+          <button id="btn-focus-hud" class="underline text-cyan-300 font-bold ml-2">ดูแผงควบคุม</button>
+        </div>
+      </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <button data-macro="ecommerce" class="macro-preset-btn text-left p-2.5 rounded-xl border border-cyan-500 bg-cyan-500/15 transition">
-                            <div class="font-bold text-xs text-cyan-300">📦 จัดการข้อมูล/สต็อก</div>
-                            <div class="text-[11px] text-slate-300 mt-0.5">กรอกรหัส + จำนวน + คลิกอัปเดต</div>
-                        </button>
-                        <button data-macro="form" class="macro-preset-btn text-left p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition">
-                            <div class="font-bold text-xs text-white">📝 กรอกฟอร์มเรียงช่อง</div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">พิมพ์ทุกช่อง + เลือกเมนู + กดส่ง</div>
-                        </button>
-                        <button data-macro="social" class="macro-preset-btn text-left p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition">
-                            <div class="font-bold text-xs text-white">📣 โพสต์ข้อความอัตโนมัติ</div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">วางแคปชัน + เลือกหมวด + กดเผยแพร่</div>
-                        </button>
-                        <button data-macro="clicker" class="macro-preset-btn text-left p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition">
-                            <div class="font-bold text-xs text-white">⚡ คลิกปุ่มรัว & ดึงข้อมูล</div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">คลิกปุ่มทุกแถว + ดูดข้อความเก็บลง Log</div>
-                        </button>
-                    </div>
+      <!-- Box 2: Natural Language Command Input -->
+      <div class="glass-card rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold text-purple-300 flex items-center gap-2">
+            <span>💬</span> 2. ช่องรับคำสั่งบอท (พิมพ์สั่งงานได้อิสระ)
+          </h2>
+          <button id="btn-parse-nl" class="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition shadow">
+            อัปเดตคำสั่งลงบอทจริง
+          </button>
+        </div>
+
+        <textarea id="nl-command-input" rows="2" class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-400 leading-relaxed">คลิกช่อง id พิมพ์ id คลิกช่อง password พิมพ์ password คลิกปุ่ม login แล้วพิมพ์ข้อความ คลิกปุ่ม play ทำซ้ำไม่หยุดพัก</textarea>
+
+        <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <span class="text-slate-400">รูปแบบคำสั่ง:</span>
+          <button data-preset="full-loop" class="preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700">
+            Login + พิมพ์ข้อมูล + กด Play วนลูปไม่หยุด
+          </button>
+          <button data-preset="rapid-play" class="preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700">
+            พิมพ์ข้อความ + กด Play รัวๆ
+          </button>
+          <button data-preset="re-login" class="preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700">
+            ล็อกอินอัตโนมัติ + กด Play
+          </button>
+        </div>
+      </div>
+
+      <!-- Box 3: Action Queue & Execution Controls -->
+      <div class="glass-card rounded-2xl p-4 flex-1 flex flex-col min-h-[270px]">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+          <h2 class="text-sm font-bold text-cyan-300">
+            ⚡ 3. คิวคำสั่งเมาส์บอท (<span id="step-count">0</span> ขั้นตอน)
+          </h2>
+          <div class="flex items-center gap-1.5">
+            <button id="btn-record-mode" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-medium flex items-center gap-1 transition">
+              <span id="record-dot" class="w-2 h-2 rounded-full bg-rose-400"></span>
+              <span id="record-label">อัดตำแหน่งการคลิก</span>
+            </button>
+            <button id="btn-add-step-modal" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-medium transition">
+              + เพิ่มคำสั่ง
+            </button>
+          </div>
+        </div>
+
+        <!-- Inline Add Step Bar -->
+        <div id="add-step-bar" class="hidden mb-3 p-2.5 rounded-xl bg-slate-900/95 border border-cyan-500/30 text-xs space-y-2">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label class="text-slate-400 block mb-0.5">การกระทำ</label>
+              <select id="new-step-action" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200">
+                <option value="click">คลิกเมาส์ซ้าย (Click)</option>
+                <option value="type">พิมพ์ข้อความ (Type)</option>
+                <option value="press_enter">กดปุ่ม Enter</option>
+                <option value="wait">หน่วงเวลา (Wait)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-0.5">เป้าหมาย (CSS Selector / ปุ่ม)</label>
+              <select id="new-step-target" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200">
+                <option value="#sim-input-user">ช่อง User ID</option>
+                <option value="#sim-input-pass">ช่อง Password</option>
+                <option value="#sim-btn-login">ปุ่ม Login</option>
+                <option value="#sim-input-prompt">ช่องพิมพ์งาน / ข้อความ</option>
+                <option value="#sim-btn-send">ปุ่มส่งคำสั่ง</option>
+                <option value="#sim-btn-play">ปุ่ม PLAY</option>
+                <option value="#sim-btn-bonus">ปุ่มเสริม / โบนัส</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-0.5">ข้อมูลที่จะพิมพ์ / เวลา (ms)</label>
+              <input id="new-step-value" type="text" value="{{MESSAGE}}" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200" />
+            </div>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button id="btn-cancel-step" class="px-2.5 py-1 rounded bg-slate-800 text-slate-400 hover:text-white">ยกเลิก</button>
+            <button id="btn-Confirm-step" class="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-bold">เพิ่มลงคิว</button>
+          </div>
+        </div>
+
+        <!-- Step List -->
+        <div id="steps-container" class="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[240px]"></div>
+
+        <!-- Bot Run Controls -->
+        <div class="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-3 text-xs">
+            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+              <input id="chk-infinite-loop" type="checkbox" checked class="rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0" />
+              <span class="text-emerald-300 font-semibold">ทำซ้ำไม่หยุดพัก 24/7</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-400">ความเร็ว:</span>
+              <select id="sel-speed" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300">
+                <option value="1">ปกติ (1x)</option>
+                <option value="2" selected>เร็ว (2x)</option>
+                <option value="4">เทอร์โบ (4x)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="btn-start-bot" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 transition">
+              <span>▶</span> <span id="btn-start-text">เดินบอททันที</span>
+            </button>
+            <button id="btn-stop-bot" disabled class="px-3 py-2 rounded-xl bg-rose-600/30 text-rose-300 border border-rose-500/40 font-semibold text-xs disabled:opacity-40 hover:bg-rose-600 hover:text-white transition">
+              หยุด (Stop)
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN (7 cols): Live Real Web Iframe + Active DOM Target -->
+    <section class="lg:col-span-7 flex flex-col gap-3.5">
+
+      <!-- KPI Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div class="glass-card rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400">รอบการทำงานสำเร็จ</div>
+            <div id="kpi-cycles" class="text-xl font-bold text-cyan-300 mono">0</div>
+          </div>
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">⟳</div>
+        </div>
+        <div class="glass-card rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400">คลิกเมาส์จริงทั้งหมด</div>
+            <div id="kpi-clicks" class="text-xl font-bold text-emerald-300 mono">0</div>
+          </div>
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">🖱️</div>
+        </div>
+        <div class="glass-card rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400">ตัวอักษรที่พิมพ์</div>
+            <div id="kpi-typed" class="text-xl font-bold text-purple-300 mono">0</div>
+          </div>
+          <div class="w-8 h-8 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">⌨️</div>
+        </div>
+        <div class="glass-card rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400">พิกัดเมาส์บอท (X, Y)</div>
+            <div id="kpi-coords" class="text-base font-bold text-amber-300 mono">X: 50, Y: 50</div>
+          </div>
+          <div class="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">🎯</div>
+        </div>
+      </div>
+
+      <!-- Browser Stage with Mode Switch: Active DOM Target vs Live External Website Iframe -->
+      <div class="glass-card rounded-2xl overflow-hidden flex flex-col border border-emerald-500/30 relative">
+        <!-- Browser Top Bar -->
+        <div class="bg-slate-900/95 border-b border-slate-800 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 text-[11px]">
+              <button id="stage-mode-dom" class="px-2.5 py-1 rounded-md font-semibold bg-emerald-500 text-slate-950 transition">
+                หน้าต่างรับคำสั่งตรง (Active DOM)
+              </button>
+              <button id="stage-mode-iframe" class="px-2.5 py-1 rounded-md font-semibold text-slate-300 hover:text-white transition">
+                แสดงหน้าเว็บจริงสด (Live Web Iframe)
+              </button>
+            </div>
+          </div>
+
+          <div class="flex-1 min-w-[200px] bg-slate-950 border border-slate-800 rounded-lg px-3 py-1 text-xs flex items-center justify-between mono text-slate-300">
+            <span id="browser-url-bar" class="truncate">https://ailabv2.vercel.app/</span>
+            <span id="sim-auth-pill" class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">พร้อมรันบอท</span>
+          </div>
+
+          <button id="btn-reset-sim" class="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+            รีเซ็ตค่า
+          </button>
+        </div>
+
+        <!-- Stage Container -->
+        <div id="browser-stage" class="relative min-h-[390px] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/60 p-4 select-none overflow-hidden">
+
+          <!-- Virtual Hardware Mouse Cursor (Full-Screen Fixed & High Visibility) -->
+          <div id="virtual-cursor">
+            <div class="relative">
+              <span class="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-emerald-400/80 animate-ping"></span>
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+                <path d="M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z" fill="#10b981" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div id="cursor-action-tag" class="mt-1 px-2.5 py-1 rounded-md bg-slate-950/95 border-2 border-emerald-400 text-[11px] font-bold text-emerald-300 mono whitespace-nowrap shadow-xl">
+              🖱️ AUTO-BOT ACTIVE
+            </div>
+          </div>
+
+          <!-- Sub-View A: Direct DOM Target (Allows 100% unrestricted DOM mouse & keyboard dispatch) -->
+          <div id="subview-dom-arena" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch h-full">
+            <!-- Login Form -->
+            <div class="md:col-span-5 bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">1. ฟอร์ม Login รับค่าจริง</span>
+                  <span id="login-indicator" class="text-[11px] text-slate-400">รอล็อกอิน</span>
                 </div>
-
-                <!-- Step Adder -->
-                <div class="glass-panel rounded-2xl p-4 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-xs sm:text-sm text-white flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-emerald-400"></i> เพิ่มคำสั่งสั่งการเว็บ (Add Command Step)
-                        </h3>
-                        <button id="btnVisualPickStep" class="bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 px-2.5 py-1 rounded-lg text-[11px] font-bold transition">
-                            🎯 ชี้เป้าบนหน้าเว็บ
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">คำสั่ง (Action)</label>
-                            <select id="stepActionType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white outline-none focus:border-cyan-400">
-                                <option value="fill">⌨️ พิมพ์ข้อความ (Type / Fill)</option>
-                                <option value="click">🖱️ คลิกเมาส์ (Click Element)</option>
-                                <option value="select">📋 เลือก Dropdown (Select)</option>
-                                <option value="keypress">⏎ กดปุ่มคีย์บอร์ด (Key Press)</option>
-                                <option value="extract">📥 ดึงข้อความจากเว็บ (Extract)</option>
-                                <option value="scroll">📜 เลื่อนหน้าจอ (Scroll)</option>
-                                <option value="wait">⏱️ รอเวลาหน่วง (Delay ms)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">เป้าหมาย (CSS Selector)</label>
-                            <input type="text" id="stepTargetSelector" value=".target-input-1"
-                                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-cyan-300 font-mono outline-none focus:border-cyan-400"
-                                   placeholder="เช่น #btn-submit, input.name">
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <input type="text" id="stepParamValue" value="{{var1}}"
-                               class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 outline-none focus:border-cyan-400"
-                               placeholder="ค่าที่จะพิมพ์ หรือปุ่มคีย์บอร์ด เช่น {{var1}}, Enter, 500">
-                        <button id="btnAddCommandStep" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition shrink-0 flex items-center gap-1">
-                            <i class="fa-solid fa-plus"></i> เพิ่มคำสั่ง
-                        </button>
-                    </div>
-
-                    <div class="flex flex-wrap gap-1.5 text-[11px]">
-                        <span class="text-slate-400 self-center">ตัวแปรข้อมูลลูป:</span>
-                        <button type="button" data-var="{{var1}}" class="var-chip bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2 py-0.5 rounded border border-slate-700">{{var1}} ค่าที่ 1</button>
-                        <button type="button" data-var="{{var2}}" class="var-chip bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2 py-0.5 rounded border border-slate-700">{{var2}} ค่าที่ 2</button>
-                        <button type="button" data-var="{{var3}}" class="var-chip bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2 py-0.5 rounded border border-slate-700">{{var3}} ค่าที่ 3</button>
-                        <button type="button" data-var="Enter" class="var-chip bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2 py-0.5 rounded border border-slate-700">ปุ่ม Enter</button>
-                    </div>
+                <div class="space-y-2.5 text-xs">
+                  <div>
+                    <label class="text-slate-400 block mb-1">Username / ID</label>
+                    <input id="sim-input-user" data-bot-name="ช่อง User ID" type="text" placeholder="บอทจะคลิกและพิมพ์ ID..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-cyan-200 mono focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="text-slate-400 block mb-1">Password</label>
+                    <input id="sim-input-pass" data-bot-name="ช่อง Password" type="text" placeholder="บอทจะคลิกและพิมพ์ Password..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-200 mono focus:outline-none" />
+                  </div>
+                  <button id="sim-btn-login" data-bot-name="ปุ่ม Login" class="w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold transition shadow-md">
+                    เข้าสู่ระบบ (LOGIN)
+                  </button>
                 </div>
-
-                <!-- Active Command Pipeline -->
-                <div class="glass-panel rounded-2xl p-4 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="font-bold text-xs sm:text-sm text-white flex items-center gap-2">
-                                <i class="fa-solid fa-list-ol text-amber-400"></i> คิวคำสั่งที่จะรันอัตโนมัติ (<span id="stepCountBadge">0</span> ขั้นตอน)
-                            </h3>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <select id="loopCountSelect" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-cyan-300 outline-none">
-                                <option value="1">รัน 1 รอบ</option>
-                                <option value="3" selected>รันลูป 3 รอบ (ตามชุดข้อมูล)</option>
-                                <option value="5">รันลูป 5 รอบ</option>
-                            </select>
-                            <button id="btnClearPipeline" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-slate-900 border border-slate-800">
-                                ล้างคิว
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="pipelineContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
-
-                    <!-- Speed & Execution Controls -->
-                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 flex-grow">
-                            <span class="text-[11px] text-slate-400 whitespace-nowrap">ความเร็วบอท:</span>
-                            <input type="range" id="botSpeedSlider" min="100" max="1200" step="50" value="350" class="w-full accent-cyan-400">
-                            <span id="botSpeedText" class="text-xs font-bold text-cyan-300 w-16 text-right">350 ms</span>
-                        </div>
-                        <button id="btnStopWorkflow" class="hidden bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">
-                            ⏹ หยุดบอท
-                        </button>
-                    </div>
-                </div>
+              </div>
+              <div id="sim-user-profile" class="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                <span>ผู้ใช้งาน: <strong id="session-user-text" class="text-slate-200">Guest</strong></span>
+                <button id="sim-btn-logout" data-bot-name="ปุ่ม Logout" class="text-rose-400 hover:underline">Logout</button>
+              </div>
             </div>
 
-            <!-- Right Column: Interactive Target Web Browser Workspace & Live Console (7 cols) -->
-            <div class="lg:col-span-7 space-y-4">
-
-                <!-- Simulated Browser Window -->
-                <div class="glass-panel rounded-2xl overflow-hidden border border-slate-700/80 flex flex-col">
-                    <!-- Browser Chrome Bar -->
-                    <div class="bg-slate-900 px-3.5 py-2.5 border-b border-slate-800 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
-                            <span class="w-3 h-3 rounded-full bg-amber-400/80"></span>
-                            <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
-                        </div>
-                        <div class="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono text-cyan-300 truncate flex items-center gap-2">
-                            <i class="fa-solid fa-lock text-emerald-400 text-[10px]"></i>
-                            <span id="browserAddressText">https://erp.company-portal.com/automation-workspace</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                            <select id="simTemplateSwitcher" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 outline-none">
-                                <option value="ecommerce">หน้าเว็บ: ระบบสต็อก & ออเดอร์</option>
-                                <option value="form">หน้าเว็บ: ระบบกรอกฟอร์มออนไลน์</option>
-                                <option value="social">หน้าเว็บ: ระบบโพสต์คอนเทนต์</option>
-                                <option value="clicker">หน้าเว็บ: ตารางกดอนุมัติ & ดึงข้อมูล</option>
-                            </select>
-                            <button id="btnResetTargetWeb" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs" title="รีเซ็ตหน้าเว็บจำลอง">
-                                <i class="fa-solid fa-rotate-right"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Interactive Target Website Viewport -->
-                    <div id="targetWebViewport" class="p-5 bg-slate-950/90 min-h-[340px] relative">
-
-                        <!-- Target Web 1: E-Commerce & Inventory Portal -->
-                        <div id="sim-page-ecommerce" class="sim-page space-y-4">
-                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                                <div>
-                                    <h4 class="font-bold text-sm text-cyan-300"><i class="fa-solid fa-boxes-stacked mr-1.5"></i> ระบบจัดการสินค้าและอัปเดตสต็อกอัตโนมัติ (Web Portal)</h4>
-                                    <p class="text-xs text-slate-400">บอทสามารถพิมพ์รหัสสินค้า กรอกราคา เลือกคลังสินค้า และกดปุ่มบันทึกซ้ำอัตโนมัติ</p>
-                                </div>
-                                <span id="ecomSavedBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs px-2.5 py-1 rounded-full font-bold">
-                                    อัปเดตแล้ว: 0 รายการ
-                                </span>
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">ชื่อรายการ / รหัสสินค้า (`.target-input-1`)</label>
-                                    <input type="text" id="ecomSkuInput" class="target-input-1 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none" placeholder="รอรับข้อมูลจากบอท...">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">ราคา / จำนวนสต็อก (`.target-input-2`)</label>
-                                    <input type="text" id="ecomQtyInput" class="target-input-2 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none" placeholder="รอรับค่าตัวเลข...">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">สถานะการจัดส่ง (`.target-select`)</label>
-                                    <select id="ecomStatusSelect" class="target-select w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
-                                        <option value="รอดำเนินการ">รอดำเนินการ</option>
-                                        <option value="พร้อมจัดส่ง">พร้อมจัดส่ง</option>
-                                        <option value="อนุมัติด่วน">อนุมัติด่วน</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-between pt-1">
-                                <button type="button" id="btnEcomSubmit" class="target-submit-btn bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs transition shadow">
-                                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> บันทึกข้อมูลเข้าเว็บ (`.target-submit-btn`)
-                                </button>
-                                <span class="text-[11px] text-slate-400">Selector ปุ่ม: <code class="text-amber-300">.target-submit-btn</code></span>
-                            </div>
-
-                            <div class="border border-slate-800 rounded-xl overflow-hidden">
-                                <table class="w-full text-xs text-left">
-                                    <thead class="bg-slate-900 text-slate-400">
-                                        <tr>
-                                            <th class="p-2.5">เวลา</th>
-                                            <th class="p-2.5">รายการ / รหัส</th>
-                                            <th class="p-2.5">จำนวน / ค่า</th>
-                                            <th class="p-2.5">สถานะ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="ecomRecordsBody" class="divide-y divide-slate-800/70 bg-slate-900/40">
-                                        <tr><td colspan="4" class="p-4 text-center text-slate-500">กดปุ่ม "รันคำสั่งอัตโนมัติทันที" ด้านบนเพื่อดูบอทกรอกและคลิกบันทึก</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Target Web 2: Online Form & Survey Submitter -->
-                        <div id="sim-page-form" class="sim-page hidden space-y-4">
-                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                                <div>
-                                    <h4 class="font-bold text-sm text-indigo-300"><i class="fa-solid fa-file-signature mr-1.5"></i> ระบบแบบฟอร์มลงทะเบียน & ส่งข้อมูลอัตโนมัติ</h4>
-                                    <p class="text-xs text-slate-400">จำลองหน้าเว็บแบบฟอร์มทั่วไป (Google Forms / ระบบลงทะเบียนออนไลน์)</p>
-                                </div>
-                                <span id="formSavedBadge" class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs px-2.5 py-1 rounded-full font-bold">
-                                    ส่งฟอร์มแล้ว: 0 ชุด
-                                </span>
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">หัวข้อ / ชื่อผู้ติดต่อ (`.target-input-1`)</label>
-                                    <input type="text" class="target-input-1 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="ช่องที่ 1...">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">ข้อมูลอ้างอิง / เบอร์ติดต่อ (`.target-input-2`)</label>
-                                    <input type="text" class="target-input-2 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="ช่องที่ 2...">
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <label class="block text-xs text-slate-400 mb-1">รายละเอียดเพิ่มเติม (`.target-input-3`)</label>
-                                    <input type="text" class="target-input-3 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" placeholder="ช่องที่ 3...">
-                                </div>
-                            </div>
-
-                            <button type="button" id="btnFormSubmit" class="target-submit-btn bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition">
-                                <i class="fa-solid fa-paper-plane mr-1"></i> ส่งแบบฟอร์ม (`.target-submit-btn`)
-                            </button>
-                        </div>
-
-                        <!-- Target Web 3: Social Content Publisher -->
-                        <div id="sim-page-social" class="sim-page hidden space-y-4">
-                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                                <div>
-                                    <h4 class="font-bold text-sm text-amber-300"><i class="fa-solid fa-bullhorn mr-1.5"></i> ระบบตั้งเวลาและโพสต์คอนเทนต์อัตโนมัติ</h4>
-                                    <p class="text-xs text-slate-400">สั่งบอทพิมพ์แคปชัน แนบลิงก์ และกดเผยแพร่ลงฟีดอัตโนมัติ</p>
-                                </div>
-                            </div>
-                            <div class="space-y-3">
-                                <textarea rows="2" class="target-input-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white" placeholder="เนื้อหาโพสต์ / แคปชัน (`.target-input-1`)..."></textarea>
-                                <div class="flex gap-2">
-                                    <input type="text" class="target-input-2 flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300" placeholder="แท็ก / ลิงก์แนบ (`.target-input-2`)...">
-                                    <button type="button" id="btnSocialPost" class="target-submit-btn bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs transition">
-                                        เผยแพร่โพสต์ทันที
-                                    </button>
-                                </div>
-                                <div id="socialFeedList" class="space-y-2 max-h-36 overflow-y-auto"></div>
-                            </div>
-                        </div>
-
-                        <!-- Target Web 4: Batch Approval & Scraper Table -->
-                        <div id="sim-page-clicker" class="sim-page hidden space-y-3">
-                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                <div>
-                                    <h4 class="font-bold text-sm text-emerald-300"><i class="fa-solid fa-bolt mr-1.5"></i> ตารางคำขออนุมัติ & ดึงข้อมูลจากหน้าเว็บ (Auto-Clicker & Scraper)</h4>
-                                    <p class="text-xs text-slate-400">สั่งบอทคลิกปุ่ม <code class="text-cyan-300">.approve-btn</code> ทุกแถว หรือดึงข้อความจาก <code class="text-amber-300">.scrape-item</code></p>
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-xs border border-slate-800 rounded-xl">
-                                    <thead class="bg-slate-900 text-slate-400">
-                                        <tr>
-                                            <th class="p-2 text-left">รหัสรายการ (`.scrape-item`)</th>
-                                            <th class="p-2 text-center">ช่องกรอกค่า (`.grid-input`)</th>
-                                            <th class="p-2 text-center">สถานะ</th>
-                                            <th class="p-2 text-center">คำสั่งคลิก (`.approve-btn`)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="clickerTableBody" class="divide-y divide-slate-800"></tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                    </div>
+            <!-- Command & Play Box -->
+            <div class="md:col-span-7 bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">2. ช่องพิมพ์คำสั่ง & ปุ่ม PLAY อัตโนมัติ</span>
+                  <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    Play Count: <strong id="sim-play-counter">0</strong>
+                  </span>
                 </div>
 
-                <!-- Live Automation Console & Extracted Data Log -->
-                <div class="glass-panel rounded-2xl p-4 space-y-2.5">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-cyan-300 flex items-center gap-2">
-                            <i class="fa-solid fa-terminal"></i> หน้าต่างแสดงผลการสั่งการสด (Live Bot Execution Log)
-                        </span>
-                        <div class="flex gap-2">
-                            <button id="btnExportLogs" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700">
-                                <i class="fa-solid fa-download mr-1"></i> ดาวน์โหลด Log
-                            </button>
-                            <button id="btnClearLogs" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-700">
-                                ล้างประวัติ
-                            </button>
-                        </div>
-                    </div>
-                    <div id="botConsoleLog" class="bg-slate-950 border border-slate-800/90 rounded-xl p-3 h-36 overflow-y-auto font-mono text-[11px] text-slate-300 space-y-1"></div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- VIEW 2: BATCH DATA QUEUE (ชุดข้อมูลสำหรับสั่งรันลูปทุกเว็บไซต์) -->
-        <section id="view-batchdata" class="app-view hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <div class="lg:col-span-5 space-y-4">
-                <div class="glass-panel rounded-2xl p-5 space-y-4">
-                    <h3 class="font-bold text-base text-white flex items-center gap-2">
-                        <i class="fa-solid fa-database text-cyan-400"></i> วางชุดข้อมูลสำหรับสั่งรันอัตโนมัติ (CSV / Tab / ข้อความ)
-                    </h3>
-                    <p class="text-xs text-slate-300 leading-relaxed">
-                        วางรายการสินค้า, รายชื่อ, รหัสอ้างอิง, ข้อความโพสต์ หรือพารามิเตอร์ที่ต้องการให้บอทหยิบไปกรอกลงในเว็บเป้าหมายทีละรอบ (คั่นคอลัมน์ด้วย Tab หรือเครื่องหมายจุลภาค `,`)
-                    </p>
-                    <textarea id="batchRawInput" rows="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-xs text-white font-mono outline-none focus:border-cyan-400"
-                              placeholder="ตัวอย่าง:
-ORD-2026-01, 1500, พร้อมจัดส่ง
-ORD-2026-02, 3200, อนุมัติด่วน
-ORD-2026-03, 890, พร้อมจัดส่ง"></textarea>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <button id="btnParseBatch" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs sm:text-sm transition">
-                            <i class="fa-solid fa-rotate mr-1"></i> แปลงข้อมูลเข้าคิวบอท
-                        </button>
-                        <button id="btnLoadSampleBatch" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded-xl text-xs sm:text-sm border border-slate-700 transition">
-                            โหลดข้อมูลตัวอย่าง
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-7 space-y-4">
-                <div class="glass-panel rounded-2xl p-5 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-base text-white">ตารางตัวแปรพร้อมส่งเข้าเวิร์กโฟลว์ (<span id="batchRowCountLabel">0</span> รอบการทำงาน)</h3>
-                        <span class="text-xs text-cyan-300">อ้างอิงด้วย <code>{{var1}}</code>, <code>{{var2}}</code>, <code>{{var3}}</code></span>
-                    </div>
-                    <div class="overflow-x-auto max-h-80">
-                        <table class="w-full text-xs text-left border border-slate-800 rounded-xl overflow-hidden">
-                            <thead class="bg-slate-900 text-slate-400">
-                                <tr>
-                                    <th class="p-3 text-center w-14">รอบที่</th>
-                                    <th class="p-3 text-cyan-300">ตัวแปร {{var1}}</th>
-                                    <th class="p-3 text-indigo-300">ตัวแปร {{var2}}</th>
-                                    <th class="p-3 text-amber-300">ตัวแปร {{var3}}</th>
-                                </tr>
-                            </thead>
-                            <tbody id="batchTableBody" class="divide-y divide-slate-800"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- VIEW 3: EXPORT & UNIVERSAL INJECTION (BOOKMARKLET, USERSCRIPT, PLAYWRIGHT) -->
-        <section id="view-export" class="app-view hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <div class="lg:col-span-6 space-y-4">
-                <div class="glass-panel neon-glow rounded-2xl p-5 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-base text-amber-300 flex items-center gap-2">
-                            <i class="fa-solid fa-bookmark"></i> 1. ปุ่มลัด Bookmarklet (ลากไปวางแถบ Bookmarks ใช้ได้ทุกเว็บ)
-                        </h3>
-                        <span class="text-[11px] bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-400/30 font-bold">ไม่ต้องลงโปรแกรม</span>
-                    </div>
-                    <p class="text-xs text-slate-300 leading-relaxed">
-                        ลากปุ่มสีทองด้านล่างไปวางไว้บนแถบ Bookmarks ของเบราว์เซอร์ เมื่อคุณเปิดเว็บไซต์ที่ต้องการสั่งการ ให้คลิกที่ Bookmark นี้ แผงควบคุมรีโมท <b>AiLab Web AutoBot</b> จะถูกฝังลงในหน้าเว็บนั้นทันที!
-                    </p>
-                    <a id="bookmarkletDragLink" href="#autobot"
-                       class="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-950 font-extrabold py-3.5 px-4 rounded-2xl shadow-lg text-xs sm:text-sm flex items-center justify-center gap-2 cursor-grab">
-                        <i class="fa-solid fa-robot text-base"></i>
-                        <span>🤖 AiLab AutoBot สั่งการทุกเว็บ (ลากปุ่มนี้ไปวางที่ Bookmarks Bar)</span>
-                    </a>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <button id="btnCopyBookmarkletUrl" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 px-3 rounded-xl text-xs border border-slate-700 transition">
-                            <i class="fa-regular fa-copy mr-1 text-cyan-400"></i> คัดลอกลิงก์ Bookmarklet
-                        </button>
-                        <button id="btnDownloadTampermonkey" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-3 rounded-xl text-xs transition">
-                            <i class="fa-solid fa-download mr-1"></i> โหลดไฟล์ .user.js (ฝังถาวร)
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-6 space-y-4">
-                <div class="glass-panel rounded-2xl p-5 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-base text-cyan-300 flex items-center gap-2">
-                            <i class="fa-solid fa-terminal"></i> 2. โค้ดสคริปต์อัตโนมัติ (Console F12 & Node.js Playwright)
-                        </h3>
-                        <select id="exportScriptFormat" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white outline-none">
-                            <option value="console">สคริปต์วางใน Console (F12) ของเว็บเป้าหมาย</option>
-                            <option value="playwright">สคริปต์ Node.js Playwright (รันเปิดเบราว์เซอร์จริง)</option>
-                        </select>
-                    </div>
-                    <textarea id="exportedCodeBox" readonly rows="8" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-300 outline-none"></textarea>
-                    <button id="btnCopyExportedCode" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs sm:text-sm transition">
-                        <i class="fa-solid fa-copy mr-1.5"></i> คัดลอกสคริปต์สั่งการชุดนี้
+                <div class="space-y-2 text-xs">
+                  <label class="text-slate-400 block">ช่องรับข้อความที่บอทพิมพ์ลงหน้าเว็บ</label>
+                  <div class="flex gap-2">
+                    <input id="sim-input-prompt" data-bot-name="ช่องพิมพ์งาน" type="text" placeholder="บอทจะคลิกแล้วพิมพ์คำสั่งที่นี่..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-emerald-200 focus:outline-none" />
+                    <button id="sim-btn-send" data-bot-name="ปุ่มส่งคำสั่ง" class="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold transition">
+                      ส่งข้อมูล
                     </button>
+                  </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-2.5 mt-3">
+                  <button id="sim-btn-play" data-bot-name="ปุ่ม PLAY" class="py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition">
+                    <span>▶</span> PLAY (คลิกทำงานต่อเนื่อง)
+                  </button>
+                  <button id="sim-btn-bonus" data-bot-name="ปุ่มเสริม" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    <span>⚡</span> คลิกปุ่มเสริม (<span id="sim-bonus-counter">0</span>)
+                  </button>
+                </div>
+              </div>
+
+              <div class="mt-3 pt-2.5 border-t border-slate-800">
+                <div class="text-[11px] text-slate-400 mb-1">ประวัติการสั่งงานจริงล่าสุด:</div>
+                <div id="sim-live-feed" class="bg-slate-950 border border-slate-800 rounded-lg p-2 h-24 overflow-y-auto text-[11px] mono space-y-1 text-slate-300">
+                  <div class="text-emerald-400">[พร้อมทำงาน] กดปุ่ม "เดินบอททันที" หรือลากปุ่ม Bookmarklet ด้านบนไปรันในหน้าเว็บจริงได้เลย</div>
+                </div>
+              </div>
             </div>
-        </section>
+          </div>
 
-    </main>
+          <!-- Sub-View B: Live External Website Iframe -->
+          <div id="subview-real-iframe" class="hidden flex-col h-[390px] rounded-xl overflow-hidden border border-cyan-500/30 bg-slate-950">
+            <div class="bg-slate-900 px-3 py-1.5 text-[11px] text-slate-300 flex items-center justify-between border-b border-slate-800">
+              <span>🌐 แสดงหน้าเว็บจริงจาก URL: <strong id="iframe-current-url" class="text-emerald-300 mono">https://ailabv2.vercel.app/</strong></span>
+              <span class="text-amber-300">ทิป: หากเว็บปลายทางบล็อกการแสดงผลในกรอบ ให้กดปุ่ม "เปิดเว็บเป้าหมายในหน้าต่างจริง" ด้านบน แล้วคลิก Bookmarklet</span>
+            </div>
+            <iframe id="real-web-iframe" src="https://ailabv2.vercel.app/" class="w-full flex-1 bg-white"></iframe>
+          </div>
 
-    <!-- Virtual Bot Mouse Cursor for In-Page Execution -->
-    <div id="virtualBotCursor" class="fixed w-6 h-6 rounded-full bg-amber-400/90 border-2 border-white shadow-[0_0_20px_rgba(251,191,36,0.95)] pointer-events-none z-50 hidden -translate-x-1/2 -translate-y-1/2 transition-all duration-200"></div>
+        </div>
+      </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 left-5 bg-slate-900 border border-cyan-500/50 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 text-xs sm:text-sm flex items-center gap-2.5 pointer-events-none">
-        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
-        <span id="toastMsg">พร้อมทำงาน</span>
+      <!-- Real-Time Bot Execution Log -->
+      <div class="glass-card rounded-2xl p-3.5 flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-semibold text-emerald-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            บันทึกเหตุการณ์เมาส์บอทแบบเรียลไทม์ (Real-Time Execution Log)
+          </span>
+          <button id="btn-clear-log" class="text-[11px] text-slate-400 hover:text-white">ล้างประวัติ</button>
+        </div>
+        <div id="bot-console-log" class="bg-slate-950/90 border border-slate-800/90 rounded-xl p-2.5 h-28 overflow-y-auto mono text-[11px] space-y-1 text-slate-300"></div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- SECOND VIEW: 3 Real-World Execution Methods (Bookmarklet, Tampermonkey Userscript, Python OS Bot) -->
+  <section id="view-export" class="hidden flex-1 max-w-[1640px] w-full mx-auto p-3 sm:p-4 space-y-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <!-- Method 1: Live Floating Widget Injector for ANY Website -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              วิธีที่ 1: สคริปต์ฝังแผงควบคุมเมาส์บอทลงหน้าเว็บจริง (Console / Bookmarklet)
+            </span>
+            <button id="btn-copy-js" class="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
+              คัดลอกโค้ด JS
+            </button>
+          </div>
+          <p class="text-xs text-slate-300 mb-2.5 leading-relaxed">
+            เมื่อรันบนหน้าเว็บจริง จะสร้าง <strong>แผงควบคุมลอย + ตัวชี้เมาส์บอทสีเขียวมรกต</strong> บนหน้าเว็บนั้นทันที สามารถกรอก ID/Password สั่งพิมพ์ข้อความ และกดปุ่ม Play วนซ้ำไม่หยุดพักบน DOM จริงของเว็บนั้นโดยตรง
+          </p>
+          <pre id="export-js-code" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] mono text-emerald-200 overflow-x-auto h-80"></pre>
+        </div>
+        <div id="copy-toast-js" class="hidden mt-2 text-xs text-emerald-400 font-semibold">✓ คัดลอกโค้ดฝังหน้าเว็บจริงเรียบร้อยแล้ว! เปิดเว็บจริงแล้วกด F12 > Console วางได้เลย</div>
+      </div>
+
+      <!-- Method 2: Tampermonkey Auto-Run Extension Script -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+              วิธีที่ 2: สคริปต์ Tampermonkey (เข้าเว็บปุ๊บ เมาส์บอททำงานเองอัตโนมัติ)
+            </span>
+            <button id="btn-copy-tm" class="px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition">
+              คัดลอก Userscript
+            </button>
+          </div>
+          <p class="text-xs text-slate-300 mb-2.5 leading-relaxed">
+            ติดตั้งลงส่วนขยาย <strong>Tampermonkey</strong> บน Chrome/Edge เมื่อเปิดหน้าเว็บเป้าหมาย หรือเว็บรีเฟรชหน้าใหม่ บอทจะทำงานต่อเองอัตโนมัติแบบไม่ต้องกดเริ่มใหม่
+          </p>
+          <pre id="export-tm-code" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] mono text-cyan-200 overflow-x-auto h-80"></pre>
+        </div>
+        <div id="copy-toast-tm" class="hidden mt-2 text-xs text-cyan-400 font-semibold">✓ คัดลอกโค้ด Tampermonkey เรียบร้อยแล้ว!</div>
+      </div>
+
+      <!-- Method 3: Python OS Hardware Mouse + Playwright Real Browser Bot -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+              วิธีที่ 3: บอทบังคับเมาส์จริงบนเครื่อง Mac/Windows (Python Playwright + PyAutoGUI)
+            </span>
+            <div class="flex gap-1.5">
+              <button id="btn-download-py" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-500/40 font-semibold text-xs transition">
+                ดาวน์โหลด .py
+              </button>
+              <button id="btn-copy-py" class="px-3 py-1 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs transition">
+                คัดลอก Python
+              </button>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 mb-2.5 leading-relaxed">
+            เปิด Chrome จริงขึ้นมาเข้า URL เป้าหมาย ล็อกอินด้วย ID/Password พิมพ์ข้อความ และคลิกปุ่ม Play วนซ้ำไม่หยุดพัก 24 ชม. ทะลุทุกข้อจำกัดของเบราว์เซอร์
+          </p>
+          <pre id="export-py-code" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] mono text-purple-200 overflow-x-auto h-80"></pre>
+        </div>
+        <div id="copy-toast-py" class="hidden mt-2 text-xs text-purple-400 font-semibold">✓ คัดลอกสคริปต์ Python เรียบร้อยแล้ว!</div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- FLOATING EMBEDDED HUD CONTROL PANEL (Appears when user clicks "กดฝังแผงควบคุมบอททันที") -->
+  <div id="embedded-hud-panel" class="p-3.5 text-xs select-none">
+    <!-- Draggable Header -->
+    <div id="hud-drag-handle" class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800 cursor-move">
+      <div class="flex items-center gap-2">
+        <span id="hud-live-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="font-extrabold text-emerald-300 tracking-wide text-xs">🖱️ AiLab Floating HUD Controller</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <span id="hud-cycle-pill" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mono text-[10px] font-bold">RUN #0</span>
+        <button id="hud-btn-minimize" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]" title="ย่อ/ขยาย">_</button>
+        <button id="hud-btn-close" class="px-1.5 py-0.5 rounded bg-rose-900/60 hover:bg-rose-600 text-rose-200 text-[10px]" title="ซ่อนแผงควบคุม">✕</button>
+      </div>
     </div>
 
-    <script>
-        // ==========================================
-        // CORE STATE (ZERO SGS / 100% UNIVERSAL WEB AUTOMATION)
-        // ==========================================
-        let isRecording = false;
-        let isPickingSelector = false;
-        let runningTimer = null;
-        let ecomSavedCount = 0;
-        let formSavedCount = 0;
+    <!-- HUD Body -->
+    <div id="hud-body-content" class="space-y-2">
+      <div class="grid grid-cols-2 gap-1.5">
+        <div>
+          <label class="text-[10px] text-slate-400 block">User ID (ซิงค์สด)</label>
+          <input id="hud-input-uid" type="text" value="metawat_ai" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-cyan-300 mono text-[11px] focus:outline-none focus:border-cyan-400" />
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 block">Password</label>
+          <input id="hud-input-pwd" type="text" value="AiLab@2026#Pro" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-amber-300 mono text-[11px] focus:outline-none focus:border-amber-400" />
+        </div>
+      </div>
 
-        let batchRows = [
-            { var1: 'PRO-AI-001', var2: '2450', var3: 'พร้อมจัดส่ง' },
-            { var1: 'PRO-AI-002', var2: '1890', var3: 'อนุมัติด่วน' },
-            { var1: 'PRO-AI-003', var2: '5400', var3: 'พร้อมจัดส่ง' },
-            { var1: 'PRO-AI-004', var2: '990', var3: 'รอดำเนินการ' },
-            { var1: 'PRO-AI-005', var2: '3200', var3: 'อนุมัติด่วน' }
-        ];
+      <div>
+        <label class="text-[10px] text-slate-400 block">ข้อความ / คำสั่งที่บอทพิมพ์อัตโนมัติ</label>
+        <input id="hud-input-msg" type="text" value="รันระบบประมวลผลอัตโนมัติ AiLab V2 แบบไม่หยุดพัก" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-emerald-200 text-[11px] focus:outline-none focus:border-emerald-400" />
+      </div>
 
-        const macroTemplates = {
-            ecommerce: [
-                { action: 'fill', selector: '.target-input-1', value: '{{var1}}' },
-                { action: 'fill', selector: '.target-input-2', value: '{{var2}}' },
-                { action: 'select', selector: '.target-select', value: '{{var3}}' },
-                { action: 'click', selector: '.target-submit-btn', value: 'คลิกปุ่มบันทึก' }
-            ],
-            form: [
-                { action: 'fill', selector: '.target-input-1', value: '{{var1}}' },
-                { action: 'fill', selector: '.target-input-2', value: '{{var2}}' },
-                { action: 'fill', selector: '.target-input-3', value: '{{var3}}' },
-                { action: 'click', selector: '.target-submit-btn', value: 'ส่งแบบฟอร์ม' }
-            ],
-            social: [
-                { action: 'fill', selector: '.target-input-1', value: 'อัปเดตสถานะอัตโนมัติ: {{var1}} ({{var3}})' },
-                { action: 'fill', selector: '.target-input-2', value: '#AiLab #AutoBot #{{var2}}' },
-                { action: 'click', selector: '.target-submit-btn', value: 'เผยแพร่โพสต์' }
-            ],
-            clicker: [
-                { action: 'fill', selector: '.grid-input', value: '{{var2}}' },
-                { action: 'click', selector: '.approve-btn', value: 'คลิกอนุมัติ' },
-                { action: 'extract', selector: '.scrape-item', value: 'ดึงรหัสรายการลง Log' }
-            ]
+      <!-- HUD Speed & Target Picker -->
+      <div class="flex items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5">
+        <div class="flex items-center gap-1.5">
+          <span class="text-[10px] text-slate-400">ความเร็ว:</span>
+          <select id="hud-sel-speed" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 text-[11px]">
+            <option value="1">1x</option>
+            <option value="2" selected>2x</option>
+            <option value="4">4x เทอร์โบ</option>
+          </select>
+        </div>
+        <button id="hud-btn-pick-target" class="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-semibold flex items-center gap-1 transition">
+          <span>🎯</span> ชี้เป้าคลิกบนเว็บ
+        </button>
+      </div>
+
+      <!-- HUD Primary Action Buttons -->
+      <div class="flex items-center gap-1.5 pt-1">
+        <button id="hud-btn-run" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs shadow-md transition">
+          ▶ เดินบอท 24/7
+        </button>
+        <button id="hud-btn-pause" class="px-3 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs transition">
+          หยุดพัก
+        </button>
+        <button id="hud-btn-step" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 font-bold text-xs transition" title="คลิกทีละขั้นตอน">
+          +1 คลิก
+        </button>
+      </div>
+
+      <!-- HUD Live Status Bar -->
+      <div class="bg-slate-950 border border-slate-800/90 rounded-lg px-2.5 py-1.5 flex items-center justify-between text-[10px] mono">
+        <span id="hud-status-line" class="text-emerald-300 truncate">พร้อมสั่งการเมาส์บอท...</span>
+        <span id="hud-coords-line" class="text-amber-300 shrink-0 ml-2">X:0 Y:0</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Core Application State ---
+    const state = {
+      running: false,
+      recording: false,
+      currentStepIndex: 0,
+      cyclesCompleted: 0,
+      totalClicks: 0,
+      totalTypedChars: 0,
+      playCount: 0,
+      bonusCount: 0,
+      loggedInUser: null,
+      steps: [
+        { id: 1, action: 'click', target: '#sim-input-user', label: 'คลิกเมาส์ที่ช่อง User ID', value: '' },
+        { id: 2, action: 'type', target: '#sim-input-user', label: 'พิมพ์ชื่อผู้ใช้ (ID)', value: '{{USER_ID}}' },
+        { id: 3, action: 'click', target: '#sim-input-pass', label: 'คลิกเมาส์ที่ช่อง Password', value: '' },
+        { id: 4, action: 'type', target: '#sim-input-pass', label: 'พิมพ์รหัสผ่าน (Password)', value: '{{PASSWORD}}' },
+        { id: 5, action: 'click', target: '#sim-btn-login', label: 'คลิกปุ่มเข้าสู่ระบบ (Login)', value: '' },
+        { id: 6, action: 'click', target: '#sim-input-prompt', label: 'คลิกช่องพิมพ์ข้อความ/คำสั่ง', value: '' },
+        { id: 7, action: 'type', target: '#sim-input-prompt', label: 'พิมพ์ข้อความอัตโนมัติ', value: '{{MESSAGE}}' },
+        { id: 8, action: 'click', target: '#sim-btn-send', label: 'คลิกปุ่มส่งข้อมูล', value: '' },
+        { id: 9, action: 'click', target: '#sim-btn-play', label: 'คลิกปุ่ม PLAY เพื่อรันงาน', value: '' }
+      ]
+    };
+
+    function appendBotLog(msg, tone = 'info') {
+      const box = document.getElementById('bot-console-log');
+      const now = new Date().toLocaleTimeString('th-TH', { hour12: false });
+      const colorMap = {
+        info: 'text-cyan-300',
+        success: 'text-emerald-300',
+        warn: 'text-amber-300',
+        action: 'text-purple-300'
+      };
+      const line = document.createElement('div');
+      line.className = `${colorMap[tone] || 'text-slate-300'}`;
+      line.textContent = `[${now}] ${msg}`;
+      box.appendChild(line);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function appendSimFeed(msg) {
+      const feed = document.getElementById('sim-live-feed');
+      const now = new Date().toLocaleTimeString('th-TH', { hour12: false });
+      const item = document.createElement('div');
+      item.innerHTML = `<span class="text-emerald-400">[${now}]</span> ${msg}`;
+      feed.prepend(item);
+    }
+
+    function resolveValue(rawVal) {
+      const uid = document.getElementById('cfg-userid').value.trim();
+      const pwd = document.getElementById('cfg-password').value.trim();
+      const msg = document.getElementById('cfg-message').value.trim();
+      return String(rawVal || '')
+        .replace('{{USER_ID}}', uid)
+        .replace('{{PASSWORD}}', pwd)
+        .replace('{{MESSAGE}}', msg);
+    }
+
+    function renderSteps() {
+      const container = document.getElementById('steps-container');
+      document.getElementById('step-count').textContent = state.steps.length;
+      container.innerHTML = '';
+
+      state.steps.forEach((step, idx) => {
+        const isCurrent = state.running && state.currentStepIndex === idx;
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-xs transition ${
+          isCurrent
+            ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-md'
+            : 'bg-slate-900/75 border-slate-800 text-slate-300 hover:border-slate-700'
+        }`;
+
+        const badgeMap = {
+          click: '<span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 mono text-[10px]">CLICK</span>',
+          type: '<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 mono text-[10px]">TYPE</span>',
+          press_enter: '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 mono text-[10px]">ENTER</span>',
+          wait: '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 mono text-[10px]">WAIT</span>'
         };
 
-        let pipelineSteps = JSON.parse(JSON.stringify(macroTemplates.ecommerce));
+        const resolvedPreview = step.value ? ` → "${resolveValue(step.value)}"` : '';
 
-        // ==========================================
-        // LOGGING & UI HELPERS
-        // ==========================================
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMsg');
-            if (!toast || !toastMsg) return;
-            toastMsg.innerText = msg;
-            toast.classList.remove('translate-y-24', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-24', 'opacity-0');
-            }, 2800);
+        row.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-[10px] mono shrink-0">${idx + 1}</span>
+            ${badgeMap[step.action] || ''}
+            <span class="truncate font-medium">${step.label}</span>
+            <span class="text-slate-400 truncate mono text-[11px]">${resolvedPreview}</span>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button data-run-idx="${idx}" class="run-single-step px-1.5 py-0.5 rounded bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-[10px] transition" title="รันขั้นตอนนี้ทันที">▶</button>
+            <button data-del-idx="${idx}" class="del-step px-1.5 py-0.5 rounded bg-slate-800 hover:bg-rose-500 hover:text-white text-[10px] transition" title="ลบ">✕</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      container.querySelectorAll('.run-single-step').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.currentTarget.getAttribute('data-run-idx'), 10);
+          executeStep(state.steps[i]);
+        });
+      });
+      container.querySelectorAll('.del-step').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.currentTarget.getAttribute('data-del-idx'), 10);
+          state.steps.splice(i, 1);
+          if (state.currentStepIndex >= state.steps.length) state.currentStepIndex = 0;
+          renderSteps();
+          updateExportCodes();
+        });
+      });
+    }
+
+    // Web Audio API Synthesized Mouse Click Sound (Optional & Safe)
+    let audioCtx = null;
+    function playClickSound(freq = 900) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.045);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+      } catch (e) {}
+    }
+
+    function moveCursorToElement(selector, actionLabel) {
+      const stage = document.getElementById('browser-stage');
+      const cursor = document.getElementById('virtual-cursor');
+      const tag = document.getElementById('cursor-action-tag');
+      let targetEl = document.querySelector(selector);
+
+      document.querySelectorAll('.target-highlight').forEach(el => el.classList.remove('target-highlight'));
+
+      // Check if targetEl is currently hidden (e.g. when Live Iframe view is active)
+      const isVisible = targetEl && targetEl.offsetParent !== null && targetEl.getBoundingClientRect().width > 0;
+
+      if (!isVisible) {
+        const iframeBox = document.getElementById('real-web-iframe');
+        if (iframeBox && iframeBox.offsetParent !== null) {
+          const r = iframeBox.getBoundingClientRect();
+          const randX = Math.round(r.left + r.width * (0.28 + (state.currentStepIndex % 5) * 0.12));
+          const randY = Math.round(r.top + r.height * (0.25 + (state.currentStepIndex % 4) * 0.16));
+          cursor.style.left = `${randX}px`;
+          cursor.style.top = `${randY}px`;
+          tag.textContent = `🖱️ ${actionLabel}`;
+          document.getElementById('kpi-coords').textContent = `X: ${randX}, Y: ${randY}`;
+          return { x: randX, y: randY, el: targetEl || iframeBox };
         }
+        return { x: 400, y: 300, el: targetEl };
+      }
 
-        function logBotEvent(message, type = 'info') {
-            const box = document.getElementById('botConsoleLog');
-            if (!box) return;
-            const time = new Date().toLocaleTimeString('th-TH');
-            const colorMap = {
-                info: 'text-cyan-300',
-                success: 'text-emerald-400',
-                warn: 'text-amber-300',
-                extract: 'text-purple-300'
-            };
-            const line = document.createElement('div');
-            line.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${colorMap[type] || 'text-slate-200'}">${message}</span>`;
-            box.prepend(line);
+      targetEl.classList.add('target-highlight');
+      const targetRect = targetEl.getBoundingClientRect();
+
+      const x = Math.round(targetRect.left + targetRect.width * 0.45);
+      const y = Math.round(targetRect.top + targetRect.height * 0.52);
+
+      cursor.style.left = `${x}px`;
+      cursor.style.top = `${y}px`;
+      tag.textContent = `🖱️ ${actionLabel}`;
+
+      document.getElementById('kpi-coords').textContent = `X: ${x}, Y: ${y}`;
+      const hudCoords = document.getElementById('hud-coords-line');
+      if (hudCoords) hudCoords.textContent = `X:${x} Y:${y}`;
+      const hudStatus = document.getElementById('hud-status-line');
+      if (hudStatus) hudStatus.textContent = actionLabel;
+      return { x, y, el: targetEl };
+    }
+
+    function spawnClickRipple(x, y, labelText = 'CLICK!') {
+      const cursor = document.getElementById('virtual-cursor');
+      cursor.classList.add('cursor-clicking');
+      setTimeout(() => cursor.classList.remove('cursor-clicking'), 150);
+      playClickSound(980);
+
+      const ripple = document.createElement('div');
+      ripple.className = 'click-ripple';
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      document.body.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 580);
+
+      const spark = document.createElement('div');
+      spark.className = 'click-spark-label';
+      spark.style.left = `${x}px`;
+      spark.style.top = `${y}px`;
+      spark.textContent = labelText;
+      document.body.appendChild(spark);
+      setTimeout(() => spark.remove(), 650);
+    }
+
+    // Real React/Vue/DOM Native Value Setter
+    function setNativeInputValue(el, value) {
+      const valueSetter = Object.getOwnPropertyDescriptor(el, 'value')?.set;
+      const prototype = Object.getPrototypeOf(el);
+      const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+      if (valueSetter && valueSetter !== prototypeValueSetter) {
+        prototypeValueSetter.call(el, value);
+      } else if (valueSetter) {
+        valueSetter.call(el, value);
+      } else {
+        el.value = value;
+      }
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    async function executeStep(step) {
+      if (!step) return;
+      const speedMultiplier = parseFloat(document.getElementById('sel-speed').value) || 1;
+      const baseDelay = Math.max(140, Math.round(480 / speedMultiplier));
+
+      if (step.action === 'wait') {
+        const ms = parseInt(resolveValue(step.value), 10) || 500;
+        appendBotLog(`หน่วงเวลารอ ${ms} ms`, 'warn');
+        await new Promise(r => setTimeout(r, Math.min(ms, 2000)));
+        return;
+      }
+
+      const { x, y, el } = moveCursorToElement(step.target, `${step.action.toUpperCase()} -> ${step.target}`);
+      await new Promise(r => setTimeout(r, baseDelay));
+
+      if (!el) {
+        appendBotLog(`ไม่พบองค์ประกอบ ${step.target}`, 'warn');
+        return;
+      }
+
+      if (step.action === 'click') {
+        spawnClickRipple(x, y, '🖱️ CLICK! (' + step.label + ')');
+        state.totalClicks++;
+        document.getElementById('kpi-clicks').textContent = state.totalClicks;
+        el.focus();
+        el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+        el.click();
+        appendBotLog(`คลิกเมาส์จริงที่ [${step.label}] พิกัด (${x}, ${y})`, 'action');
+      } else if (step.action === 'type') {
+        spawnClickRipple(x, y, '⌨️ พิมพ์ข้อมูล...');
+        const textToType = resolveValue(step.value);
+        el.focus();
+        setNativeInputValue(el, '');
+        const charDelay = Math.max(10, Math.round(32 / speedMultiplier));
+        let currentStr = '';
+        for (let i = 0; i < textToType.length; i++) {
+          currentStr += textToType[i];
+          setNativeInputValue(el, currentStr);
+          state.totalTypedChars++;
+          document.getElementById('kpi-typed').textContent = state.totalTypedChars;
+          await new Promise(r => setTimeout(r, charDelay));
         }
+        appendBotLog(`พิมพ์ข้อมูลจริง "${textToType}" ลงใน [${step.label}]`, 'info');
+      } else if (step.action === 'press_enter') {
+        spawnClickRipple(x, y);
+        el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+        document.getElementById('sim-btn-send').click();
+        appendBotLog(`กดปุ่ม Enter ที่ [${step.label}]`, 'success');
+      }
+    }
 
-        function copyText(text) {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand('copy'); } catch (e) {}
-            document.body.removeChild(ta);
+    async function runBotLoop() {
+      while (state.running) {
+        if (state.steps.length === 0) {
+          stopBot();
+          break;
         }
+        renderSteps();
+        const step = state.steps[state.currentStepIndex];
+        await executeStep(step);
 
-        // ==========================================
-        // PIPELINE RENDERING & MACRO SWITCHING
-        // ==========================================
-        function renderPipeline() {
-            const container = document.getElementById('pipelineContainer');
-            const badge = document.getElementById('stepCountBadge');
-            if (badge) badge.innerText = pipelineSteps.length;
-            if (!container) return;
+        if (!state.running) break;
 
-            if (pipelineSteps.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">ยังไม่มีคำสั่งในคิว กดเลือกโหมดด้านบนหรือเพิ่มคำสั่งใหม่</div>`;
-                updateExportedScriptPreview();
-                return;
-            }
+        state.currentStepIndex++;
+        if (state.currentStepIndex >= state.steps.length) {
+          state.cyclesCompleted++;
+          document.getElementById('kpi-cycles').textContent = state.cyclesCompleted;
+          const hudCycle = document.getElementById('hud-cycle-pill');
+          if (hudCycle) hudCycle.textContent = `RUN #${state.cyclesCompleted}`;
+          appendBotLog(`=== จบรอบการทำงานที่ #${state.cyclesCompleted} สำเร็จ ===`, 'success');
 
-            const labels = {
-                fill: { icon: 'fa-keyboard', text: 'พิมพ์ค่า', cls: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
-                click: { icon: 'fa-computer-mouse', text: 'คลิกเมาส์', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-                select: { icon: 'fa-list', text: 'เลือกเมนู', cls: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' },
-                keypress: { icon: 'fa-square-caret-down', text: 'กดปุ่มคีย์', cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-                extract: { icon: 'fa-magnet', text: 'ดึงข้อมูลเว็บ', cls: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
-                scroll: { icon: 'fa-arrows-up-down', text: 'เลื่อนจอ', cls: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
-                wait: { icon: 'fa-clock', text: 'หน่วงเวลา', cls: 'bg-slate-700 text-slate-300 border-slate-600' }
-            };
-
-            container.innerHTML = pipelineSteps.map((s, idx) => {
-                const info = labels[s.action] || labels.fill;
-                return `
-                    <div class="flex items-center justify-between gap-2 bg-slate-900/95 border border-slate-800 rounded-xl px-3 py-2 text-xs">
-                        <div class="flex items-center gap-2 min-w-0">
-                            <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-[10px] shrink-0">${idx + 1}</span>
-                            <span class="px-2 py-0.5 rounded-md border text-[11px] font-semibold shrink-0 ${info.cls}">
-                                <i class="fa-solid ${info.icon} mr-1"></i>${info.text}
-                            </span>
-                            <code class="text-cyan-300 font-mono truncate">${s.selector}</code>
-                            <span class="text-slate-500">→</span>
-                            <span class="text-amber-300 font-semibold truncate">${s.value}</span>
-                        </div>
-                        <button data-del-step="${idx}" class="text-slate-500 hover:text-rose-400 px-1.5 py-0.5 rounded transition shrink-0">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                `;
-            }).join('');
-
-            container.querySelectorAll('[data-del-step]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const i = parseInt(btn.getAttribute('data-del-step'), 10);
-                    pipelineSteps.splice(i, 1);
-                    renderPipeline();
-                });
-            });
-
-            updateExportedScriptPreview();
+          if (document.getElementById('chk-infinite-loop').checked) {
+            state.currentStepIndex = 0;
+          } else {
+            stopBot();
+            break;
+          }
         }
+      }
+    }
 
-        function switchSimTemplate(simKey) {
-            document.getElementById('simTemplateSwitcher').value = simKey;
-            document.querySelectorAll('.sim-page').forEach(p => {
-                p.classList.toggle('hidden', p.id !== `sim-page-${simKey}`);
-            });
+    function startBot() {
+      if (state.running) return;
+      state.running = true;
+      document.getElementById('btn-start-bot').disabled = true;
+      document.getElementById('btn-start-bot').classList.add('opacity-50');
+      document.getElementById('btn-stop-bot').disabled = false;
+      document.getElementById('status-badge-text').textContent = 'RUNNING 24/7';
+      document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+      appendBotLog('เริ่มเดินเครื่องเมาส์บอทอัตโนมัติ (ทำงานต่อเนื่องไม่หยุดพัก)', 'success');
+      runBotLoop();
+    }
 
-            if (macroTemplates[simKey]) {
-                pipelineSteps = JSON.parse(JSON.stringify(macroTemplates[simKey]));
-                renderPipeline();
-            }
+    function stopBot() {
+      state.running = false;
+      document.getElementById('btn-start-bot').disabled = false;
+      document.getElementById('btn-start-bot').classList.remove('opacity-50');
+      document.getElementById('btn-stop-bot').disabled = true;
+      document.getElementById('status-badge-text').textContent = 'PAUSED';
+      document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-amber-400';
+      document.getElementById('cursor-action-tag').textContent = 'PAUSED';
+      renderSteps();
+      appendBotLog('หยุดพักการทำงานของเมาส์บอทแล้ว', 'warn');
+    }
 
-            document.querySelectorAll('.macro-preset-btn').forEach(btn => {
-                const active = btn.getAttribute('data-macro') === simKey;
-                btn.className = active
-                    ? 'macro-preset-btn text-left p-2.5 rounded-xl border border-cyan-500 bg-cyan-500/15 transition'
-                    : 'macro-preset-btn text-left p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 hover:bg-slate-800 transition';
-            });
-        }
+    function parseThaiCommandToSteps(text) {
+      const steps = [];
+      const lower = text.toLowerCase();
 
-        // ==========================================
-        // TARGET SIMULATOR INITIALIZATION
-        // ==========================================
-        function initTargetSimulators() {
-            const clickerBody = document.getElementById('clickerTableBody');
-            if (clickerBody) {
-                const items = ['REQ-2026-101', 'REQ-2026-102', 'REQ-2026-103', 'REQ-2026-104'];
-                clickerBody.innerHTML = items.map((code, idx) => `
-                    <tr class="hover:bg-slate-900/60">
-                        <td class="p-2 font-mono text-amber-300 scrape-item">${code}</td>
-                        <td class="p-2 text-center">
-                            <input type="text" class="grid-input w-24 text-center bg-slate-900 border border-slate-700 rounded-lg p-1 text-white" placeholder="ว่าง">
-                        </td>
-                        <td class="p-2 text-center row-status text-slate-400">รออนุมัติ</td>
-                        <td class="p-2 text-center">
-                            <button type="button" data-idx="${idx}" class="approve-btn bg-emerald-600/30 hover:bg-emerald-500 text-emerald-200 hover:text-slate-950 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold transition">
-                                คลิกอนุมัติ
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
+      if (lower.includes('login') || lower.includes('ล็อกอิน') || lower.includes('id') || lower.includes('password')) {
+        steps.push(
+          { id: Date.now() + 1, action: 'click', target: '#sim-input-user', label: 'คลิกเมาส์ที่ช่อง User ID', value: '' },
+          { id: Date.now() + 2, action: 'type', target: '#sim-input-user', label: 'พิมพ์ชื่อผู้ใช้ (ID)', value: '{{USER_ID}}' },
+          { id: Date.now() + 3, action: 'click', target: '#sim-input-pass', label: 'คลิกเมาส์ที่ช่อง Password', value: '' },
+          { id: Date.now() + 4, action: 'type', target: '#sim-input-pass', label: 'พิมพ์รหัสผ่าน (Password)', value: '{{PASSWORD}}' },
+          { id: Date.now() + 5, action: 'click', target: '#sim-btn-login', label: 'คลิกปุ่มเข้าสู่ระบบ (Login)', value: '' }
+        );
+      }
+      if (lower.includes('พิมพ์') || lower.includes('ข้อความ') || lower.includes('ส่ง')) {
+        steps.push(
+          { id: Date.now() + 6, action: 'click', target: '#sim-input-prompt', label: 'คลิกช่องพิมพ์ข้อความ/คำสั่ง', value: '' },
+          { id: Date.now() + 7, action: 'type', target: '#sim-input-prompt', label: 'พิมพ์ข้อความอัตโนมัติ', value: '{{MESSAGE}}' },
+          { id: Date.now() + 8, action: 'click', target: '#sim-btn-send', label: 'คลิกปุ่มส่งข้อมูล', value: '' }
+        );
+      }
+      if (lower.includes('play') || lower.includes('เพลย์') || lower.includes('เล่น') || lower.includes('คลิกปุ่ม')) {
+        steps.push(
+          { id: Date.now() + 9, action: 'click', target: '#sim-btn-play', label: 'คลิกปุ่ม PLAY เพื่อรันงาน', value: '' }
+        );
+      }
+      if (lower.includes('โบนัส') || lower.includes('แต้ม') || lower.includes('เสริม')) {
+        steps.push(
+          { id: Date.now() + 10, action: 'click', target: '#sim-btn-bonus', label: 'คลิกปุ่มเสริม', value: '' }
+        );
+      }
+      if (steps.length === 0) {
+        steps.push(
+          { id: Date.now() + 11, action: 'click', target: '#sim-input-prompt', label: 'คลิกช่องพิมพ์งาน', value: '' },
+          { id: Date.now() + 12, action: 'type', target: '#sim-input-prompt', label: 'พิมพ์คำสั่งที่กำหนด', value: text },
+          { id: Date.now() + 13, action: 'click', target: '#sim-btn-play', label: 'คลิกปุ่ม PLAY', value: '' }
+        );
+      }
 
-                clickerBody.querySelectorAll('.approve-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const tr = btn.closest('tr');
-                        const st = tr.querySelector('.row-status');
-                        st.innerHTML = '<span class="text-emerald-400 font-bold">✔ อนุมัติแล้ว</span>';
-                        btn.innerText = 'สำเร็จ';
-                    });
-                });
-            }
-        }
+      state.steps = steps;
+      state.currentStepIndex = 0;
+      renderSteps();
+      updateExportCodes();
+      appendBotLog(`อัปเดตคิวคำสั่งเมาส์บอท ${steps.length} ขั้นตอนเรียบร้อย`, 'success');
+    }
 
-        // ==========================================
-        // IN-PAGE WORKFLOW EXECUTION ENGINE
-        // ==========================================
-        function moveBotCursorToElement(el) {
-            const cursor = document.getElementById('virtualBotCursor');
-            if (!cursor || !el) return;
-            const rect = el.getBoundingClientRect();
-            cursor.classList.remove('hidden');
-            cursor.style.left = `${rect.left + rect.width / 2}px`;
-            cursor.style.top = `${rect.top + rect.height / 2}px`;
-            cursor.style.transform = 'translate(-50%, -50%) scale(0.7)';
-            setTimeout(() => {
-                cursor.style.transform = 'translate(-50%, -50%) scale(1)';
-            }, 120);
-        }
+    // Build Real Self-Contained Floating Bot Overlay Script for ANY Real Website
+    function buildRealWebInjectorScript() {
+      const uid = document.getElementById('cfg-userid').value.trim();
+      const pwd = document.getElementById('cfg-password').value.trim();
+      const msg = document.getElementById('cfg-message').value.trim();
+      const userSel = document.getElementById('sel-real-user').value.trim();
+      const passSel = document.getElementById('sel-real-pass').value.trim();
+      const loginKeywords = document.getElementById('sel-real-login').value.trim();
+      const playKeywords = document.getElementById('sel-real-play').value.trim();
 
-        function resolveVariables(templateStr, rowObj) {
-            if (!templateStr) return '';
-            return templateStr
-                .replace(/\{\{var1\}\}/g, rowObj.var1 || '')
-                .replace(/\{\{var2\}\}/g, rowObj.var2 || '')
-                .replace(/\{\{var3\}\}/g, rowObj.var3 || '');
-        }
+      return `(function(){
+  if(document.getElementById('ailab-real-bot-panel')){console.log('AiLab Bot กำลังทำงานอยู่แล้วบนหน้านี้');return;}
+  const CFG = {
+    userId: ${JSON.stringify(uid)},
+    password: ${JSON.stringify(pwd)},
+    message: ${JSON.stringify(msg)},
+    userSel: ${JSON.stringify(userSel)},
+    passSel: ${JSON.stringify(passSel)},
+    loginKey: ${JSON.stringify(loginKeywords)},
+    playKey: ${JSON.stringify(playKeywords)},
+    running: false,
+    cycles: 0
+  };
 
-        function executeWorkflowInSandbox() {
-            if (runningTimer) {
-                clearInterval(runningTimer);
-                runningTimer = null;
-            }
-            if (pipelineSteps.length === 0) {
-                showToast('กรุณาเพิ่มคำสั่งในคิวก่อนเริ่มรันครับ');
-                return;
-            }
+  // สร้างเคอร์เซอร์เมาส์จริงบนหน้าเว็บ
+  const cur = document.createElement('div');
+  cur.id = 'ailab-real-cursor';
+  cur.style.cssText = 'position:fixed;top:60px;left:60px;width:26px;height:26px;z-index:2147483647;pointer-events:none;transition:top 0.32s cubic-bezier(0.22,1,0.36,1),left 0.32s cubic-bezier(0.22,1,0.36,1),transform 0.1s;filter:drop-shadow(0 0 8px #10b981);';
+  cur.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z" fill="#10b981" stroke="#fff" stroke-width="1.8"/></svg><div id="ailab-cur-tag" style="background:#050811;color:#6ee7b7;border:1px solid #10b981;font-size:10px;padding:1px 5px;border-radius:4px;white-space:nowrap;font-family:monospace;">READY</div>';
+  document.body.appendChild(cur);
 
-            const totalLoops = parseInt(document.getElementById('loopCountSelect').value, 10) || 1;
-            const speed = parseInt(document.getElementById('botSpeedSlider').value, 10) || 350;
-            const viewport = document.getElementById('targetWebViewport');
+  // สร้างแผงควบคุมลอยบนเว็บจริง
+  const panel = document.createElement('div');
+  panel.id = 'ailab-real-bot-panel';
+  panel.style.cssText = 'position:fixed;bottom:18px;right:18px;width:330px;background:rgba(9,13,22,0.96);color:#f1f5f9;border:1.5px solid #10b981;border-radius:14px;padding:12px;z-index:2147483646;font-family:sans-serif;box-shadow:0 15px 35px rgba(0,0,0,0.8);font-size:12px;';
+  panel.innerHTML = \`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #1e293b;padding-bottom:6px;">
+      <strong style="color:#34d399;font-size:13px;">🖱️ AiLab AutoMouse (เว็บจริง)</strong>
+      <span id="ab-stat" style="background:#065f46;color:#a7f3d0;padding:2px 6px;border-radius:99px;font-size:10px;">IDLE</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+      <input id="ab-uid" value="\${CFG.userId}" placeholder="User ID" style="background:#0f172a;border:1px solid #334155;color:#38bdf8;padding:4px 6px;border-radius:6px;font-size:11px;"/>
+      <input id="ab-pwd" value="\${CFG.password}" placeholder="Password" style="background:#0f172a;border:1px solid #334155;color:#fbbf24;padding:4px 6px;border-radius:6px;font-size:11px;"/>
+    </div>
+    <input id="ab-msg" value="\${CFG.message}" placeholder="ข้อความที่จะพิมพ์..." style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;color:#6ee7b7;padding:5px 6px;border-radius:6px;font-size:11px;margin-bottom:8px;"/>
+    <div style="display:flex;gap:6px;">
+      <button id="ab-start" style="flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;font-weight:800;border:none;padding:7px;border-radius:8px;cursor:pointer;">▶ เริ่มเดินบอท 24/7</button>
+      <button id="ab-stop" style="background:#be123c;color:#fff;font-weight:700;border:none;padding:7px 10px;border-radius:8px;cursor:pointer;">หยุด</button>
+    </div>
+    <div id="ab-log" style="margin-top:8px;font-family:monospace;font-size:10px;color:#94a3b8;max-height:55px;overflow-y:auto;">พร้อมทำงานบนหน้าเว็บนี้...</div>
+  \`;
+  document.body.appendChild(panel);
 
-            // Build flat execution queue across loops
-            const executionQueue = [];
-            for (let loopIdx = 0; loopIdx < totalLoops; loopIdx++) {
-                const rowData = batchRows[loopIdx % batchRows.length] || { var1: `ITEM-${loopIdx + 1}`, var2: '100', var3: 'สำเร็จ' };
-                pipelineSteps.forEach((step, stepIdx) => {
-                    executionQueue.push({
-                        loopIdx,
-                        stepIdx,
-                        action: step.action,
-                        selector: step.selector,
-                        resolvedValue: resolveVariables(step.value, rowData)
-                    });
-                });
-            }
-
-            let qIndex = 0;
-            document.getElementById('btnStopWorkflow').classList.remove('hidden');
-            logBotEvent(`🚀 เริ่มรันชุดคำสั่งอัตโนมัติ (${totalLoops} รอบ รวม ${executionQueue.length} คำสั่ง)...`, 'info');
-
-            runningTimer = setInterval(() => {
-                if (qIndex >= executionQueue.length) {
-                    clearInterval(runningTimer);
-                    runningTimer = null;
-                    document.getElementById('virtualBotCursor').classList.add('hidden');
-                    document.getElementById('btnStopWorkflow').classList.add('hidden');
-                    logBotEvent(`✅ รันชุดคำสั่งอัตโนมัติครบ ${executionQueue.length} ขั้นตอนเสร็จสมบูรณ์!`, 'success');
-                    showToast('บอททำงานครบทุกขั้นตอนเรียบร้อยแล้ว!');
-                    return;
-                }
-
-                const item = executionQueue[qIndex];
-                const activePage = viewport.querySelector('.sim-page:not(.hidden)') || viewport;
-                const candidates = Array.from(activePage.querySelectorAll(item.selector));
-                const targetEl = candidates[item.loopIdx] || candidates[0];
-
-                if (item.action === 'wait') {
-                    logBotEvent(`⏱️ [รอบ ${item.loopIdx + 1}] หน่วงเวลา ${item.resolvedValue}`);
-                } else if (item.action === 'scroll') {
-                    window.scrollBy({ top: 80, behavior: 'smooth' });
-                    logBotEvent(`📜 [รอบ ${item.loopIdx + 1}] เลื่อนหน้าจออัตโนมัติ`);
-                } else if (!targetEl) {
-                    logBotEvent(`⚠️ [รอบ ${item.loopIdx + 1}] ไม่พบ Selector "${item.selector}" ในหน้าจำลองปัจจุบัน`, 'warn');
-                } else {
-                    moveBotCursorToElement(targetEl);
-                    targetEl.focus();
-
-                    if (item.action === 'fill') {
-                        const nativeSetter = Object.getOwnPropertyDescriptor(
-                            targetEl.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype,
-                            'value'
-                        )?.set;
-                        if (nativeSetter) {
-                            nativeSetter.call(targetEl, item.resolvedValue);
-                        } else {
-                            targetEl.value = item.resolvedValue;
-                        }
-                        targetEl.dispatchEvent(new Event('input', { bubbles: true }));
-                        targetEl.dispatchEvent(new Event('change', { bubbles: true }));
-                        logBotEvent(`⌨️ [รอบ ${item.loopIdx + 1}] พิมพ์ "${item.resolvedValue}" ลงใน ${item.selector}`);
-                    } else if (item.action === 'select') {
-                        if (targetEl.tagName === 'SELECT') {
-                            const match = Array.from(targetEl.options).find(o => o.value === item.resolvedValue || o.text.includes(item.resolvedValue));
-                            if (match) targetEl.value = match.value;
-                            targetEl.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
-                        logBotEvent(`📋 [รอบ ${item.loopIdx + 1}] เลือกเมนู "${item.resolvedValue}" ใน ${item.selector}`);
-                    } else if (item.action === 'click') {
-                        targetEl.click();
-                        logBotEvent(`🖱️ [รอบ ${item.loopIdx + 1}] คลิกเมาส์ที่ปุ่ม ${item.selector}`, 'success');
-                    } else if (item.action === 'keypress') {
-                        ['keydown', 'keypress', 'keyup'].forEach(ev => {
-                            targetEl.dispatchEvent(new KeyboardEvent(ev, { key: item.resolvedValue || 'Enter', bubbles: true }));
-                        });
-                        logBotEvent(`⏎ [รอบ ${item.loopIdx + 1}] กดปุ่มคีย์บอร์ด ${item.resolvedValue}`);
-                    } else if (item.action === 'extract') {
-                        const text = (targetEl.innerText || targetEl.value || '').trim();
-                        logBotEvent(`📥 [รอบ ${item.loopIdx + 1}] ดึงข้อมูลจากเว็บสำเร็จ: "${text}"`, 'extract');
-                    }
-                }
-
-                qIndex++;
-            }, speed);
-        }
-
-        // ==========================================
-        // BATCH DATA PARSER
-        // ==========================================
-        function parseBatchData() {
-            const raw = document.getElementById('batchRawInput').value.trim();
-            if (!raw) return;
-            const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-            batchRows = lines.map((line, i) => {
-                const cols = line.includes('\t')
-                    ? line.split('\t').map(c => c.trim())
-                    : line.split(',').map(c => c.trim());
-                return {
-                    var1: cols[0] || `ITEM-${i + 1}`,
-                    var2: cols[1] || '100',
-                    var3: cols[2] || 'พร้อมใช้งาน'
-                };
-            });
-            renderBatchTable();
-            updateExportedScriptPreview();
-        }
-
-        function renderBatchTable() {
-            const tbody = document.getElementById('batchTableBody');
-            const label = document.getElementById('batchRowCountLabel');
-            if (label) label.innerText = batchRows.length;
-            if (!tbody) return;
-
-            tbody.innerHTML = batchRows.map((r, i) => `
-                <tr class="hover:bg-slate-900/60">
-                    <td class="p-2.5 text-center text-slate-400 font-mono">${i + 1}</td>
-                    <td class="p-2.5 text-cyan-300 font-semibold">${r.var1}</td>
-                    <td class="p-2.5 text-indigo-300">${r.var2}</td>
-                    <td class="p-2.5 text-amber-300">${r.var3}</td>
-                </tr>
-            `).join('');
-        }
-
-        // ==========================================
-        // UNIVERSAL FLOATING HUD BOT (INJECTABLE ON ANY EXTERNAL WEBSITE)
-        // ==========================================
-        function launchUniversalFloatingHud() {
-            if (document.getElementById('ailab-universal-hud')) {
-                document.getElementById('ailab-universal-hud').style.display = 'flex';
-                return;
-            }
-
-            const style = document.createElement('style');
-            style.innerHTML = `
-                #ailab-universal-hud {
-                    position: fixed; top: 20px; right: 20px; width: 350px;
-                    background: #090d16; color: #f8fafc; border-radius: 18px;
-                    border: 2px solid #06b6d4; z-index: 2147483646;
-                    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.75), 0 0 25px rgba(6,182,212,0.3);
-                    font-family: 'Sarabun', sans-serif; font-size: 12px;
-                    display: flex; flex-direction: column; overflow: hidden;
-                }
-                #ailab-universal-hud * { box-sizing: border-box; }
-                .hud-head {
-                    background: linear-gradient(135deg, #0f172a, #1e1b4b, #0891b2);
-                    padding: 10px 14px; cursor: move; display: flex; justify-content: space-between; align-items: center;
-                }
-                .hud-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 9px; }
-                .hud-inp, .hud-sel, .hud-ta {
-                    width: 100%; background: #1e293b; border: 1px solid #334155; color: #fff;
-                    border-radius: 8px; padding: 6px 8px; font-size: 12px; outline: none;
-                }
-                .hud-btn {
-                    border: none; border-radius: 8px; padding: 8px 10px; font-weight: 700;
-                    cursor: pointer; font-size: 12px; transition: 0.15s;
-                }
-                .hud-highlight { outline: 3px dashed #f59e0b !important; background: rgba(245,158,11,0.15) !important; }
-            `;
-            document.head.appendChild(style);
-
-            const hud = document.createElement('div');
-            hud.id = 'ailab-universal-hud';
-            hud.innerHTML = `
-                <div class="hud-head" id="hud-drag-bar">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:16px;">🤖</span>
-                        <div>
-                            <div style="font-weight:800;font-size:13px;">AiLab AutoBot Remote</div>
-                            <div style="font-size:10px;color:#67e8f9;">สั่งการทุกเว็บอัตโนมัติ • นายเมธาวัฒน์ พงสะพัง</div>
-                        </div>
-                    </div>
-                    <button id="hud-close-btn" style="background:#ef4444;color:#fff;border:none;width:24px;height:24px;border-radius:6px;cursor:pointer;">✕</button>
-                </div>
-                <div class="hud-body">
-                    <div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#94a3b8;font-weight:600;">
-                            <span>1. ชี้เป้าจุดที่ต้องการสั่งงาน</span>
-                            <span id="hud-target-tag" style="color:#fbbf24;">ยังไม่ล็อกเป้า</span>
-                        </div>
-                        <button id="hud-pick-btn" class="hud-btn" style="width:100%;background:rgba(6,182,212,0.18);color:#22d3ee;border:1px dashed #06b6d4;">
-                            🎯 คลิกเพื่อชี้เป้าช่องกรอก / ปุ่มบนเว็บ
-                        </button>
-                    </div>
-                    <div>
-                        <div style="margin-bottom:4px;color:#94a3b8;font-weight:600;">2. รูปแบบคำสั่งอัตโนมัติ</div>
-                        <select id="hud-mode-sel" class="hud-sel">
-                            <option value="sequence">➡️ กรอกเรียงทุกช่องในฟอร์ม + กด Enter</option>
-                            <option value="vertical">⬇️ กรอกไล่ลงแนวตั้ง (ตารางเว็บ)</option>
-                            <option value="repeat_click">🖱️ คลิกปุ่มเดิมซ้ำอัตโนมัติ (Auto-Clicker)</option>
-                            <option value="click_all_similar">⚡ คลิกปุ่มประเภทเดียวกันทั้งหมดในหน้านี้</option>
-                        </select>
-                    </div>
-                    <div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:#94a3b8;font-weight:600;">
-                            <span>3. ข้อมูลที่จะสั่งพิมพ์ (บรรทัดละ 1 รอบ)</span>
-                            <span id="hud-speed-txt" style="color:#22d3ee;">300 ms</span>
-                        </div>
-                        <textarea id="hud-data-ta" rows="3" class="hud-ta" placeholder="วางรายการข้อความ หรือใส่จำนวนรอบคลิก..."></textarea>
-                    </div>
-                    <div style="display:flex;gap:6px;">
-                        <button id="hud-start-btn" class="hud-btn" style="flex:1;background:#10b981;color:#022c22;">▶ เริ่มรันบอท</button>
-                        <button id="hud-stop-btn" class="hud-btn" style="display:none;background:#ef4444;color:#fff;">⏹ หยุด</button>
-                    </div>
-                    <div id="hud-status-box" style="background:#020617;border:1px solid #1e293b;padding:8px;border-radius:8px;color:#38bdf8;font-size:11px;">
-                        💡 ชี้เป้าองค์ประกอบบนเว็บแล้วกดเริ่มรันได้เลย
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(hud);
-
-            let pickedEl = null;
-            let picking = false;
-            let hudTimer = null;
-            let hoverEl = null;
-
-            // Dragging
-            const dragBar = document.getElementById('hud-drag-bar');
-            let dragging = false, ox = 0, oy = 0;
-            dragBar.addEventListener('mousedown', (e) => {
-                if (e.target.tagName === 'BUTTON') return;
-                dragging = true;
-                const r = hud.getBoundingClientRect();
-                ox = e.clientX - r.left;
-                oy = e.clientY - r.top;
-            });
-            document.addEventListener('mousemove', (e) => {
-                if (!dragging) return;
-                hud.style.left = Math.max(0, Math.min(window.innerWidth - hud.offsetWidth, e.clientX - ox)) + 'px';
-                hud.style.top = Math.max(0, Math.min(window.innerHeight - 48, e.clientY - oy)) + 'px';
-                hud.style.right = 'auto';
-            });
-            document.addEventListener('mouseup', () => { dragging = false; });
-
-            document.getElementById('hud-close-btn').onclick = () => {
-                if (hudTimer) clearInterval(hudTimer);
-                hud.style.display = 'none';
-            };
-
-            const pickBtn = document.getElementById('hud-pick-btn');
-            pickBtn.onclick = () => {
-                picking = !picking;
-                pickBtn.innerText = picking ? '🔍 คลิกเลือกจุดเป้าหมายบนหน้าเว็บ...' : '🎯 คลิกเพื่อชี้เป้าช่องกรอก / ปุ่มบนเว็บ';
-            };
-
-            document.addEventListener('mouseover', (e) => {
-                if (!picking || hud.contains(e.target)) return;
-                if (hoverEl) hoverEl.classList.remove('hud-highlight');
-                hoverEl = e.target;
-                hoverEl.classList.add('hud-highlight');
-            }, true);
-
-            document.addEventListener('click', (e) => {
-                if (!picking || hud.contains(e.target)) return;
-                e.preventDefault();
-                e.stopPropagation();
-                if (hoverEl) hoverEl.classList.remove('hud-highlight');
-                picking = false;
-                pickedEl = e.target;
-                document.getElementById('hud-target-tag').innerText = '✔ ' + pickedEl.tagName;
-                document.getElementById('hud-target-tag').style.color = '#34d399';
-                pickBtn.innerText = '🎯 เปลี่ยนเป้าหมายใหม่';
-                document.getElementById('hud-status-box').innerHTML = '🎯 ล็อกเป้าหมายแล้ว กด <b>เริ่มรันบอท</b> ได้เลย';
-            }, true);
-
-            const startBtn = document.getElementById('hud-start-btn');
-            const stopBtn = document.getElementById('hud-stop-btn');
-
-            stopBtn.onclick = () => {
-                if (hudTimer) clearInterval(hudTimer);
-                startBtn.style.display = 'inline-block';
-                stopBtn.style.display = 'none';
-                document.getElementById('hud-status-box').innerHTML = '⏹ หยุดบอทเรียบร้อยแล้ว';
-            };
-
-            startBtn.onclick = () => {
-                if (!pickedEl) {
-                    document.getElementById('hud-status-box').innerHTML = '⚠️ กรุณากดปุ่ม 🎯 ชี้เป้าบนหน้าเว็บก่อนครับ';
-                    return;
-                }
-                const mode = document.getElementById('hud-mode-sel').value;
-                const raw = document.getElementById('hud-data-ta').value.trim();
-                const lines = raw ? raw.split('\n').map(s => s.trim()) : ['Auto-1', 'Auto-2', 'Auto-3'];
-
-                let targets = [pickedEl];
-                const allInputs = Array.from(document.querySelectorAll('input, textarea, select')).filter(el => !hud.contains(el) && !el.disabled);
-                if (mode === 'sequence') {
-                    const i = allInputs.indexOf(pickedEl);
-                    targets = i !== -1 ? allInputs.slice(i) : allInputs;
-                } else if (mode === 'vertical') {
-                    const rx = pickedEl.getBoundingClientRect().left;
-                    targets = allInputs.filter(el => Math.abs(el.getBoundingClientRect().left - rx) < 30);
-                } else if (mode === 'click_all_similar') {
-                    const tag = pickedEl.tagName;
-                    targets = Array.from(document.querySelectorAll(tag)).filter(el => !hud.contains(el));
-                }
-
-                let idx = 0;
-                const maxSteps = mode === 'repeat_click' ? lines.length : Math.min(lines.length, Math.max(1, targets.length));
-                startBtn.style.display = 'none';
-                stopBtn.style.display = 'inline-block';
-
-                hudTimer = setInterval(() => {
-                    if (idx >= maxSteps) {
-                        clearInterval(hudTimer);
-                        startBtn.style.display = 'inline-block';
-                        stopBtn.style.display = 'none';
-                        document.getElementById('hud-status-box').innerHTML = `✅ สั่งการเสร็จสิ้น ${idx} รายการ!`;
-                        return;
-                    }
-                    const el = mode === 'repeat_click' ? pickedEl : (targets[idx] || pickedEl);
-                    const val = lines[idx % lines.length];
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.focus();
-                    if (el.tagName === 'BUTTON' || mode === 'repeat_click' || mode === 'click_all_similar') {
-                        el.click();
-                    } else {
-                        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
-                        if (setter && el.tagName === 'INPUT') setter.call(el, val);
-                        else el.value = val;
-                        el.dispatchEvent(new Event('input', { bubbles: true }));
-                        el.dispatchEvent(new Event('change', { bubbles: true }));
-                        el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true }));
-                    }
-                    idx++;
-                    document.getElementById('hud-status-box').innerHTML = `🚀 กำลังรันขั้นตอนที่ ${idx}/${maxSteps}...`;
-                }, 320);
-            };
-        }
-
-        // ==========================================
-        // CODE & BOOKMARKLET GENERATORS
-        // ==========================================
-        function getBookmarkletCode() {
-            return 'javascript:(' + launchUniversalFloatingHud.toString() + ')();';
-        }
-
-        function updateExportedScriptPreview() {
-            const bmLink = document.getElementById('bookmarkletDragLink');
-            if (bmLink) bmLink.href = getBookmarkletCode();
-
-            const format = document.getElementById('exportScriptFormat')?.value || 'console';
-            const targetUrl = document.getElementById('targetWebsiteUrl')?.value || 'https://example.com';
-            const box = document.getElementById('exportedCodeBox');
-            if (!box) return;
-
-            if (format === 'console') {
-                box.value = `// วางโค้ดนี้ในหน้าต่าง Inspect -> Console (F12) บนเว็บ: ${targetUrl}\n(${launchUniversalFloatingHud.toString()})();`;
-            } else {
-                const stepsCode = pipelineSteps.map(s => {
-                    if (s.action === 'fill') return `    await page.fill('${s.selector}', '${s.value}');`;
-                    if (s.action === 'click') return `    await page.click('${s.selector}');`;
-                    if (s.action === 'select') return `    await page.selectOption('${s.selector}', '${s.value}');`;
-                    if (s.action === 'keypress') return `    await page.keyboard.press('${s.value || 'Enter'}');`;
-                    return `    await page.waitForTimeout(350);`;
-                }).join('\n');
-
-                box.value = `// สคริปต์ Node.js Playwright สั่งการเว็บอัตโนมัติ (พัฒนาโดย นายเมธาวัฒน์ พงสะพัง)
-const { chromium } = require('playwright');
-
-(async () => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
-  await page.goto('${targetUrl}');
-
-  const batchData = ${JSON.stringify(batchRows)};
-  for (const row of batchData) {
-${stepsCode}
-    await page.waitForTimeout(350);
+  function setNativeValue(el, val) {
+    const setter = Object.getOwnPropertyDescriptor(el, 'value')?.set;
+    const protoSetter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')?.set;
+    if (setter && setter !== protoSetter) protoSetter.call(el, val);
+    else if (setter) setter.call(el, val);
+    else el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
   }
-})();`;
-            }
-        }
 
-        function downloadTampermonkeyScript() {
-            const targetUrl = document.getElementById('targetWebsiteUrl').value.trim() || '*://*/*';
-            const content = `// ==UserScript==
-// @name         AiLab Universal Web Auto-Commander
+  function findByKeywordOrSel(ruleStr) {
+    const parts = ruleStr.split('|').map(s => s.trim()).filter(Boolean);
+    for (const p of parts) {
+      if (p.startsWith('#') || p.startsWith('.') || p.startsWith('input') || p.startsWith('button')) {
+        try { const found = document.querySelector(p); if (found) return found; } catch(e){}
+      }
+    }
+    const regex = new RegExp(parts.join('|'), 'i');
+    const candidates = Array.from(document.querySelectorAll('button, a, input[type="submit"], input[type="button"], [role="button"]'));
+    return candidates.find(el => !panel.contains(el) && regex.test((el.innerText || el.value || el.getAttribute('aria-label') || '').trim()));
+  }
+
+  async function moveAndAct(el, action, text) {
+    if (!el) return false;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    await new Promise(r => setTimeout(r, 220));
+    const rect = el.getBoundingClientRect();
+    const x = Math.round(rect.left + rect.width * 0.5);
+    const y = Math.round(rect.top + rect.height * 0.5);
+    cur.style.left = x + 'px';
+    cur.style.top = y + 'px';
+    document.getElementById('ailab-cur-tag').textContent = action.toUpperCase();
+    await new Promise(r => setTimeout(r, 380));
+    cur.style.transform = 'scale(0.8)';
+    setTimeout(() => cur.style.transform = 'scale(1)', 140);
+    el.focus();
+    if (action === 'click') {
+      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      el.click();
+    } else if (action === 'type') {
+      setNativeValue(el, text);
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+    }
+    return true;
+  }
+
+  async function loop() {
+    const logEl = document.getElementById('ab-log');
+    while (CFG.running) {
+      CFG.userId = document.getElementById('ab-uid').value;
+      CFG.password = document.getElementById('ab-pwd').value;
+      CFG.message = document.getElementById('ab-msg').value;
+
+      const uEl = document.querySelector(CFG.userSel);
+      const pEl = document.querySelector(CFG.passSel);
+      if (uEl && pEl && !panel.contains(uEl) && !pEl.value) {
+        logEl.textContent = 'กำลังกรอก ID และ Password...';
+        await moveAndAct(uEl, 'type', CFG.userId);
+        await moveAndAct(pEl, 'type', CFG.password);
+        const lBtn = findByKeywordOrSel(CFG.loginKey);
+        if (lBtn) await moveAndAct(lBtn, 'click');
+        await new Promise(r => setTimeout(r, 1200));
+      }
+
+      const textInputs = Array.from(document.querySelectorAll('textarea, input[type="text"], input[type="search"], [contenteditable="true"]'))
+        .filter(el => !panel.contains(el) && el !== uEl && el !== pEl && el.offsetParent !== null);
+      if (textInputs.length > 0 && CFG.message) {
+        logEl.textContent = 'กำลังพิมพ์ข้อความลงหน้าเว็บ...';
+        await moveAndAct(textInputs[0], 'type', CFG.message);
+      }
+
+      const playBtn = findByKeywordOrSel(CFG.playKey);
+      if (playBtn) {
+        logEl.textContent = 'กำลังคลิกปุ่ม Play / ส่งคำสั่ง...';
+        await moveAndAct(playBtn, 'click');
+      }
+
+      CFG.cycles++;
+      document.getElementById('ab-stat').textContent = 'RUN #' + CFG.cycles;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+
+  document.getElementById('ab-start').onclick = () => {
+    if (CFG.running) return;
+    CFG.running = true;
+    document.getElementById('ab-stat').textContent = 'RUNNING';
+    loop();
+  };
+  document.getElementById('ab-stop').onclick = () => {
+    CFG.running = false;
+    document.getElementById('ab-stat').textContent = 'PAUSED';
+    document.getElementById('ab-log').textContent = 'หยุดพักบอทแล้ว';
+  };
+  document.getElementById('ab-start').click();
+})();`;
+    }
+
+    function updateExportCodes() {
+      const url = document.getElementById('cfg-url').value.trim();
+      const uid = document.getElementById('cfg-userid').value.trim();
+      const pwd = document.getElementById('cfg-password').value.trim();
+      const msg = document.getElementById('cfg-message').value.trim();
+
+      const rawInjector = buildRealWebInjectorScript();
+      document.getElementById('export-js-code').textContent = rawInjector;
+
+      // Update Bookmarklet Drag href
+      const bookmarkletHref = 'javascript:' + encodeURIComponent(rawInjector);
+      document.getElementById('bookmarklet-drag-link').setAttribute('href', bookmarkletHref);
+
+      // Tampermonkey Userscript
+      const tmCode = `// ==UserScript==
+// @name         AiLab Real-Web AutoMouse Bot 24/7
 // @namespace    https://ailabv2.vercel.app/
-// @version      4.0
-// @description  ระบบสั่งการเว็บไซต์อัตโนมัติทุกเว็บ (พัฒนาโดย นายเมธาวัฒน์ พงสะพัง)
-// @author       นายเมธาวัฒน์ พงสะพัง
+// @version      2.0
+// @description  บอทเมาส์ล็อกอิน พิมพ์ข้อความ และคลิกปุ่ม Play อัตโนมัติแบบไม่หยุดพักบนเว็บจริง
+// @author       Ai Lab Studio dev (นายเมธาวัฒน์ พงสะพัง)
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
 
-(function() {
-    'use strict';
-    // Target Website: ${targetUrl}
-    ${launchUniversalFloatingHud.toString()}
+${rawInjector}`;
+      document.getElementById('export-tm-code').textContent = tmCode;
 
-    const btn = document.createElement('button');
-    btn.innerHTML = '🤖 AiLab AutoBot';
-    btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483645;background:linear-gradient(135deg,#06b6d4,#4f46e5);color:#fff;border:2px solid #fff;border-radius:999px;padding:8px 14px;font-weight:bold;font-size:12px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,0.4);';
-    btn.onclick = launchUniversalFloatingHud;
-    document.body.appendChild(btn);
-})();`;
+      // Python Playwright + PyAutoGUI Real Browser & OS Mouse Script
+      const pyCode = `# === AiLab Real-Web & Hardware Mouse Bot (Python Playwright + PyAutoGUI) ===
+# ใช้งานบนเว็บจริง 100% เปิดเบราว์เซอร์จริง ล็อกอิน พิมพ์คำสั่ง และคลิกปุ่ม Play ไม่หยุดพัก
+# 1. ติดตั้ง: pip install playwright pyautogui && playwright install chromium
+# 2. รันบอท: python ailab_real_bot.py
 
-            const blob = new Blob([content], { type: 'text/javascript;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'ailab-universal-web-autobot.user.js';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast('ดาวน์โหลดไฟล์ .user.js สำหรับฝังทุกเว็บเรียบร้อย!');
-        }
+import time
+from playwright.sync_api import sync_playwright
 
-        // ==========================================
-        // INITIALIZE ALL LISTENERS
-        // ==========================================
-        window.addEventListener('DOMContentLoaded', () => {
-            initTargetSimulators();
-            renderPipeline();
-            renderBatchTable();
-            updateExportedScriptPreview();
-            logBotEvent('💡 ระบบ AiLab Universal Web Auto-Commander พร้อมสั่งการเว็บไซต์เป้าหมายแล้ว');
+TARGET_URL = ${JSON.stringify(url)}
+USER_ID    = ${JSON.stringify(uid)}
+PASSWORD   = ${JSON.stringify(pwd)}
+MESSAGE    = ${JSON.stringify(msg)}
 
-            // Top View Navigation
-            document.querySelectorAll('.nav-view-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const viewId = btn.getAttribute('data-view');
-                    document.querySelectorAll('.app-view').forEach(v => {
-                        v.classList.toggle('hidden', v.id !== viewId);
-                    });
-                    document.querySelectorAll('.nav-view-btn').forEach(b => {
-                        b.className = b === btn
-                            ? 'nav-view-btn bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow'
-                            : 'nav-view-btn text-slate-300 hover:bg-slate-800/80 font-semibold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2';
-                    });
-                });
-            });
+def run_real_web_bot():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
+        print(f"[AiLab Real Bot] กำลังเปิดเว็บจริง: {TARGET_URL}")
+        page.goto(TARGET_URL)
 
-            // Quick Target Website Chips
-            document.querySelectorAll('.quick-url-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const url = btn.getAttribute('data-url');
-                    const sim = btn.getAttribute('data-sim');
-                    document.getElementById('targetWebsiteUrl').value = url;
-                    document.getElementById('browserAddressText').innerText = url;
-                    switchSimTemplate(sim);
-                    updateExportedScriptPreview();
-                    showToast(`ตั้งค่าเว็บเป้าหมายเป็น ${url} แล้ว`);
-                });
-            });
+        cycle = 0
+        while True:
+            cycle += 1
+            print(f"=== รอบการทำงานบนเว็บจริง #{cycle} ===")
+            try:
+                # 1. ตรวจหาช่อง User ID และ Password บนหน้าเว็บจริง
+                user_input = page.locator("input[type='text'], input[type='email'], input[name*='user'], input[id*='user']").first
+                pass_input = page.locator("input[type='password']").first
+                if user_input.is_visible() and pass_input.is_visible():
+                    user_input.click()
+                    user_input.fill(USER_ID)
+                    pass_input.click()
+                    pass_input.fill(PASSWORD)
+                    login_btn = page.locator("button:has-text('Login'), button:has-text('เข้าสู่ระบบ'), button[type='submit']").first
+                    if login_btn.is_visible():
+                        login_btn.click()
+                        page.wait_for_timeout(1500)
 
-            document.getElementById('btnConnectSimulatedWeb').addEventListener('click', () => {
-                const url = document.getElementById('targetWebsiteUrl').value.trim() || 'https://example.com';
-                document.getElementById('browserAddressText').innerText = url;
-                updateExportedScriptPreview();
-                logBotEvent(`🌐 เชื่อมต่อโครงสร้างหน้าเว็บเป้าหมาย: ${url}`);
-                showToast('ซิงค์ลิงก์เว็บไซต์เข้าหน้าต่างจำลองแล้ว');
-            });
+                # 2. คลิกช่องรับคำสั่งและพิมพ์ข้อความ
+                msg_box = page.locator("textarea, input[type='text'], input[type='search']").first
+                if msg_box.is_visible():
+                    msg_box.click()
+                    msg_box.fill(MESSAGE)
+                    msg_box.press("Enter")
 
-            document.getElementById('btnOpenRealWebTab').addEventListener('click', () => {
-                const url = document.getElementById('targetWebsiteUrl').value.trim() || 'https://www.google.com';
-                copyText(`(${launchUniversalFloatingHud.toString()})();`);
-                window.open(url, '_blank', 'noopener,noreferrer');
-                showToast('เปิดเว็บเป้าหมายในแท็บใหม่ + คัดลอกสคริปต์ AutoBot ให้พร้อมวางแล้ว!');
-            });
+                # 3. คลิกปุ่ม Play บนหน้าเว็บจริง
+                play_btn = page.locator("button:has-text('Play'), button:has-text('PLAY'), button:has-text('เล่น'), button:has-text('เริ่ม')").first
+                if play_btn.is_visible():
+                    play_btn.click()
 
-            // Macro Preset Buttons
-            document.querySelectorAll('.macro-preset-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    switchSimTemplate(btn.getAttribute('data-macro'));
-                    showToast('เปลี่ยนชุดคำสั่งอัตโนมัติเรียบร้อย');
-                });
-            });
+            except Exception as err:
+                print(f"[แจ้งเตือน] รอองค์ประกอบหน้าเว็บ: {err}")
 
-            document.getElementById('simTemplateSwitcher').addEventListener('change', (e) => {
-                switchSimTemplate(e.target.value);
-            });
+            time.sleep(1.2)
 
-            // Variable Chips
-            document.querySelectorAll('.var-chip').forEach(chip => {
-                chip.addEventListener('click', () => {
-                    document.getElementById('stepParamValue').value = chip.getAttribute('data-var');
-                });
-            });
+if __name__ == "__main__":
+    run_real_web_bot()`;
 
-            // Add Custom Step
-            document.getElementById('btnAddCommandStep').addEventListener('click', () => {
-                const action = document.getElementById('stepActionType').value;
-                const selector = document.getElementById('stepTargetSelector').value.trim() || '.target-input-1';
-                const value = document.getElementById('stepParamValue').value.trim() || '{{var1}}';
-                pipelineSteps.push({ action, selector, value });
-                renderPipeline();
-                showToast('เพิ่มคำสั่งลงในคิวอัตโนมัติแล้ว');
-            });
+      document.getElementById('export-py-code').textContent = pyCode;
+    }
 
-            document.getElementById('btnClearPipeline').addEventListener('click', () => {
-                pipelineSteps = [];
-                renderPipeline();
-                showToast('ล้างคิวคำสั่งทั้งหมดแล้ว');
-            });
+    function setupTargetHandlers() {
+      document.getElementById('sim-btn-login').addEventListener('click', () => {
+        const u = document.getElementById('sim-input-user').value || document.getElementById('cfg-userid').value;
+        state.loggedInUser = u;
+        document.getElementById('sim-auth-pill').textContent = `ล็อกอินสำเร็จ: ${u}`;
+        document.getElementById('sim-auth-pill').className = 'px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0';
+        document.getElementById('login-indicator').textContent = '✓ เข้าสู่ระบบแล้ว';
+        document.getElementById('login-indicator').className = 'text-[11px] text-emerald-400 font-semibold';
+        document.getElementById('session-user-text').textContent = u;
+        appendSimFeed(`เข้าสู่ระบบสำเร็จด้วย ID: <strong class="text-cyan-300">${u}</strong>`);
+      });
 
-            // Visual Target Picker inside Sandbox Viewport
-            const pickStepBtn = document.getElementById('btnVisualPickStep');
-            pickStepBtn.addEventListener('click', () => {
-                isPickingSelector = !isPickingSelector;
-                pickStepBtn.innerText = isPickingSelector ? '🔍 คลิกจุดที่ต้องการในหน้าเว็บจำลอง...' : '🎯 ชี้เป้าบนหน้าเว็บ';
-                if (isPickingSelector) showToast('คลิกเลือกช่องกรอกหรือปุ่มในหน้าเว็บจำลองด้านขวาได้เลยครับ');
-            });
+      document.getElementById('sim-btn-logout').addEventListener('click', () => {
+        state.loggedInUser = null;
+        document.getElementById('sim-input-user').value = '';
+        document.getElementById('sim-input-pass').value = '';
+        document.getElementById('sim-auth-pill').textContent = 'ออกจากระบบแล้ว';
+        document.getElementById('login-indicator').textContent = 'รอล็อกอิน';
+        document.getElementById('session-user-text').textContent = 'Guest';
+        appendSimFeed('ออกจากระบบแล้ว (Logged Out)');
+      });
 
-            document.getElementById('targetWebViewport').addEventListener('click', (e) => {
-                if (isPickingSelector) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    isPickingSelector = false;
-                    pickStepBtn.innerText = '🎯 ชี้เป้าบนหน้าเว็บ';
-                    const el = e.target;
-                    let sel = el.tagName.toLowerCase();
-                    if (el.id) sel = `#${el.id}`;
-                    else if (el.classList.length > 0) sel = `.${el.classList[0]}`;
-                    document.getElementById('stepTargetSelector').value = sel;
-                    showToast(`ดึง Selector เป้าหมาย "${sel}" สำเร็จ!`);
-                    return;
-                }
+      document.getElementById('sim-btn-send').addEventListener('click', () => {
+        const val = document.getElementById('sim-input-prompt').value || '(ข้อความว่าง)';
+        appendSimFeed(`ส่งคำสั่งแล้ว: <span class="text-emerald-300">"${val}"</span>`);
+      });
 
-                if (isRecording && (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT')) {
-                    const el = e.target;
-                    const sel = el.id ? `#${el.id}` : (el.classList.length > 0 ? `.${el.classList[0]}` : el.tagName.toLowerCase());
-                    if (el.tagName === 'BUTTON') {
-                        pipelineSteps.push({ action: 'click', selector: sel, value: 'คลิกซ้าย' });
-                        renderPipeline();
-                        logBotEvent(`🔴 [บันทึกสด] เพิ่มคำสั่งคลิกปุ่ม ${sel}`);
-                    }
-                }
-            }, true);
+      document.getElementById('sim-btn-play').addEventListener('click', () => {
+        state.playCount++;
+        document.getElementById('sim-play-counter').textContent = state.playCount;
+        appendSimFeed(`▶ คลิกปุ่ม <strong>PLAY</strong> สำเร็จ! (ครั้งที่ #${state.playCount})`);
+      });
 
-            document.getElementById('targetWebViewport').addEventListener('change', (e) => {
-                if (!isRecording) return;
-                const el = e.target;
-                const sel = el.id ? `#${el.id}` : (el.classList.length > 0 ? `.${el.classList[0]}` : el.tagName.toLowerCase());
-                pipelineSteps.push({
-                    action: el.tagName === 'SELECT' ? 'select' : 'fill',
-                    selector: sel,
-                    value: el.value
-                });
-                renderPipeline();
-                logBotEvent(`🔴 [บันทึกสด] เพิ่มคำสั่งกรอกค่า "${el.value}" ที่ ${sel}`);
-            });
+      document.getElementById('sim-btn-bonus').addEventListener('click', () => {
+        state.bonusCount += 1;
+        document.getElementById('sim-bonus-counter').textContent = state.bonusCount;
+        appendSimFeed(`⚡ คลิกปุ่มเสริมสำเร็จ (#${state.bonusCount})`);
+      });
 
-            // Live Recorder Toggle
-            document.getElementById('btnToggleRecord').addEventListener('click', () => {
-                isRecording = !isRecording;
-                const label = document.getElementById('recordBtnLabel');
-                const dot = document.getElementById('recordDot');
-                if (isRecording) {
-                    label.innerText = 'กำลังบันทึก... (คลิกเพื่อหยุด)';
-                    dot.classList.add('animate-ping');
-                    showToast('เริ่มโหมดบันทึกสด! ลองพิมพ์หรือคลิกปุ่มในหน้าเว็บจำลองด้านขวาได้เลย');
-                } else {
-                    label.innerText = 'บันทึกการคลิก/พิมพ์สด';
-                    dot.classList.remove('animate-ping');
-                    showToast('หยุดการบันทึกสดแล้ว');
-                }
-            });
-
-            // Speed & Run Controls
-            const speedSlider = document.getElementById('botSpeedSlider');
-            speedSlider.addEventListener('input', () => {
-                document.getElementById('botSpeedText').innerText = `${speedSlider.value} ms`;
-            });
-
-            document.getElementById('btnRunCurrentWorkflow').addEventListener('click', executeWorkflowInSandbox);
-            document.getElementById('btnStopWorkflow').addEventListener('click', () => {
-                if (runningTimer) clearInterval(runningTimer);
-                runningTimer = null;
-                document.getElementById('virtualBotCursor').classList.add('hidden');
-                document.getElementById('btnStopWorkflow').classList.add('hidden');
-                logBotEvent('⏹ หยุดการทำงานของบอทแล้ว', 'warn');
-            });
-
-            document.getElementById('btnOpenFloatingHud').addEventListener('click', () => {
-                launchUniversalFloatingHud();
-                const hudTa = document.getElementById('hud-data-ta');
-                if (hudTa && !hudTa.value.trim()) {
-                    hudTa.value = batchRows.map(r => r.var1).join('\n');
-                }
-                showToast('เปิดรีโมท AutoBot ลอยตัวแล้ว!');
-            });
-
-            // Target Web Interactive Handlers
-            document.getElementById('btnEcomSubmit').addEventListener('click', () => {
-                const sku = document.getElementById('ecomSkuInput').value || 'PRO-AUTO';
-                const qty = document.getElementById('ecomQtyInput').value || '100';
-                const st = document.getElementById('ecomStatusSelect').value;
-                ecomSavedCount++;
-                document.getElementById('ecomSavedBadge').innerText = `อัปเดตแล้ว: ${ecomSavedCount} รายการ`;
-                const tbody = document.getElementById('ecomRecordsBody');
-                if (ecomSavedCount === 1) tbody.innerHTML = '';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="p-2 text-slate-400 font-mono">${new Date().toLocaleTimeString('th-TH')}</td>
-                    <td class="p-2 font-bold text-cyan-300">${sku}</td>
-                    <td class="p-2 text-white">${qty}</td>
-                    <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300">${st}</span></td>
-                `;
-                tbody.prepend(tr);
-            });
-
-            document.getElementById('btnFormSubmit').addEventListener('click', () => {
-                formSavedCount++;
-                document.getElementById('formSavedBadge').innerText = `ส่งฟอร์มแล้ว: ${formSavedCount} ชุด`;
-            });
-
-            document.getElementById('btnSocialPost').addEventListener('click', () => {
-                const feed = document.getElementById('socialFeedList');
-                const page = document.getElementById('sim-page-social');
-                const cap = page.querySelector('.target-input-1').value || 'โพสต์อัตโนมัติ';
-                const tag = page.querySelector('.target-input-2').value || '#AiLab';
-                const div = document.createElement('div');
-                div.className = 'bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs flex justify-between items-center';
-                div.innerHTML = `<div><span class="text-white font-semibold">${cap}</span> <span class="text-cyan-400 ml-2">${tag}</span></div><span class="text-[10px] text-emerald-400">✔ เผยแพร่แล้ว</span>`;
-                feed.prepend(div);
-            });
-
-            document.getElementById('btnResetTargetWeb').addEventListener('click', () => {
-                ecomSavedCount = 0;
-                formSavedCount = 0;
-                document.getElementById('ecomSavedBadge').innerText = 'อัปเดตแล้ว: 0 รายการ';
-                document.getElementById('formSavedBadge').innerText = 'ส่งฟอร์มแล้ว: 0 ชุด';
-                document.getElementById('ecomRecordsBody').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">รีเซ็ตข้อมูลหน้าเว็บจำลองเรียบร้อย</td></tr>';
-                document.getElementById('socialFeedList').innerHTML = '';
-                initTargetSimulators();
-                showToast('รีเซ็ตหน้าเว็บจำลองแล้ว');
-            });
-
-            // Log Export & Clear
-            document.getElementById('btnClearLogs').addEventListener('click', () => {
-                document.getElementById('botConsoleLog').innerHTML = '';
-            });
-            document.getElementById('btnExportLogs').addEventListener('click', () => {
-                const text = document.getElementById('botConsoleLog').innerText || 'No logs';
-                const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'autobot-execution-log.txt';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToast('ดาวน์โหลดไฟล์ Log เรียบร้อย');
-            });
-
-            // Batch Queue Controls
-            document.getElementById('btnParseBatch').addEventListener('click', () => {
-                parseBatchData();
-                showToast('อัปเดตตารางชุดข้อมูลลูปเรียบร้อย');
-            });
-            document.getElementById('btnLoadSampleBatch').addEventListener('click', () => {
-                document.getElementById('batchRawInput').value = `PRO-AI-001, 2450, พร้อมจัดส่ง\nPRO-AI-002, 1890, อนุมัติด่วน\nPRO-AI-003, 5400, พร้อมจัดส่ง\nPRO-AI-004, 990, รอดำเนินการ\nPRO-AI-005, 3200, อนุมัติด่วน`;
-                parseBatchData();
-                showToast('โหลดข้อมูลตัวอย่างเข้าคิวเรียบร้อย');
-            });
-
-            // Export & Bookmarklet Controls
-            document.getElementById('bookmarkletDragLink').addEventListener('click', (e) => {
-                e.preventDefault();
-                launchUniversalFloatingHud();
-                showToast('เปิดรีโมทบอทแล้ว! (ลากปุ่มสีทองนี้ไปวางที่แถบ Bookmarks เพื่อกดใช้บนเว็บอื่น)');
-            });
-            document.getElementById('btnCopyBookmarkletUrl').addEventListener('click', () => {
-                copyText(getBookmarkletCode());
-                showToast('คัดลอกลิงก์ Bookmarklet เรียบร้อย!');
-            });
-            document.getElementById('btnDownloadTampermonkey').addEventListener('click', downloadTampermonkeyScript);
-            document.getElementById('exportScriptFormat').addEventListener('change', updateExportedScriptPreview);
-            document.getElementById('btnCopyExportedCode').addEventListener('click', () => {
-                copyText(document.getElementById('exportedCodeBox').value);
-                showToast('คัดลอกสคริปต์สั่งการเรียบร้อยแล้ว!');
-            });
+      const recordableSelectors = [
+        '#sim-input-user', '#sim-input-pass', '#sim-btn-login',
+        '#sim-input-prompt', '#sim-btn-send', '#sim-btn-play', '#sim-btn-bonus'
+      ];
+      recordableSelectors.forEach(sel => {
+        const el = document.querySelector(sel);
+        if (!el) return;
+        el.addEventListener('mousedown', () => {
+          if (!state.recording) return;
+          const name = el.getAttribute('data-bot-name') || sel;
+          state.steps.push({
+            id: Date.now(),
+            action: 'click',
+            target: sel,
+            label: `คลิกที่ ${name}`,
+            value: ''
+          });
+          renderSteps();
+          updateExportCodes();
+          appendBotLog(`[บันทึกตำแหน่งคลิก] เพิ่มคำสั่งคลิก ${name} ลงคิว`, 'action');
         });
-    </script>
+      });
+    }
+
+    function copyTextToClipboard(text, toastId) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      if (toastId) {
+        const toast = document.getElementById(toastId);
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setupTargetHandlers();
+      renderSteps();
+      updateExportCodes();
+      appendBotLog('🚀 เริ่มเดินเมาส์บอทอัตโนมัติทันที! สังเกตลูกศรเมาส์สีเขียววิ่งไปคลิกและพิมพ์ข้อมูลจริงบนหน้าเว็บ...', 'success');
+      setTimeout(() => {
+        startBot();
+      }, 350);
+
+      // Top Navigation Tabs
+      const tabWorkspace = document.getElementById('tab-btn-workspace');
+      const tabExport = document.getElementById('tab-btn-export');
+      const viewWorkspace = document.getElementById('view-workspace');
+      const viewExport = document.getElementById('view-export');
+
+      tabWorkspace.addEventListener('click', () => {
+        viewWorkspace.classList.remove('hidden');
+        viewExport.classList.add('hidden');
+        tabWorkspace.className = 'px-3 py-1.5 rounded-lg font-semibold transition bg-emerald-500 text-slate-950 shadow';
+        tabExport.className = 'px-3 py-1.5 rounded-lg font-semibold transition text-slate-300 hover:text-white';
+      });
+
+      tabExport.addEventListener('click', () => {
+        updateExportCodes();
+        viewWorkspace.classList.add('hidden');
+        viewExport.classList.remove('hidden');
+        tabExport.className = 'px-3 py-1.5 rounded-lg font-semibold transition bg-emerald-500 text-slate-950 shadow';
+        tabWorkspace.className = 'px-3 py-1.5 rounded-lg font-semibold transition text-slate-300 hover:text-white';
+      });
+
+      // Stage Mode Switch (Active DOM vs Real Web Iframe)
+      const btnModeDom = document.getElementById('stage-mode-dom');
+      const btnModeIframe = document.getElementById('stage-mode-iframe');
+      const subDom = document.getElementById('subview-dom-arena');
+      const subIframe = document.getElementById('subview-real-iframe');
+
+      btnModeDom.addEventListener('click', () => {
+        subDom.classList.remove('hidden');
+        subIframe.classList.add('hidden');
+        btnModeDom.className = 'px-2.5 py-1 rounded-md font-semibold bg-emerald-500 text-slate-950 transition';
+        btnModeIframe.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-300 hover:text-white transition';
+      });
+
+      btnModeIframe.addEventListener('click', () => {
+        const url = document.getElementById('cfg-url').value.trim();
+        document.getElementById('real-web-iframe').src = url;
+        document.getElementById('iframe-current-url').textContent = url;
+        subDom.classList.add('hidden');
+        subIframe.classList.remove('hidden');
+        subIframe.classList.add('flex');
+        btnModeIframe.className = 'px-2.5 py-1 rounded-md font-semibold bg-emerald-500 text-slate-950 transition';
+        btnModeDom.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-300 hover:text-white transition';
+      });
+
+      document.getElementById('btn-load-real-iframe').addEventListener('click', () => {
+        btnModeIframe.click();
+        appendBotLog(`โหลดหน้าเว็บจริง ${document.getElementById('cfg-url').value} เข้าสู่กรอบแสดงผลแล้ว`, 'info');
+      });
+
+      // Open Real Popup Window + Copy Injector Script Automatically
+      document.getElementById('btn-launch-popup-window').addEventListener('click', () => {
+        updateExportCodes();
+        const code = buildRealWebInjectorScript();
+        copyTextToClipboard(code);
+        const targetUrl = document.getElementById('cfg-url').value.trim();
+        window.open(targetUrl, '_blank');
+        appendBotLog(`เปิดหน้าเว็บจริง (${targetUrl}) ในแท็บใหม่ และคัดลอกโค้ดเมาส์บอทลงคลิปบอร์ดให้แล้ว! กด F12 > Console แล้ววาง (Ctrl+V) เพื่อรันบอทบนเว็บนั้นได้เลย`, 'success');
+      });
+
+      // Site Presets
+      document.querySelectorAll('.site-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const type = btn.getAttribute('data-site-preset');
+          if (type === 'ailab') {
+            document.getElementById('cfg-url').value = 'https://ailabv2.vercel.app/';
+            document.getElementById('cfg-message').value = 'ฟิสิกส์';
+          } else if (type === 'sgs') {
+            document.getElementById('cfg-url').value = 'https://sgs.bopp-obec.info/sgs/TblTranscripts/Edit-TblTranscripts-Table.aspx';
+            document.getElementById('cfg-message').value = '80';
+          }
+          document.getElementById('browser-url-bar').textContent = document.getElementById('cfg-url').value;
+          updateExportCodes();
+          appendBotLog(`ตั้งค่าเว็บเป้าหมายเป็น ${document.getElementById('cfg-url').value}`, 'info');
+        });
+      });
+
+      // Start / Stop
+      document.getElementById('btn-start-bot').addEventListener('click', startBot);
+      document.getElementById('btn-stop-bot').addEventListener('click', stopBot);
+
+      // Parse NL
+      document.getElementById('btn-parse-nl').addEventListener('click', () => {
+        const text = document.getElementById('nl-command-input').value.trim();
+        if (text) parseThaiCommandToSteps(text);
+      });
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const preset = btn.getAttribute('data-preset');
+          if (preset === 'full-loop') {
+            document.getElementById('nl-command-input').value = 'คลิกช่อง id พิมพ์ id คลิกช่อง password พิมพ์ password คลิกปุ่ม login แล้วพิมพ์ข้อความ คลิกปุ่ม play ทำซ้ำไม่หยุดพัก';
+          } else if (preset === 'rapid-play') {
+            document.getElementById('nl-command-input').value = 'พิมพ์ข้อความ ส่งข้อมูล แล้วคลิกปุ่ม play วนซ้ำไม่หยุด';
+          } else if (preset === 're-login') {
+            document.getElementById('nl-command-input').value = 'คลิกช่อง id พิมพ์ id คลิกช่อง password พิมพ์ password คลิกปุ่ม login คลิกปุ่ม play';
+          }
+          parseThaiCommandToSteps(document.getElementById('nl-command-input').value);
+        });
+      });
+
+      // Record Mode
+      document.getElementById('btn-record-mode').addEventListener('click', () => {
+        state.recording = !state.recording;
+        const label = document.getElementById('record-label');
+        const dot = document.getElementById('record-dot');
+        if (state.recording) {
+          label.textContent = 'กำลังอัดคลิก (คลิกปุ่มฝั่งขวาได้เลย)';
+          dot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-ping';
+          appendBotLog('เปิดโหมดอัดการคลิก: คลิกช่องหรือปุ่มในหน้าต่างฝั่งขวาเพื่อบันทึกเป็นขั้นตอนบอท', 'warn');
+        } else {
+          label.textContent = 'อัดตำแหน่งการคลิก';
+          dot.className = 'w-2 h-2 rounded-full bg-rose-400';
+          appendBotLog('ปิดโหมดอัดการคลิกแล้ว', 'info');
+        }
+      });
+
+      // Add Step Modal
+      document.getElementById('btn-add-step-modal').addEventListener('click', () => {
+        document.getElementById('add-step-bar').classList.toggle('hidden');
+      });
+      document.getElementById('btn-cancel-step').addEventListener('click', () => {
+        document.getElementById('add-step-bar').classList.add('hidden');
+      });
+      document.getElementById('btn-Confirm-step').addEventListener('click', () => {
+        const action = document.getElementById('new-step-action').value;
+        const target = document.getElementById('new-step-target').value;
+        const val = document.getElementById('new-step-value').value;
+        const targetText = document.getElementById('new-step-target').selectedOptions[0].text;
+        state.steps.push({
+          id: Date.now(),
+          action,
+          target,
+          label: `${action.toUpperCase()} ที่ ${targetText}`,
+          value: action === 'click' ? '' : val
+        });
+        document.getElementById('add-step-bar').classList.add('hidden');
+        renderSteps();
+        updateExportCodes();
+      });
+
+      // Sync Config Inputs
+      ['cfg-url', 'cfg-userid', 'cfg-password', 'cfg-message', 'sel-real-user', 'sel-real-pass', 'sel-real-login', 'sel-real-play'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+          document.getElementById('browser-url-bar').textContent = document.getElementById('cfg-url').value;
+          renderSteps();
+          updateExportCodes();
+        });
+      });
+
+      // Reset
+      document.getElementById('btn-reset-sim').addEventListener('click', () => {
+        document.getElementById('sim-btn-logout').click();
+        document.getElementById('sim-input-prompt').value = '';
+        state.playCount = 0;
+        state.bonusCount = 0;
+        document.getElementById('sim-play-counter').textContent = '0';
+        document.getElementById('sim-bonus-counter').textContent = '0';
+        appendBotLog('รีเซ็ตสถานะหน้าเว็บเรียบร้อยแล้ว', 'info');
+      });
+
+      document.getElementById('btn-clear-log').addEventListener('click', () => {
+        document.getElementById('bot-console-log').innerHTML = '';
+      });
+
+      // Export Copy & Download
+      document.getElementById('btn-copy-js').addEventListener('click', () => copyTextToClipboard(document.getElementById('export-js-code').textContent, 'copy-toast-js'));
+      document.getElementById('btn-copy-tm').addEventListener('click', () => copyTextToClipboard(document.getElementById('export-tm-code').textContent, 'copy-toast-tm'));
+      document.getElementById('btn-copy-py').addEventListener('click', () => copyTextToClipboard(document.getElementById('export-py-code').textContent, 'copy-toast-py'));
+
+      document.getElementById('btn-download-py').addEventListener('click', () => {
+        const blob = new Blob([document.getElementById('export-py-code').textContent], { type: 'text/x-python' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'ailab_real_bot.py';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      // --- Floating Embedded HUD Controller Logic ---
+      const hudPanel = document.getElementById('embedded-hud-panel');
+      const hudBody = document.getElementById('hud-body-content');
+      const hudUid = document.getElementById('hud-input-uid');
+      const hudPwd = document.getElementById('hud-input-pwd');
+      const hudMsg = document.getElementById('hud-input-msg');
+      const hudSpeed = document.getElementById('hud-sel-speed');
+
+      function syncMainToHud() {
+        hudUid.value = document.getElementById('cfg-userid').value;
+        hudPwd.value = document.getElementById('cfg-password').value;
+        hudMsg.value = document.getElementById('cfg-message').value;
+        hudSpeed.value = document.getElementById('sel-speed').value;
+      }
+      function syncHudToMain() {
+        document.getElementById('cfg-userid').value = hudUid.value;
+        document.getElementById('cfg-password').value = hudPwd.value;
+        document.getElementById('cfg-message').value = hudMsg.value;
+        document.getElementById('sel-speed').value = hudSpeed.value;
+        renderSteps();
+        updateExportCodes();
+      }
+      [hudUid, hudPwd, hudMsg, hudSpeed].forEach(el => el.addEventListener('input', syncHudToMain));
+      ['cfg-userid', 'cfg-password', 'cfg-message', 'sel-speed'].forEach(id => {
+        document.getElementById(id).addEventListener('input', syncMainToHud);
+      });
+
+      // One-Click "ตั้งค่าเสร็จ! กดฝังแผงควบคุมบอททันที"
+      document.getElementById('btn-embed-hud-now').addEventListener('click', () => {
+        syncMainToHud();
+        updateExportCodes();
+        try {
+          localStorage.setItem('ailab_bot_config', JSON.stringify({
+            url: document.getElementById('cfg-url').value,
+            uid: document.getElementById('cfg-userid').value,
+            pwd: document.getElementById('cfg-password').value,
+            msg: document.getElementById('cfg-message').value
+          }));
+        } catch (e) {}
+
+        // Show & highlight floating HUD panel
+        hudPanel.classList.remove('hidden');
+        hudBody.classList.remove('hidden');
+        hudPanel.style.transform = 'scale(1.06)';
+        setTimeout(() => { hudPanel.style.transform = 'scale(1)'; }, 220);
+
+        // Copy real-web injector code to clipboard automatically
+        copyTextToClipboard(buildRealWebInjectorScript());
+        document.getElementById('embed-success-banner').classList.remove('hidden');
+        appendBotLog('⚡ ฝังแผงควบคุมลอย (Floating HUD) สำเร็จ + บันทึกค่าและคัดลอกสคริปต์ลงคลิปบอร์ดพร้อมใช้งาน!', 'success');
+        if (!state.running) startBot();
+      });
+
+      document.getElementById('btn-embed-and-open-external').addEventListener('click', () => {
+        document.getElementById('btn-embed-hud-now').click();
+        const targetUrl = document.getElementById('cfg-url').value.trim();
+        window.open(targetUrl, '_blank');
+      });
+
+      document.getElementById('btn-focus-hud').addEventListener('click', () => {
+        hudPanel.classList.remove('hidden');
+        hudBody.classList.remove('hidden');
+        hudPanel.style.transform = 'scale(1.08)';
+        setTimeout(() => { hudPanel.style.transform = 'scale(1)'; }, 250);
+      });
+
+      document.getElementById('hud-btn-minimize').addEventListener('click', () => {
+        hudBody.classList.toggle('hidden');
+      });
+
+      document.getElementById('hud-btn-close').addEventListener('click', () => {
+        hudPanel.classList.add('hidden');
+      });
+
+      document.getElementById('hud-btn-run').addEventListener('click', startBot);
+      document.getElementById('hud-btn-pause').addEventListener('click', stopBot);
+      document.getElementById('hud-btn-step').addEventListener('click', () => {
+        const step = state.steps[state.currentStepIndex] || state.steps[0];
+        if (step) {
+          executeStep(step);
+          state.currentStepIndex = (state.currentStepIndex + 1) % state.steps.length;
+          renderSteps();
+        }
+      });
+
+      // Crosshair Target Picker from HUD
+      let pickingTarget = false;
+      document.getElementById('hud-btn-pick-target').addEventListener('click', () => {
+        pickingTarget = !pickingTarget;
+        document.body.classList.toggle('hud-picking-cursor', pickingTarget);
+        const btn = document.getElementById('hud-btn-pick-target');
+        if (pickingTarget) {
+          btn.textContent = '🎯 คลิกปุ่มเป้าหมายได้เลย...';
+          document.getElementById('hud-status-line').textContent = 'โหมดชี้เป้า: คลิกปุ่มใดก็ได้เพื่อเพิ่มเข้าคิว';
+        } else {
+          btn.innerHTML = '<span>🎯</span> ชี้เป้าคลิกบนเว็บ';
+        }
+      });
+
+      document.getElementById('browser-stage').addEventListener('click', (e) => {
+        if (!pickingTarget) return;
+        const target = e.target.closest('button, input, textarea, a');
+        if (target && target.id) {
+          const labelName = target.getAttribute('data-bot-name') || target.id;
+          state.steps.push({
+            id: Date.now(),
+            action: target.tagName === 'INPUT' ? 'type' : 'click',
+            target: '#' + target.id,
+            label: `เป้าหมายที่เลือก (${labelName})`,
+            value: target.tagName === 'INPUT' ? '{{MESSAGE}}' : ''
+          });
+          renderSteps();
+          updateExportCodes();
+          appendBotLog(`🎯 ชี้เป้าสำเร็จ: เพิ่ม #${target.id} (${labelName}) เข้าคิวเมาส์บอทแล้ว`, 'action');
+          pickingTarget = false;
+          document.body.classList.remove('hud-picking-cursor');
+          document.getElementById('hud-btn-pick-target').innerHTML = '<span>🎯</span> ชี้เป้าคลิกบนเว็บ';
+        }
+      }, true);
+
+      // Make HUD Draggable anywhere on screen
+      (function makeHudDraggable() {
+        const handle = document.getElementById('hud-drag-handle');
+        let isDragging = false, startX = 0, startY = 0, initLeft = 0, initTop = 0;
+        handle.addEventListener('mousedown', (e) => {
+          if (e.target.tagName === 'BUTTON') return;
+          isDragging = true;
+          const rect = hudPanel.getBoundingClientRect();
+          hudPanel.style.right = 'auto';
+          hudPanel.style.bottom = 'auto';
+          hudPanel.style.left = rect.left + 'px';
+          hudPanel.style.top = rect.top + 'px';
+          startX = e.clientX;
+          startY = e.clientY;
+          initLeft = rect.left;
+          initTop = rect.top;
+        });
+        window.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          hudPanel.style.left = Math.max(8, initLeft + (e.clientX - startX)) + 'px';
+          hudPanel.style.top = Math.max(8, initTop + (e.clientY - startY)) + 'px';
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+      })();
+
+    });
+  </script>
 </body>
 </html>
