@@ -178,8 +178,8 @@
               <h2 class="text-sm sm:text-base font-extrabold text-amber-300">
                 ระบบแยกจอ AutoMouse + เชื่อมต่อเว็บเป้าหมาย (ไม่คลิกมั่วในหน้าตั้งค่า!)
               </h2>
-              <span id="remote-bridge-pill" class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[11px] font-bold mono">
-                รอเชื่อมเว็บเป้าหมาย
+              <span id="remote-bridge-pill" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold mono">
+                ⚡ โหมดเด้งจอ AutoMouse อัตโนมัติเมื่อเชื่อมเว็บแล้ว: เปิดใช้งาน
               </span>
             </div>
             <p class="text-xs text-slate-300">
@@ -564,8 +564,8 @@
               <button id="btn-copy-script" class="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-[11px] transition">
                 📋 คัดลอก JS (F12)
               </button>
-              <button id="btn-copy-userscript" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-[11px] transition" title="ใช้กับส่วนขยาย Tampermonkey ทะลุบล็อก YouTube 100%">
-                ⚡ Tampermonkey
+              <button id="btn-copy-userscript" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-[11px] transition" title="ติดตั้งใน Tampermonkey เพื่อให้เด้งจอ AutoMouse ขึ้นมาเองอัตโนมัติทันทีที่เปิดเว็บที่เชื่อมไว้">
+                ⚡ Tampermonkey (เด้งจอเองอัตโนมัติ)
               </button>
               <button id="btn-download-py-queue" class="px-2.5 py-1 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-[11px] transition" title="ดาวน์โหลดบอท Python คุมเบราว์เซอร์จริงทุกเว็บ">
                 🐍 โหลด Python (.py)
@@ -1550,8 +1550,15 @@
   window.__AILAB_SPY_ACTIVE = true;
 
   const STORAGE_KEY = '__AILAB_SPY_BOT_STATE_V11__';
+  const CONNECTED_KEY = '__AILAB_CONNECTED_SITE_LOCK__';
   const DEFAULT_QUEUE = ${serializedQueue};
   const DEFAULT_VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
+
+  // Mark this website/domain as a Connected Site ("เชื่อมเว็บนั้นแล้ว") so AutoMouse ALWAYS pops up its screen automatically whenever on this site!
+  try {
+    localStorage.setItem(CONNECTED_KEY, JSON.stringify({ host: location.hostname, origin: location.origin, connectedAt: Date.now(), autoPopup: true }));
+    sessionStorage.setItem(CONNECTED_KEY, '1');
+  } catch(e){}
 
   let saved = null;
   try { saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e){}
@@ -1565,7 +1572,8 @@
   let commandedByUser = isRecentCommandedRun;
   let idx = (saved && typeof saved.idx === 'number') ? (saved.idx % Math.max(1, QUEUE.length)) : 0;
   let cycles = (saved && typeof saved.cycles === 'number') ? saved.cycles : 0;
-  let minimized = Boolean(saved && saved.minimized);
+  // Always pop up expanded (minimized = false) when connected to the website!
+  let minimized = false;
   let hudPos = (saved && saved.hudPos) ? saved.hudPos : null;
   let masterShellActive = false;
   let masterIframe = null;
@@ -1793,7 +1801,8 @@
     hud = document.getElementById('ailab-q-hud');
     if (hud) return;
 
-    hud = mk('div', 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:rgba(5,9,20,0.97);color:#ecfdf5;border:2px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 22px 55px rgba(0,0,0,0.95);width:390px;max-width:95vw;');
+    hud = mk('div', 'position:fixed;bottom:18px;right:18px;z-index:2147483646;background:rgba(5,9,20,0.98);color:#ecfdf5;border:2.5px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 0 35px rgba(16,185,129,0.45),0 22px 55px rgba(0,0,0,0.95);width:395px;max-width:95vw;transition:transform 0.22s cubic-bezier(0.22,1,0.36,1);transform:scale(1.04);');
+    setTimeout(() => { if (hud) hud.style.transform = 'scale(1)'; }, 220);
     hud.id = 'ailab-q-hud';
     if (hudPos && hudPos.left && hudPos.top) {
       hud.style.right = 'auto'; hud.style.bottom = 'auto';
@@ -1834,7 +1843,7 @@
     header.append(title, hdrBtns);
 
     bodyWrap = mk('div', minimized ? 'display:none;' : 'display:block;');
-    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:5px;color:#34d399;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', 'STANDBY (ไม่รันเอง — รอคุณกดปุ่ม "▶ สั่งการเริ่มทำงาน")');
+    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:5px;color:#34d399;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #10b981;', '⚡ เชื่อมต่อเว็บ ' + location.hostname + ' แล้ว! (เด้งจอ AutoMouse ขึ้นมาอัตโนมัติ — รอกด ▶ สั่งการ)');
     spyTelemetryEl = mk('div', 'font-family:monospace;font-size:10px;margin-bottom:8px;color:#fbbf24;background:#020617;padding:4px 8px;border-radius:6px;border:1px solid #1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', '🎯 SPY LOCK: เลื่อนเมาส์เพื่อสแกนเป้าหมาย...');
 
     listBox = mk('div', 'max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
@@ -3382,25 +3391,81 @@ if __name__ == "__main__":
 
       document.getElementById('btn-detach-standalone-hud')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
       document.getElementById('btn-hero-detach-now')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
-      document.getElementById('btn-open-target-workspace')?.addEventListener('click', () => {
-        let u = document.getElementById('real-target-url')?.value.trim() || 'https://www.youtube.com/';
+      function connectTargetWebsiteAndAutoPopScreen(urlInput, openExternalTab) {
+        let u = (urlInput || document.getElementById('real-target-url')?.value || 'https://www.youtube.com/').trim();
         if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
-        document.getElementById('real-target-url').value = u;
+        const urlEl = document.getElementById('real-target-url');
+        if (urlEl) urlEl.value = u;
+
+        // Save connected website to localStorage so whenever this website is connected, AutoMouse screen pops up automatically!
+        try {
+          localStorage.setItem('__AILAB_CONNECTED_TARGET_URL__', u);
+        } catch (e) {}
+
+        // 1. Pop up the Embedded HUD Screen & Detached AutoMouse Window automatically upon connection!
+        const hud = document.getElementById('embedded-hud-panel');
+        const hudBody = document.getElementById('hud-body');
+        if (hud && hudBody) {
+          hud.classList.remove('hidden');
+          hudBody.classList.remove('hidden');
+          hud.style.transform = 'scale(1.06)';
+          setTimeout(() => { hud.style.transform = 'scale(1)'; }, 240);
+        }
+
+        // 2. Also open the Live Target Stage & Detached AutoMouse Window if not already open
         const wrap = document.getElementById('configured-web-stage-wrap');
         const ifr = document.getElementById('configured-web-iframe');
         const lbl = document.getElementById('stage-active-url-lbl');
         if (wrap && ifr) {
           wrap.classList.remove('hidden');
-          ifr.src = u;
+          if (ifr.src !== u) ifr.src = u;
           if (lbl) lbl.textContent = u;
         }
-        targetWebWin = window.open(u, 'AiLabTargetWebTab');
+
+        if (!detachedWin || detachedWin.closed) {
+          openDetachedAutoMouseWindow(false);
+        } else {
+          try { detachedWin.focus(); } catch (e) {}
+        }
+
+        if (openExternalTab) {
+          targetWebWin = window.open(u, 'AiLabTargetWebTab');
+        }
+
         const pill = document.getElementById('remote-bridge-pill');
         if (pill) {
-          pill.textContent = 'ล็อกเว็บ: ' + u.slice(0, 28);
+          pill.textContent = '✓ เชื่อมเว็บแล้ว (เด้งจอ AutoMouse อัตโนมัติ): ' + u.slice(0, 30);
           pill.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold mono';
         }
+        document.getElementById('target-last-action').textContent = `⚡ เชื่อมต่อเว็บ [${u}] สำเร็จ! เด้งจอ AutoMouse ขึ้นมาพร้อมรับคำสั่งแล้ว`;
+      }
+
+      document.getElementById('btn-open-target-workspace')?.addEventListener('click', () => {
+        connectTargetWebsiteAndAutoPopScreen(document.getElementById('real-target-url')?.value, true);
       });
+
+      // When user finishes typing or pastes a URL in #real-target-url and presses Enter or Change, auto-connect & pop up the AutoMouse screen!
+      document.getElementById('real-target-url')?.addEventListener('change', (e) => {
+        connectTargetWebsiteAndAutoPopScreen(e.target.value, false);
+      });
+
+      // On page load, if a website was previously connected in localStorage, automatically restore & pop up the connected AutoMouse screen!
+      try {
+        const prevConnectedUrl = localStorage.getItem('__AILAB_CONNECTED_TARGET_URL__');
+        if (prevConnectedUrl) {
+          document.getElementById('real-target-url').value = prevConnectedUrl;
+          const pill = document.getElementById('remote-bridge-pill');
+          if (pill) {
+            pill.textContent = '✓ เชื่อมเว็บค้างไว้แล้ว: ' + prevConnectedUrl.slice(0, 30);
+          }
+          const hud = document.getElementById('embedded-hud-panel');
+          const hudBody = document.getElementById('hud-body');
+          if (hud && hudBody) {
+            hud.classList.remove('hidden');
+            hudBody.classList.remove('hidden');
+          }
+        }
+      } catch (e) {}
       document.getElementById('btn-close-web-stage')?.addEventListener('click', () => {
         document.getElementById('configured-web-stage-wrap')?.classList.add('hidden');
       });
