@@ -1350,7 +1350,7 @@
       });
     }
 
-    // Immortal Cross-Page & SPA Persistent Floating AutoMouse Panel (Never disappears on YouTube navigation or page transitions, auto-resumes from exact step!)
+    // Ultimate Anti-Unload Immortal Bookmarklet Engine (Prevents Bookmarklet from ever getting wiped on page navigation via SPA Fetch-Swap + Target=_self Lock + Optional Master Frame Lock!)
     function generateStandaloneQueueScript() {
       const uid = document.getElementById('quick-id')?.value.trim() || '';
       const pwd = document.getElementById('quick-pass')?.value.trim() || '';
@@ -1379,11 +1379,10 @@
   }
   window.__AILAB_IMMORTAL_ACTIVE = true;
 
-  const STORAGE_KEY = '__AILAB_IMMORTAL_BOT_STATE_V4__';
+  const STORAGE_KEY = '__AILAB_IMMORTAL_BOT_STATE_V5__';
   const DEFAULT_QUEUE = ${serializedQueue};
   const DEFAULT_VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
 
-  // Load persisted state across page transitions (e.g. YouTube Home -> Watch Video page)
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY) || 'null'); } catch(e){}
 
@@ -1394,15 +1393,94 @@
   let cycles = (saved && typeof saved.cycles === 'number') ? saved.cycles : 0;
   let minimized = Boolean(saved && saved.minimized);
   let hudPos = (saved && saved.hudPos) ? saved.hudPos : null;
+  let antiUnloadLock = (saved && saved.antiUnloadLock !== undefined) ? Boolean(saved.antiUnloadLock) : true;
   let lastEl = null, loopActive = false;
 
   function persistState() {
     try {
-      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, idx, cycles, minimized, hudPos, ts: Date.now() });
+      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, idx, cycles, minimized, hudPos, antiUnloadLock, ts: Date.now() });
       localStorage.setItem(STORAGE_KEY, payload);
       sessionStorage.setItem(STORAGE_KEY, payload);
     } catch(e){}
   }
+
+  // --- CORE FIX: Anti-Reload Navigation Shield (Keeps Bookmarklet Alive Across Clicks Without Clicking Bookmark Again!) ---
+  // 1. Force all target="_blank" links and window.open calls to stay in the current tab so the HUD is never left behind
+  function neutralizeBlankTargets() {
+    document.querySelectorAll('a[target="_blank"]').forEach(a => { a.setAttribute('target', '_self'); });
+  }
+  const origWinOpen = window.open;
+  window.open = function(url) {
+    if (url && antiUnloadLock) {
+      smartNavigateWithoutReload(url);
+      return window;
+    }
+    return origWinOpen.apply(window, arguments);
+  };
+
+  // 2. Seamless SPA / Fetch-Swap Navigation so clicking a link changes the page content & URL WITHOUT killing the Bookmarklet JS context!
+  async function smartNavigateWithoutReload(targetUrl) {
+    try {
+      const absUrl = new URL(targetUrl, location.href).href;
+      if (new URL(absUrl).origin !== location.origin) {
+        location.href = absUrl;
+        return;
+      }
+      // On YouTube, use YouTube's native SPA router (ytd-app) so the video player loads natively without full page reload!
+      const ytApp = document.querySelector('ytd-app');
+      const uObj = new URL(absUrl);
+      if (ytApp && location.hostname.includes('youtube.com')) {
+        history.pushState({}, '', uObj.pathname + uObj.search + uObj.hash);
+        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+        buildOrRestoreUI();
+        return;
+      }
+      // For any other website: fetch the next page HTML in background, swap body content, update URL via pushState, and keep HUD alive!
+      if (statEl) statEl.textContent = '🔄 กำลังเปิดหน้าถัดไปโดยไม่ปิดแผงบอท...';
+      const resp = await fetch(absUrl);
+      const htmlText = await resp.text();
+      const parser = new DOMParser();
+      const nextDoc = parser.parseFromString(htmlText, 'text/html');
+      history.pushState({}, nextDoc.title || document.title, absUrl);
+      if (nextDoc.title) document.title = nextDoc.title;
+      // Preserve our HUD & Cursor while replacing page body
+      Array.from(document.body.children).forEach(ch => {
+        if (ch.id !== 'ailab-q-hud' && ch.id !== 'ailab-q-cursor' && ch.id !== 'ailab-hover-box') ch.remove();
+      });
+      Array.from(nextDoc.body.children).forEach(ch => {
+        document.body.appendChild(document.importNode(ch, true));
+      });
+      // Re-run inline scripts of the new page if needed
+      buildOrRestoreUI();
+      if (statEl) statEl.textContent = '✓ เข้าสู่หน้าใหม่สำเร็จ (แผงบอทยังทำงานต่อ!)';
+    } catch (err) {
+      // Fallback if fetch blocked
+      buildOrRestoreUI();
+    }
+  }
+
+  // Intercept <a> clicks when Anti-Unload Shield is ON so the browser never performs a hard unload that wipes the Bookmarklet
+  window.addEventListener('click', (ev) => {
+    if (!antiUnloadLock) return;
+    if (hud && hud.contains(ev.target)) return;
+    const link = ev.target.closest && ev.target.closest('a[href]');
+    if (!link) return;
+    const rawHref = link.getAttribute('href');
+    if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
+    link.removeAttribute('target');
+    // On YouTube, let YouTube's internal polymer click handler run unless it tries to force a hard reload, and ensure target="_self"
+    if (location.hostname.includes('youtube.com')) {
+      return;
+    }
+    // On standard multi-page websites, intercept same-origin navigation and swap seamlessly so Bookmarklet never dies!
+    try {
+      const dest = new URL(link.href, location.href);
+      if (dest.origin === location.origin) {
+        ev.preventDefault();
+        smartNavigateWithoutReload(dest.href);
+      }
+    } catch(e){}
+  }, true);
 
   function mk(tag, css, txt) {
     const el = document.createElement(tag);
@@ -1411,10 +1489,10 @@
     return el;
   }
 
-  // Create Floating Cursor & HUD elements once, and re-attach automatically if YouTube/SPA wipes DOM
   let cur = null, hud = null, statEl = null, listBox = null, title = null, bodyWrap = null;
 
   function buildOrRestoreUI() {
+    neutralizeBlankTargets();
     cur = document.getElementById('ailab-q-cursor');
     if (!cur) {
       cur = mk('div', 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:top 0.22s ease,left 0.22s ease,transform 0.1s;filter:drop-shadow(0 0 10px #10b981);');
@@ -1431,7 +1509,7 @@
     hud = document.getElementById('ailab-q-hud');
     if (hud) return;
 
-    hud = mk('div', 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:rgba(6,11,23,0.97);color:#ecfdf5;border:2px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 20px 50px rgba(0,0,0,0.92);width:375px;max-width:95vw;');
+    hud = mk('div', 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:rgba(6,11,23,0.97);color:#ecfdf5;border:2px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 20px 50px rgba(0,0,0,0.92);width:380px;max-width:95vw;');
     hud.id = 'ailab-q-hud';
     if (hudPos && hudPos.left && hudPos.top) {
       hud.style.right = 'auto'; hud.style.bottom = 'auto';
@@ -1447,7 +1525,6 @@
     });
     speedSel.onchange = () => { VARS.speed = parseFloat(speedSel.value) || 2; persistState(); };
     const bResetDefault = mk('button', 'background:#1e293b;color:#38bdf8;border:none;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:10px;', 'รีเซ็ตคิว');
-    bResetDefault.title = 'โหลดคิวเริ่มต้นใหม่';
     bResetDefault.onclick = () => { QUEUE.length = 0; DEFAULT_QUEUE.forEach(s => QUEUE.push(Object.assign({}, s))); idx = 0; cycles = 0; persistState(); renderHudSteps(); };
     const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
     const bClose = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '✕');
@@ -1455,8 +1532,17 @@
     header.append(title, hdrBtns);
 
     bodyWrap = mk('div', minimized ? 'display:none;' : 'display:block;');
-    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:8px;color:#38bdf8;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', running ? ('กำลังทำงานต่อเนื่อง... (ขั้น #' + (idx+1) + ' รอบ #' + cycles + ')') : ('พร้อมทำงานข้ามหน้าเว็บอัตโนมัติบน ' + location.hostname));
-    listBox = mk('div', 'max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
+    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:6px;color:#38bdf8;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', running ? ('กำลังรันต่อเนื่อง... (ขั้น #' + (idx+1) + ' รอบ #' + cycles + ')') : ('พร้อมทำงาน (ล็อกแผงไม่ให้หายเมื่อคลิกเปลี่ยนหน้า)'));
+
+    // Anti-Unload Lock Toggle Bar inside HUD
+    const lockRow = mk('label', 'display:flex;align-items:center;justify-content:space-between;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);padding:4px 8px;border-radius:8px;margin-bottom:8px;font-size:10px;color:#a7f3d0;cursor:pointer;');
+    const lockLeft = mk('div', 'display:flex;align-items:center;gap:5px;');
+    const chkLock = mk('input', ''); chkLock.type = 'checkbox'; chkLock.checked = antiUnloadLock;
+    chkLock.onchange = () => { antiUnloadLock = chkLock.checked; persistState(); };
+    lockLeft.append(chkLock, mk('span', 'font-weight:700;', '🔒 ล็อกแผงไม่ให้เด้งหายเมื่อคลิกเปลี่ยนหน้าเว็บ'));
+    lockRow.append(lockLeft);
+
+    listBox = mk('div', 'max-height:195px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
 
     const pickRow = mk('div', 'display:flex;gap:5px;margin-bottom:6px;');
     const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ');
@@ -1465,11 +1551,11 @@
     pickRow.append(bPick, bAdd, bExport);
 
     const btnRow = mk('div', 'display:flex;gap:6px;');
-    const bStart = mk('button', 'flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;border:none;padding:7px 12px;border-radius:9px;font-weight:800;cursor:pointer;font-size:12px;', '▶ เริ่มทำงาน (ไม่หลุดเมื่อเปลี่ยนหน้า)');
+    const bStart = mk('button', 'flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;border:none;padding:7px 12px;border-radius:9px;font-weight:800;cursor:pointer;font-size:12px;', '▶ เริ่มทำงาน');
     const bStop = mk('button', 'background:#ef4444;color:#fff;border:none;padding:7px 12px;border-radius:9px;font-weight:700;cursor:pointer;font-size:12px;', '⏹ หยุด');
     btnRow.append(bStart, bStop);
 
-    bodyWrap.append(statEl, listBox, pickRow, btnRow);
+    bodyWrap.append(statEl, lockRow, listBox, pickRow, btnRow);
     hud.append(header, bodyWrap);
     document.documentElement.appendChild(hud);
 
@@ -1510,6 +1596,7 @@
       document.body.style.cursor = pickingMode ? 'crosshair' : '';
       if (!hoverBox) {
         hoverBox = mk('div', 'position:fixed;pointer-events:none;border:2.5px solid #f59e0b;background:rgba(245,158,11,0.18);z-index:2147483644;display:none;border-radius:6px;');
+        hoverBox.id = 'ailab-hover-box';
         document.documentElement.appendChild(hoverBox);
       }
     };
@@ -1541,7 +1628,7 @@
       pickingMode = false; document.body.style.cursor = '';
       if (hoverBox) hoverBox.style.display = 'none';
       bPick.textContent = '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
-      statEl.textContent = '✓ เพิ่มขั้น #' + QUEUE.length + ' (' + ev.clientX + ',' + ev.clientY + ') บันทึกข้ามหน้าเว็บแล้ว';
+      statEl.textContent = '✓ เพิ่มขั้น #' + QUEUE.length + ' (' + ev.clientX + ',' + ev.clientY + ') แล้ว';
       persistState();
       renderHudSteps();
     }, true);
@@ -1714,7 +1801,6 @@
       renderHudSteps();
       try {
         const step = QUEUE[idx];
-        // Pre-advance & persist index BEFORE clicking a link that might navigate to a new URL!
         const executedIdx = idx;
         idx++;
         if (idx >= QUEUE.length) { idx = 0; cycles++; }
@@ -1741,6 +1827,8 @@
             await new Promise(r => setTimeout(r, stepDelay));
             if (el && (!hud || !hud.contains(el))) {
               lastEl = el;
+              const linkAnc = el.closest && el.closest('a[href]');
+              if (linkAnc) linkAnc.removeAttribute('target');
               el.focus();
               ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(ev => el.dispatchEvent(new MouseEvent(ev, { bubbles:true, clientX:x, clientY:y })));
               if (typeof el.click === 'function') el.click();
@@ -1757,25 +1845,26 @@
     loopActive = false;
   }
 
-  // Immortal Watchdog: Survive YouTube (yt-navigate-finish), pushState, replaceState, popstate, and DOM wipes!
+  // MutationObserver + Interval Watchdog: if the website ever tries to remove our HUD from documentElement, re-append it in <16ms!
   buildOrRestoreUI();
+  const obs = new MutationObserver(() => {
+    if (window.__AILAB_IMMORTAL_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
+      buildOrRestoreUI();
+    }
+  });
+  obs.observe(document.documentElement, { childList: true, subtree: true });
+
   if (running) {
-    setTimeout(loop, 450);
+    setTimeout(loop, 350);
   }
   setInterval(() => {
-    if (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor')) {
+    if (window.__AILAB_IMMORTAL_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
       buildOrRestoreUI();
     }
     if (running && !loopActive) {
       loop();
     }
-  }, 600);
-  ['yt-navigate-finish', 'yt-page-data-updated', 'popstate', 'hashchange', 'pageshow'].forEach(evName => {
-    window.addEventListener(evName, () => {
-      buildOrRestoreUI();
-      if (running && !loopActive) setTimeout(loop, 300);
-    });
-  });
+  }, 400);
 })();`;
     }
 
