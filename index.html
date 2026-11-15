@@ -148,17 +148,17 @@
         </div>
       </div>
 
-      <!-- Dynamic AutoMouse Button & Permanent Chrome Extension Installer -->
+      <!-- Detached Standalone AutoMouse Window + Dynamic AutoMouse Button -->
       <div class="flex flex-wrap items-center gap-2">
-        <button id="btn-open-chrome-ext-modal" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/30 hover:scale-105 transition flex items-center gap-1.5">
-          <span>🧩</span> ฝังใน Chrome ถาวร (แสดงแผงตลอดเวลาทุกเว็บ)
+        <button id="btn-detach-standalone-hud" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:from-amber-300 hover:to-orange-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/30 hover:scale-105 transition flex items-center gap-1.5" title="แยกหน้าต่างแผง AutoMouse ออกมาเป็นจออิสระ ลอยอยู่เหนือทุกแท็บเว็บ ไม่หายเมื่อเปลี่ยนหน้าเว็บ และไม่ต้องใช้ Bookmark">
+          <span>🪟</span> แยกจอแผง AutoMouse อิสระ (ไม่หายเมื่อเปลี่ยนเว็บ/ไม่ต้องใช้ Bookmark)
         </button>
         <a id="dynamic-automouse-btn" href="javascript:void(0)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/30 hover:scale-105 transition flex items-center gap-1.5 cursor-grab active:cursor-grabbing" title="ลากปุ่มนี้ไปวางที่แถบบุ๊กมาร์ก โค้ดข้างในจะปรับตามคิวที่คุณสร้างอัตโนมัติ">
           <span>⚡</span>
-          <span id="dynamic-btn-label">ปุ่ม AutoMouse (0 ขั้นตอน)</span>
+          <span id="dynamic-btn-label">ปุ่ม AutoMouse (0 ขั้นตอน - ลากไปวางบุ๊กมาร์ก)</span>
         </a>
         <button id="btn-embed-hud" class="px-3 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 font-bold text-xs transition">
-          📌 คัดลอกโค้ด
+          📌 ฝังแผงควบคุมลอย + คัดลอกโค้ดคิวนี้
         </button>
       </div>
     </div>
@@ -176,11 +176,14 @@
           <input id="real-target-url" type="text" value="https://www.youtube.com/" placeholder="ใส่ URL เว็บจริง เช่น https://www.youtube.com/" class="flex-1 min-w-[180px] bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-300 mono focus:outline-none focus:border-cyan-400" />
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button id="btn-open-real-picker" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-extrabold shadow-md transition flex items-center gap-1.5">
-            <span>🚀</span> เปิดเว็บจริง + คัดลอกตัวจิ้มพิกัดบนเว็บจริง
+          <button id="btn-open-real-and-detach" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-slate-950 font-extrabold shadow-md transition flex items-center gap-1.5">
+            <span>🪟</span> เปิดเว็บค้นหาแยกแท็บ + แยกจอแผง AutoMouse อิสระ
+          </button>
+          <button id="btn-open-real-picker" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/40 font-bold transition flex items-center gap-1.5">
+            <span>🚀</span> เปิดเว็บจริง + คัดลอกโค้ด
           </button>
           <button id="btn-toggle-import-box" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold transition">
-            📥 นำเข้าพิกัดที่จิ้มมาจากเว็บจริง
+            📥 นำเข้าพิกัด
           </button>
         </div>
       </div>
@@ -534,63 +537,6 @@
 
   </main>
 
-  <!-- PERMANENT CHROME EXTENSION & ALWAYS-ON PIP WINDOW MODAL -->
-  <div id="chrome-ext-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-box rounded-2xl max-w-2xl w-full p-5 border-2 border-amber-400/60 shadow-2xl space-y-4 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-2.5">
-          <span class="text-2xl">🧩</span>
-          <div>
-            <h3 class="text-sm sm:text-base font-extrabold text-amber-300">
-              ฝังแผงควบคุม AutoMouse ลงใน Google Chrome ถาวร (แสดงบนจอตลอดเวลา 100%)
-            </h3>
-            <p class="text-slate-400 text-[11px]">
-              เมื่อฝังเป็น Chrome Extension แล้ว แผงควบคุมจะเด้งขึ้นมาเองอัตโนมัติในทุกหน้าเว็บ ทุกการรีเฟรช และทุกครั้งที่เปลี่ยน URL (เช่น YouTube Search → Watch/Radio) โดยไม่ต้องกดบุ๊กมาร์กอีกเลย!
-            </p>
-          </div>
-        </div>
-        <button id="btn-close-chrome-modal" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold">✕ ปิด</button>
-      </div>
-
-      <!-- Option 1: Download 2 Chrome Extension Files directly from browser -->
-      <div class="p-3.5 rounded-xl bg-slate-900/95 border border-emerald-500/40 space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="font-bold text-emerald-300 text-xs">
-            วิธีที่ 1: ดาวน์โหลดไฟล์ส่วนขยาย Chrome (Manifest V3) ที่บรรจุคิวของคุณพร้อมใช้งาน
-          </span>
-          <div class="flex items-center gap-2">
-            <button id="btn-dl-manifest" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold transition">
-              1. โหลดไฟล์ manifest.json
-            </button>
-            <button id="btn-dl-content-js" class="px-3 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold transition">
-              2. โหลดไฟล์ content.js
-            </button>
-          </div>
-        </div>
-        <ol class="list-decimal list-inside text-slate-300 space-y-1 text-[11px] leading-relaxed bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-          <li>สร้างโฟลเดอร์ใหม่ในคอมพิวเตอร์ของคุณชื่อ <code class="text-amber-300 font-bold">AiLab_AutoMouse_Chrome</code> แล้วนำไฟล์ <strong>manifest.json</strong> และ <strong>content.js</strong> ที่กดโหลดด้านบนไปไว้ในโฟลเดอร์เดียวกัน</li>
-          <li>เปิดเบราว์เซอร์ Chrome แล้วพิมพ์ที่ช่อง URL ว่า <code class="text-cyan-300 font-bold">chrome://extensions</code> จากนั้นเปิดสวิตช์ <strong>Developer mode (โหมดนักพัฒนาซอฟต์แวร์)</strong> ที่มุมขวาบน</li>
-          <li>กดปุ่ม <strong>Load unpacked (โหลดส่วนขยายที่ยังไม่ได้แพ็ก)</strong> มุมซ้ายบน แล้วเลือกโฟลเดอร์ <code class="text-amber-300 font-bold">AiLab_AutoMouse_Chrome</code> — เสร็จทันที! กล่องแผงควบคุมจะแสดงบนหน้าจอ Chrome ตลอดเวลาในทุกเว็บ</li>
-        </ol>
-      </div>
-
-      <!-- Option 2: Always-On-Top Picture-in-Picture (PiP) / Floating Controller Window -->
-      <div class="p-3.5 rounded-xl bg-slate-900/95 border border-amber-500/40 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex-1 min-w-[220px]">
-          <div class="font-bold text-amber-300 text-xs mb-0.5">
-            📌 วิธีที่ 2: เปิดหน้าต่างแผงควบคุมลอยค้างบนจอตลอดเวลา (Always-On-Top PiP HUD)
-          </div>
-          <p class="text-[11px] text-slate-400">
-            สร้างหน้าต่างควบคุมขนาดกะทัดรัดที่ลอยค้างอยู่เหนือหน้าจอ Chrome ตลอดเวลา ไม่ว่าแท็บหลักจะเปลี่ยนหน้าเว็บไปที่ไหน หน้าต่างนี้จะไม่ถูกปิดไปด้วย
-          </p>
-        </div>
-        <button id="btn-launch-pip-hud" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold transition shrink-0">
-          🪟 เปิดแผงลอยค้างบนจอทันที
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- FLOATING EMBEDDED HUD PANEL (Synced with Dynamic Queue & Coordinate Finder) -->
   <div id="embedded-hud-panel" class="p-3.5 text-xs select-none">
     <div id="hud-drag-bar" class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 cursor-move">
@@ -599,6 +545,7 @@
         <span class="font-extrabold text-emerald-300">🖱️ แผงควบคุม AutoMouse (ลากย้ายได้)</span>
       </div>
       <div class="flex items-center gap-1">
+        <button id="hud-btn-popout" class="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[10px] transition" title="แยกแผง AutoMouse ออกเป็นหน้าต่างอิสระ ไม่หายเมื่อเปลี่ยนหน้าเว็บ">🪟 แยกจออิสระ</button>
         <span id="hud-loop-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 mono text-[10px] font-bold">รอบ #0</span>
         <button id="hud-minimize" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">_</button>
       </div>
@@ -1238,6 +1185,10 @@
       document.getElementById('queue-total-count').textContent = state.queue.length;
       document.getElementById('hud-queue-count').textContent = state.queue.length;
       container.innerHTML = '';
+      if (state.queue.length === 0) {
+        container.innerHTML = '<div class="col-span-full text-center py-6 px-4 rounded-xl bg-slate-900/60 border border-dashed border-slate-700 text-xs text-slate-400">ยังไม่มีขั้นตอนในคิว (0 ขั้นตอน) — จิ้มเลือกพิกัดเมาส์ (X, Y) ด้านบนแล้วกดปุ่ม <strong class="text-emerald-300">"+ เพิ่มลงกล่องขั้นตอน"</strong> หรือใช้จาก <strong class="text-amber-300">"🪟 แยกจอแผง AutoMouse อิสระ"</strong> ได้เลย</div>';
+        return;
+      }
 
       const typeBadge = {
         'click_xy': '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold mono">🖱️ คลิก X,Y</span>',
@@ -1656,7 +1607,7 @@
     const bResetDefault = mk('button', 'background:#1e293b;color:#38bdf8;border:none;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:10px;', 'รีเซ็ตคิว');
     bResetDefault.onclick = () => { QUEUE.length = 0; DEFAULT_QUEUE.forEach(s => QUEUE.push(Object.assign({}, s))); idx = 0; cycles = 0; persistState(); renderHudSteps(); };
     const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
-    const bClose = mk('button', 'background:#065f46;color:#a7f3d0;border:1px solid #10b981;border-radius:6px;padding:2px 6px;cursor:pointer;font-weight:800;font-size:9px;', '📌 แสดงตลอดเวลา');
+    const bClose = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '✕');
     hdrBtns.append(speedSel, bResetDefault, bMin, bClose);
     header.append(title, hdrBtns);
 
@@ -1688,7 +1639,7 @@
     document.documentElement.appendChild(hud);
 
     bMin.onclick = () => { minimized = !minimized; bodyWrap.style.display = minimized ? 'none' : 'block'; persistState(); };
-    bClose.onclick = () => { minimized = false; bodyWrap.style.display = 'block'; hud.style.zIndex = '2147483647'; statEl.textContent = '📌 ตรึงแผงควบคุมแสดงบนจอตลอดเวลาแล้ว!'; persistState(); };
+    bClose.onclick = () => { running = false; window.__AILAB_IMMORTAL_ACTIVE = false; persistState(); hud.remove(); cur.remove(); };
 
     let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
     header.onmousedown = (e) => {
@@ -2014,21 +1965,10 @@
     if (window.__AILAB_IMMORTAL_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
       buildOrRestoreUI();
     }
-    // Keep HUD visible on screen at all times (even during YouTube Fullscreen!)
-    const fsHost = document.fullscreenElement || document.documentElement;
-    if (hud && hud.parentElement !== fsHost) {
-      fsHost.appendChild(hud);
-    }
-    if (cur && cur.parentElement !== fsHost) {
-      fsHost.appendChild(cur);
-    }
-    if (hud && hud.style.display === 'none') {
-      hud.style.display = 'block';
-    }
     if (running && !loopActive) {
       loop();
     }
-  }, 300);
+  }, 350);
 })();`;
     }
 
@@ -2128,12 +2068,10 @@ if __name__ == "__main__":
       if (sections[1]) sections[1].id = 'queue-builder-section';
       if (sections[2]) sections[2].id = 'target-pad-section';
 
-      if (!loadQueueFromStorage()) {
-        initDefaultQueueFromTargets();
-      } else {
-        renderQueueCards();
-        syncDynamicAutoMouseCode();
-      }
+      // Start clean with 0 pre-made steps ("ไม่ทำขั้นตอนไว้") so user builds their own steps from scratch
+      state.queue = [];
+      renderQueueCards();
+      syncDynamicAutoMouseCode();
 
       window.addEventListener('mousemove', (e) => {
         state.lastMouseX = e.clientX;
@@ -2601,6 +2539,361 @@ if __name__ == "__main__":
         renderQueueCards();
       });
 
+
+      // =========================================================================
+      // DETACHED STANDALONE AUTOMOUSE WINDOW ENGINE (แยกจอแผง AutoMouse ออกจากแท็บเว็บอิสระ)
+      // - Separates the AutoMouse panel into its own independent OS/Browser window (via Document Picture-in-Picture Always-On-Top Window or Standalone Popup Window).
+      // - Because the AutoMouse panel lives in its own separate window outside the search/target website tab:
+      //   1. Navigating, refreshing, or closing pages on the target website tab NEVER causes the AutoMouse panel to disappear!
+      //   2. Works WITHOUT needing to click a Bookmarklet on every page!
+      //   3. Full two-way live sync with the main studio & any connected web tab via BroadcastChannel + localStorage, plus full step editing, X,Y coordinate settings, speed control, and continuous loop execution.
+      // =========================================================================
+      let detachedWin = null;
+      let targetWebWin = null;
+      const botChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('ailab_automouse_sync_channel') : null;
+
+      if (botChannel) {
+        botChannel.onmessage = (ev) => {
+          const d = ev.data || {};
+          if (d.type === 'SYNC_QUEUE' && Array.isArray(d.queue)) {
+            state.queue = d.queue;
+            renderQueueCards();
+            syncDynamicAutoMouseCode();
+          } else if (d.type === 'START_BOT') {
+            startQueueLoop();
+          } else if (d.type === 'STOP_BOT') {
+            stopQueueLoop();
+          } else if (d.type === 'STEP_ONCE') {
+            if (state.queue.length > 0) {
+              executeStepItem(state.queue[state.currentIndex], state.currentIndex);
+              state.currentIndex = (state.currentIndex + 1) % state.queue.length;
+              renderQueueCards();
+            }
+          }
+        };
+      }
+
+      async function openDetachedAutoMouseWindow(openTargetSiteToo) {
+        if (openTargetSiteToo) {
+          const url = document.getElementById('real-target-url')?.value.trim() || 'https://www.youtube.com/';
+          targetWebWin = window.open(url, 'AiLabTargetWebTab');
+        }
+
+        // Try Chrome Document Picture-in-Picture API first (Always-on-top floating window above all browser tabs!)
+        let win = null;
+        try {
+          if ('documentPictureInPicture' in window) {
+            win = await window.documentPictureInPicture.requestWindow({ width: 430, height: 620 });
+          }
+        } catch (e) {}
+
+        // Fallback to standalone OS popup window separate from the search tab
+        if (!win) {
+          win = window.open('', 'AiLabDetachedAutoMouseWindow', 'width=430,height=640,left=60,top=60,resizable=yes,scrollbars=yes');
+        }
+
+        if (!win) {
+          document.getElementById('target-last-action').textContent = '⚠️ เบราว์เซอร์บล็อกหน้าต่างแยก กรุณากดอนุญาต Pop-up สำหรับหน้านี้';
+          return;
+        }
+
+        detachedWin = win;
+        const doc = win.document;
+        doc.open();
+        doc.write(`<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>🖱️ แผงควบคุม AutoMouse (จอแยกอิสระ)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 12px;
+      background: #050914; color: #f1f5f9;
+      font-family: 'Kanit', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px; user-select: none;
+    }
+    .box {
+      background: #0f172a; border: 1.5px solid #10b981;
+      border-radius: 14px; padding: 12px; margin-bottom: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    input, select {
+      background: #020617; color: #e2e8f0; border: 1px solid #334155;
+      border-radius: 8px; padding: 5px 8px; font-size: 11px;
+    }
+    button {
+      border: none; border-radius: 8px; padding: 6px 10px;
+      font-weight: 800; font-size: 11px; cursor: pointer;
+    }
+    .btn-green { background: linear-gradient(90deg, #10b981, #06b6d4); color: #020617; }
+    .btn-red { background: #ef4444; color: #ffffff; }
+    .btn-amber { background: #f59e0b; color: #020617; }
+    .btn-slate { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .step-item {
+      background: #020617; border: 1px solid #1e293b;
+      border-radius: 10px; padding: 8px; margin-bottom: 6px;
+    }
+    .step-active { border-color: #10b981; background: rgba(16, 185, 129, 0.14); }
+    #mini-radar { width: 100%; height: 120px; background: #020617; border: 1px solid #0284c7; border-radius: 8px; cursor: crosshair; display: block; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="row" style="border-bottom:1px solid #1e293b;padding-bottom:8px;margin-bottom:8px;">
+      <div style="font-weight:900;color:#34d399;font-size:14px;">🪟 แผง AutoMouse (จอแยกอิสระ)</div>
+      <span id="dw-status" style="background:#065f46;color:#a7f3d0;padding:2px 8px;border-radius:99px;font-size:10px;font-family:monospace;">READY</span>
+    </div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;">
+      หน้าต่างนี้แยกอิสระจากแท็บเว็บค้นหา (เปลี่ยนหน้าเว็บ/รีโหลดเว็บค้นหา แผงนี้จะไม่หาย 100%)
+    </div>
+
+    <!-- Target Web Tab URL Launcher inside Detached Window -->
+    <div class="row" style="margin-bottom:8px;">
+      <input id="dw-url" type="text" value="https://www.youtube.com/" placeholder="URL เว็บที่ต้องการเปิด..." style="flex:1;color:#38bdf8;font-family:monospace;" />
+      <button id="dw-open-url" class="btn-amber">↗ เปิด/สลับหน้าเว็บ</button>
+    </div>
+
+    <!-- Coordinate & Mini Radar -->
+    <div style="background:#020617;padding:8px;border-radius:10px;border:1px solid #1e293b;margin-bottom:8px;">
+      <div class="row">
+        <span style="color:#fbbf24;font-family:monospace;font-weight:700;" id="dw-xy-lbl">พิกัดที่ตั้ง: X:520 Y:340</span>
+        <span style="font-size:10px;color:#64748b;">คลิกในจอจำลองเพื่อเปลี่ยนพิกัด</span>
+      </div>
+      <canvas id="mini-radar" width="360" height="120"></canvas>
+      <div class="row" style="margin-top:6px;justify-content:center;">
+        <button class="btn-slate dw-nudge" data-dx="-5" data-dy="0">◀ X-5</button>
+        <button class="btn-slate dw-nudge" data-dx="5" data-dy="0">X+5 ▶</button>
+        <button class="btn-slate dw-nudge" data-dx="0" data-dy="-5">▲ Y-5</button>
+        <button class="btn-slate dw-nudge" data-dx="0" data-dy="5">▼ Y+5</button>
+      </div>
+    </div>
+
+    <!-- Quick Add Step inside Detached Window -->
+    <div style="background:#020617;padding:8px;border-radius:10px;border:1px solid #1e293b;margin-bottom:8px;">
+      <div class="row" style="margin-bottom:6px;">
+        <select id="dw-type" style="flex:1;color:#34d399;font-weight:700;">
+          <option value="click_xy">🖱️ คลิกตามพิกัด (X, Y)</option>
+          <option value="click_ type_xy">⌨️ คลิกพิกัด (X, Y) + พิมพ์ข้อความ</option>
+          <option value="click_selector">🔎 คลิกปุ่มตามชื่อปุ่ม / CSS</option>
+          <option value="type_selector">📝 พิมพ์ตามชื่อช่อง / CSS</option>
+          <option value="press_enter">↵ กดปุ่ม Enter</option>
+          <option value="wait">⏱️ รอเวลา (วินาที)</option>
+        </select>
+        <select id="dw-speed" style="color:#fbbf24;font-weight:700;">
+          <option value="1">1x</option>
+          <option value="2" selected>2x เร็ว</option>
+          <option value="5">5x แรง</option>
+          <option value="10">10x เทอร์โบ</option>
+        </select>
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <input id="dw-x" type="number" value="520" style="width:65px;color:#fbbf24;font-family:monospace;" title="X" />
+        <input id="dw-y" type="number" value="340" style="width:65px;color:#fbbf24;font-family:monospace;" title="Y" />
+        <input id="dw-val" type="text" placeholder="ข้อความที่จะพิมพ์ / ชื่อปุ่ม..." style="flex:1;color:#6ee7b7;" />
+      </div>
+      <div class="row">
+        <button id="dw-add-btn" class="btn-green" style="flex:1;">+ เพิ่มลงกล่องขั้นตอน</button>
+        <button id="dw-clean-btn" class="btn-red">🧹 Clean (ล้างทั้งหมด)</button>
+      </div>
+    </div>
+
+    <!-- Step Queue List in Detached Window -->
+    <div style="font-weight:800;color:#38bdf8;margin-bottom:6px;">
+      🔄 รายการขั้นตอน (<span id="dw-count">0</span> ขั้นตอน)
+    </div>
+    <div id="dw-step-list" style="max-height:190px;overflow-y:auto;margin-bottom:10px;"></div>
+
+    <!-- Master Run / Stop Controls -->
+    <div class="row">
+      <button id="dw-run-btn" class="btn-green" style="flex:1;padding:10px;font-size:13px;">▶ เริ่มทำงาน (รันต่อเนื่อง)</button>
+      <button id="dw-stop-btn" class="btn-red" style="padding:10px 16px;font-size:13px;">⏹ หยุด</button>
+    </div>
+  </div>
+</body>
+</html>`);
+        doc.close();
+
+        // Bind Detached Window Logic directly to our main state & target window
+        const dwRadar = doc.getElementById('mini-radar');
+        const dwCtx = dwRadar.getContext('2d');
+
+        function drawDetachedRadar() {
+          const cw = dwRadar.width, ch = dwRadar.height;
+          dwCtx.clearRect(0, 0, cw, ch);
+          dwCtx.fillStyle = '#040812';
+          dwCtx.fillRect(0, 0, cw, ch);
+          dwCtx.strokeStyle = 'rgba(56,189,248,0.15)';
+          for (let i = 1; i < 10; i++) {
+            const gx = Math.round((i / 10) * cw) + 0.5;
+            dwCtx.beginPath(); dwCtx.moveTo(gx, 0); dwCtx.lineTo(gx, ch); dwCtx.stroke();
+          }
+          for (let j = 1; j < 5; j++) {
+            const gy = Math.round((j / 5) * ch) + 0.5;
+            dwCtx.beginPath(); dwCtx.moveTo(0, gy); dwCtx.lineTo(cw, gy); dwCtx.stroke();
+          }
+          const vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
+          state.queue.forEach((st, idx) => {
+            const px = ((st.x || 500) / vw) * cw;
+            const py = ((st.y || 300) / vh) * ch;
+            dwCtx.beginPath(); dwCtx.arc(px, py, 6, 0, Math.PI * 2);
+            dwCtx.fillStyle = (state.running && state.currentIndex === idx) ? '#10b981' : '#0284c7';
+            dwCtx.fill();
+            dwCtx.fillStyle = '#fff'; dwCtx.font = 'bold 9px monospace';
+            dwCtx.fillText(String(idx + 1), px - 3, py + 3);
+          });
+          const curX = parseInt(doc.getElementById('dw-x').value, 10) || 520;
+          const curY = parseInt(doc.getElementById('dw-y').value, 10) || 340;
+          const lx = (curX / vw) * cw, ly = (curY / vh) * ch;
+          dwCtx.strokeStyle = '#f59e0b';
+          dwCtx.beginPath(); dwCtx.moveTo(lx, 0); dwCtx.lineTo(lx, ch); dwCtx.moveTo(0, ly); dwCtx.lineTo(cw, ly); dwCtx.stroke();
+        }
+
+        function renderDetachedSteps() {
+          const listEl = doc.getElementById('dw-step-list');
+          const countEl = doc.getElementById('dw-count');
+          if (!listEl) return;
+          countEl.textContent = state.queue.length;
+          listEl.innerHTML = '';
+          if (state.queue.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:14px;border:1px dashed #334155;border-radius:8px;">ยังไม่มีขั้นตอน (0 ขั้นตอน) — จิ้มพิกัดแล้วกด "+ เพิ่มลงกล่องขั้นตอน" ด้านบนได้เลย</div>';
+            drawDetachedRadar();
+            return;
+          }
+          state.queue.forEach((st, i) => {
+            const item = doc.createElement('div');
+            item.className = 'step-item' + (state.running && state.currentIndex === i ? ' step-active' : '');
+            item.innerHTML = '<div class="row" style="margin-bottom:4px;"><strong style="color:#34d399;font-family:monospace;">#' + (i + 1) + ' (' + st.type + ')</strong><button data-del="' + i + '" class="btn-red" style="padding:2px 6px;font-size:10px;">✕ ลบ</button></div>' +
+              '<div class="row"><input data-ix="' + i + '" type="number" value="' + (st.x || 0) + '" style="width:60px;color:#fbbf24;font-family:monospace;" /><input data-iy="' + i + '" type="number" value="' + (st.y || 0) + '" style="width:60px;color:#fbbf24;font-family:monospace;" /><input data-ival="' + i + '" type="text" value="' + (st.value || '') + '" style="flex:1;color:#6ee7b7;" /></div>';
+            listEl.appendChild(item);
+          });
+          listEl.querySelectorAll('[data-del]').forEach(b => {
+            b.onclick = () => {
+              const idx = parseInt(b.getAttribute('data-del'), 10);
+              state.queue.splice(idx, 1);
+              if (state.currentIndex >= state.queue.length) state.currentIndex = 0;
+              renderQueueCards(); syncDynamicAutoMouseCode(); renderDetachedSteps();
+            };
+          });
+          listEl.querySelectorAll('[data-ix]').forEach(inp => {
+            inp.oninput = () => {
+              const idx = parseInt(inp.getAttribute('data-ix'), 10);
+              state.queue[idx].x = parseInt(inp.value, 10) || 0;
+              state.queue[idx].rx = Number((state.queue[idx].x / Math.max(1, window.innerWidth)).toFixed(4));
+              renderQueueCards(); syncDynamicAutoMouseCode(); drawDetachedRadar();
+            };
+          });
+          listEl.querySelectorAll('[data-iy]').forEach(inp => {
+            inp.oninput = () => {
+              const idx = parseInt(inp.getAttribute('data-iy'), 10);
+              state.queue[idx].y = parseInt(inp.value, 10) || 0;
+              state.queue[idx].ry = Number((state.queue[idx].y / Math.max(1, window.innerHeight)).toFixed(4));
+              renderQueueCards(); syncDynamicAutoMouseCode(); drawDetachedRadar();
+            };
+          });
+          listEl.querySelectorAll('[data-ival]').forEach(inp => {
+            inp.oninput = () => {
+              const idx = parseInt(inp.getAttribute('data-ival'), 10);
+              state.queue[idx].value = inp.value;
+              renderQueueCards(); syncDynamicAutoMouseCode();
+            };
+          });
+          drawDetachedRadar();
+        }
+
+        dwRadar.addEventListener('mousedown', (ev) => {
+          const r = dwRadar.getBoundingClientRect();
+          const rx = Math.max(0, Math.min(1, (ev.clientX - r.left) / Math.max(1, r.width)));
+          const ry = Math.max(0, Math.min(1, (ev.clientY - r.top) / Math.max(1, r.height)));
+          const vx = Math.round(rx * window.innerWidth);
+          const vy = Math.round(ry * window.innerHeight);
+          doc.getElementById('dw-x').value = vx;
+          doc.getElementById('dw-y').value = vy;
+          doc.getElementById('dw-xy-lbl').textContent = 'พิกัดที่ตั้ง: X:' + vx + ' Y:' + vy;
+          setLockedXY(vx, vy);
+          drawDetachedRadar();
+        });
+
+        doc.querySelectorAll('.dw-nudge').forEach(b => {
+          b.onclick = () => {
+            const dx = parseInt(b.getAttribute('data-dx'), 10) || 0;
+            const dy = parseInt(b.getAttribute('data-dy'), 10) || 0;
+            const nx = Math.max(0, (parseInt(doc.getElementById('dw-x').value, 10) || 0) + dx);
+            const ny = Math.max(0, (parseInt(doc.getElementById('dw-y').value, 10) || 0) + dy);
+            doc.getElementById('dw-x').value = nx;
+            doc.getElementById('dw-y').value = ny;
+            doc.getElementById('dw-xy-lbl').textContent = 'พิกัดที่ตั้ง: X:' + nx + ' Y:' + ny;
+            setLockedXY(nx, ny);
+            drawDetachedRadar();
+          };
+        });
+
+        doc.getElementById('dw-open-url').onclick = () => {
+          const u = doc.getElementById('dw-url').value.trim() || 'https://www.youtube.com/';
+          targetWebWin = window.open(u, 'AiLabTargetWebTab');
+        };
+
+        doc.getElementById('dw-speed').onchange = (e) => {
+          document.getElementById('loop-speed').value = e.target.value;
+        };
+
+        doc.getElementById('dw-add-btn').onclick = () => {
+          const type = doc.getElementById('dw-type').value;
+          const x = parseInt(doc.getElementById('dw-x').value, 10) || 0;
+          const y = parseInt(doc.getElementById('dw-y').value, 10) || 0;
+          const val = doc.getElementById('dw-val').value.trim();
+          state.queue.push({
+            id: Date.now() + Math.random(),
+            type,
+            x, y,
+            rx: Number((x / Math.max(1, window.innerWidth)).toFixed(4)),
+            ry: Number((y / Math.max(1, window.innerHeight)).toFixed(4)),
+            selector: type.includes('selector') ? (val || 'Play') : '',
+            value: val || (type === 'wait' ? '1' : 'คลิกเมาส์'),
+            note: `พิกัด (${x}, ${y})`,
+            runOnce: false,
+            enabled: true
+          });
+          doc.getElementById('dw-val').value = '';
+          renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage(); renderDetachedSteps();
+        };
+
+        doc.getElementById('dw-clean-btn').onclick = () => {
+          stopQueueLoop();
+          state.queue = [];
+          state.currentIndex = 0;
+          state.cycles = 0;
+          renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage(); renderDetachedSteps();
+          doc.getElementById('dw-status').textContent = 'CLEANED';
+        };
+
+        doc.getElementById('dw-run-btn').onclick = () => {
+          doc.getElementById('dw-status').textContent = 'RUNNING';
+          startQueueLoop();
+          renderDetachedSteps();
+        };
+
+        doc.getElementById('dw-stop-btn').onclick = () => {
+          doc.getElementById('dw-status').textContent = 'PAUSED';
+          stopQueueLoop();
+          renderDetachedSteps();
+        };
+
+        renderDetachedSteps();
+        setInterval(() => {
+          if (detachedWin && !detachedWin.closed) {
+            drawDetachedRadar();
+            const stBadge = doc.getElementById('dw-status');
+            if (stBadge) stBadge.textContent = state.running ? ('RUN #' + state.cycles) : 'READY';
+          }
+        }, 400);
+      }
+
+      document.getElementById('btn-detach-standalone-hud')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
+      document.getElementById('btn-open-real-and-detach')?.addEventListener('click', () => openDetachedAutoMouseWindow(true));
+      document.getElementById('hud-btn-popout')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
+
       document.getElementById('btn-embed-hud').addEventListener('click', () => {
         syncDynamicAutoMouseCode();
         copyCodeToClipboard();
@@ -2611,84 +2904,6 @@ if __name__ == "__main__":
       });
 
       document.getElementById('btn-copy-script').addEventListener('click', copyCodeToClipboard);
-
-      // --- Permanent Chrome Extension (manifest.json + content.js) & Always-On PiP Window Handlers ---
-      const chromeModal = document.getElementById('chrome-ext-modal');
-      document.getElementById('btn-open-chrome-ext-modal')?.addEventListener('click', () => {
-        chromeModal.classList.remove('hidden');
-      });
-      document.getElementById('btn-close-chrome-modal')?.addEventListener('click', () => {
-        chromeModal.classList.add('hidden');
-      });
-
-      document.getElementById('btn-dl-manifest')?.addEventListener('click', () => {
-        const manifestObj = {
-          manifest_version: 3,
-          name: "AiLab Immortal AutoMouse Bot (Always-On HUD)",
-          version: "4.0",
-          description: "ฝังกล่องแผงควบคุมเมาส์บอทอัตโนมัติบนหน้าจอ Chrome ตลอดเวลาในทุกเว็บไซต์ (รวม YouTube Search/Watch/Radio)",
-          permissions: ["storage", "activeTab", "scripting"],
-          host_permissions: ["<all_urls>"],
-          content_scripts: [
-            {
-              matches: ["<all_urls>"],
-              js: ["content.js"],
-              run_at: "document_idle",
-              all_frames: false
-            }
-          ]
-        };
-        const blob = new Blob([JSON.stringify(manifestObj, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'manifest.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
-
-      document.getElementById('btn-dl-content-js')?.addEventListener('click', () => {
-        syncDynamicAutoMouseCode();
-        const contentScript = generateStandaloneQueueScript();
-        const blob = new Blob([contentScript], { type: 'application/javascript' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'content.js';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
-
-      document.getElementById('btn-launch-pip-hud')?.addEventListener('click', async () => {
-        syncDynamicAutoMouseCode();
-        copyCodeToClipboard();
-        // Use Document Picture-in-Picture API if supported by Chrome, otherwise fallback to compact Always-On-Top Popup Controller
-        try {
-          if ('documentPictureInPicture' in window) {
-            const pipWin = await window.documentPictureInPicture.requestWindow({ width: 390, height: 420 });
-            const wrap = pipWin.document.createElement('div');
-            wrap.style.cssText = 'background:#060b17;color:#ecfdf5;font-family:sans-serif;padding:12px;height:100vh;box-sizing:border-box;';
-            const h = pipWin.document.createElement('div');
-            h.style.cssText = 'font-weight:800;color:#34d399;margin-bottom:8px;font-size:14px;';
-            h.textContent = '📌 แผงควบคุม AutoMouse ลอยค้างบนจอ (Always-On-Top)';
-            const p = pipWin.document.createElement('p');
-            p.style.cssText = 'font-size:12px;color:#94a3b8;margin-bottom:10px;';
-            p.textContent = 'หน้าต่างนี้จะลอยอยู่บนจอ Chrome ตลอดเวลาแม้เปลี่ยนหน้าเว็บ กดปุ่มด้านล่างเพื่อคัดลอกโค้ดคิวล่าสุดหรือสั่งรันบอทได้ทันที';
-            const bRun = pipWin.document.createElement('button');
-            bRun.textContent = '▶ เริ่มรันคิว / คัดลอกโค้ดล่าสุด';
-            bRun.style.cssText = 'width:100%;background:#10b981;color:#020617;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;margin-bottom:8px;';
-            bRun.onclick = () => { startQueueLoop(); copyCodeToClipboard(); bRun.textContent = '✓ กำลังรัน + คัดลอกโค้ดแล้ว!'; };
-            wrap.append(h, p, bRun);
-            pipWin.document.body.style.margin = '0';
-            pipWin.document.body.appendChild(wrap);
-            chromeModal.classList.add('hidden');
-            return;
-          }
-        } catch (e) {}
-        const hud = document.getElementById('embedded-hud-panel');
-        document.getElementById('hud-body').classList.remove('hidden');
-        hud.style.zIndex = '2147483647';
-        chromeModal.classList.add('hidden');
-      });
-
 
       document.getElementById('btn-open-real-picker')?.addEventListener('click', () => {
         syncDynamicAutoMouseCode();
