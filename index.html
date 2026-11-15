@@ -1180,6 +1180,13 @@
         return;
       }
 
+      // Ensure Studio Embedded HUD Panel stays 100% visible & unhidden during every step
+      const studioHud = document.getElementById('embedded-hud-panel');
+      if (studioHud) {
+        studioHud.classList.remove('hidden');
+        studioHud.style.display = 'block';
+      }
+
       if (step.type === 'press_enter') {
         const target = lastInteractedElement || findTargetElement(step) || document.getElementById('test-box-msg');
         let ex = state.lastMouseX, ey = state.lastMouseY;
@@ -1187,7 +1194,7 @@
           const r = target.getBoundingClientRect();
           if (r.width > 0) { ex = Math.round(r.left + r.width / 2); ey = Math.round(r.top + r.height / 2); }
         }
-        moveBotCursor(ex, ey, '↵ กดปุ่ม ENTER ที่เว็บเป้าหมาย');
+        moveBotCursor(ex, ey, '↵ กดปุ่ม ENTER (ตรึงกล่อง AutoMouse อยู่กับที่)');
         await new Promise(r => setTimeout(r, Math.round(moveWait * 0.6)));
         triggerClickVisual(ex, ey, '↵ ENTER!');
         deepPressEnter(target);
@@ -1520,7 +1527,7 @@
       });
     }
 
-    // SPY-GRADE IMMORTAL ENGINE (1. Manual First-Start Only: Never Auto-Starts on initial injection; 2. True Click/Enter Navigation Follower across SPA, YouTube, and Multi-Page sites; 3. Live Spy Telemetry)
+    // IRONCLAD NEVER-DISAPPEAR AUTOMOUSE ENGINE (When clicking or pressing Enter on any step, intercepts hard page unloads & swaps/routes in-place so the AutoMouse box NEVER disappears, hides, or escapes!)
     function generateStandaloneQueueScript() {
       const uid = document.getElementById('quick-id')?.value.trim() || '';
       const pwd = document.getElementById('quick-pass')?.value.trim() || '';
@@ -1544,27 +1551,22 @@
 
       return `(function(){
   if (window.__AILAB_SPY_ACTIVE && document.getElementById('ailab-q-hud')) {
-    document.getElementById('ailab-q-hud').style.display = 'block';
+    const existingHud = document.getElementById('ailab-q-hud');
+    existingHud.style.setProperty('display', 'block', 'important');
+    existingHud.style.setProperty('visibility', 'visible', 'important');
+    existingHud.style.setProperty('opacity', '1', 'important');
     return;
   }
   window.__AILAB_SPY_ACTIVE = true;
 
-  const STORAGE_KEY = '__AILAB_SPY_BOT_STATE_V11__';
-  const CONNECTED_KEY = '__AILAB_CONNECTED_SITE_LOCK__';
+  const STORAGE_KEY = '__AILAB_SPY_BOT_STATE_V12__';
   const DEFAULT_QUEUE = ${serializedQueue};
   const DEFAULT_VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
-
-  // Mark this website/domain as a Connected Site ("เชื่อมเว็บนั้นแล้ว") so AutoMouse ALWAYS pops up its screen automatically whenever on this site!
-  try {
-    localStorage.setItem(CONNECTED_KEY, JSON.stringify({ host: location.hostname, origin: location.origin, connectedAt: Date.now(), autoPopup: true }));
-    sessionStorage.setItem(CONNECTED_KEY, '1');
-  } catch(e){}
 
   let saved = null;
   try { saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e){}
 
-  // RULE: First start is NEVER Auto! It only resumes if the user explicitly clicked "▶ สั่งการเริ่มทำงาน" within the last 18 seconds right before a page transition!
-  const isRecentCommandedRun = Boolean(saved && saved.commandedByUser && saved.running && (Date.now() - (saved.ts || 0) < 18000));
+  const isRecentCommandedRun = Boolean(saved && saved.commandedByUser && saved.running && (Date.now() - (saved.ts || 0) < 25000));
 
   const QUEUE = (saved && Array.isArray(saved.queue) && saved.queue.length > 0) ? saved.queue : DEFAULT_QUEUE;
   const VARS = (saved && saved.vars) ? Object.assign({}, DEFAULT_VARS, saved.vars) : DEFAULT_VARS;
@@ -1572,7 +1574,6 @@
   let commandedByUser = isRecentCommandedRun;
   let idx = (saved && typeof saved.idx === 'number') ? (saved.idx % Math.max(1, QUEUE.length)) : 0;
   let cycles = (saved && typeof saved.cycles === 'number') ? saved.cycles : 0;
-  // Always pop up expanded (minimized = false) when connected to the website!
   let minimized = false;
   let hudPos = (saved && saved.hudPos) ? saved.hudPos : null;
   let masterShellActive = false;
@@ -1581,7 +1582,7 @@
 
   function persistState() {
     try {
-      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, commandedByUser, idx, cycles, minimized, hudPos, ts: Date.now() });
+      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, commandedByUser, idx, cycles, minimized: false, hudPos, ts: Date.now() });
       sessionStorage.setItem(STORAGE_KEY, payload);
       localStorage.setItem(STORAGE_KEY, payload);
     } catch(e){}
@@ -1596,8 +1597,16 @@
     return window;
   }
 
-  // --- SPY NAVIGATION FOLLOWER (Follows Clicks, Links, YouTube Search/Watch/Radio, and Enter Submits 100% Accurately) ---
-  function spyFollowYouTubeNavigation(targetUrl, linkNode) {
+  // =========================================================================
+  // IRONCLAD ANTI-ESCAPE / ANTI-UNLOAD NAVIGATION ENGINE
+  // Why did the AutoMouse box disappear before when clicking a link or pressing Enter?
+  // Because calling native form.submit(), clicking a search submit button, or clicking an a[href] caused the browser to perform a FULL DOCUMENT UNLOAD (wiping all injected JS & DOM elements)!
+  // Solution:
+  // 1. On YouTube: NEVER allow form.submit() or hard a[href] navigation! Always intercept and dispatch yt-navigate on ytd-app + history.pushState so YouTube transitions to the search results or video player 100% inside the same JS context while the AutoMouse box stays rock-solid on screen!
+  // 2. On all other websites: Automatically engage the Full-Screen Master Shell Iframe (activateMasterShellLock) OR In-Place Fetch-Swap (inPlaceFetchNavigate) so clicking links or pressing Enter loads the next page without ever unloading the top-level AutoMouse box!
+  // =========================================================================
+
+  function inPlaceYouTubeNavigate(targetUrl) {
     try {
       const u = new URL(targetUrl, location.origin);
       if (u.origin !== location.origin) return false;
@@ -1605,42 +1614,9 @@
       const listId = u.searchParams.get('list');
       const searchQ = u.searchParams.get('search_query');
 
-      // 1. If we have a real anchor node inside YouTube DOM, let YouTube's native Polymer handler process a clean synthetic click without our wrapper blocking it
-      if (linkNode && !linkNode.__SPY_CLICKING__) {
-        linkNode.__SPY_CLICKING__ = true;
-        linkNode.removeAttribute('target');
-        history.pushState({}, '', u.pathname + u.search + u.hash);
-        const ytApp = document.querySelector('ytd-app');
-        if (vid && ytApp) {
-          const navDetail = {
-            endpoint: {
-              commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_WATCH', rootVe: 3832 } },
-              watchEndpoint: { videoId: vid }
-            }
-          };
-          if (listId) navDetail.endpoint.watchEndpoint.playlistId = listId;
-          if (u.searchParams.get('start_radio') === '1') navDetail.endpoint.watchEndpoint.continuePlayback = true;
-          ytApp.dispatchEvent(new CustomEvent('yt-navigate', { bubbles: true, composed: true, detail: navDetail }));
-        } else if (searchQ && ytApp) {
-          ytApp.dispatchEvent(new CustomEvent('yt-navigate', {
-            bubbles: true, composed: true,
-            detail: { endpoint: { commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_SEARCH' } }, searchEndpoint: { query: searchQ } } }
-          }));
-        }
-        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
-        setTimeout(() => { linkNode.__SPY_CLICKING__ = false; buildOrRestoreUI(); }, 250);
-        return true;
-      }
-
-      // 2. Direct URL navigation via YouTube Polymer SPA router (e.g. when pressing Enter on Search box)
       history.pushState({}, '', u.pathname + u.search + u.hash);
       const ytApp = document.querySelector('ytd-app');
-      if (searchQ && ytApp) {
-        ytApp.dispatchEvent(new CustomEvent('yt-navigate', {
-          bubbles: true, composed: true,
-          detail: { endpoint: { commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_SEARCH' } }, searchEndpoint: { query: searchQ } } }
-        }));
-      } else if (vid && ytApp) {
+      if (vid && ytApp) {
         const navDetail = {
           endpoint: {
             commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_WATCH', rootVe: 3832 } },
@@ -1648,59 +1624,195 @@
           }
         };
         if (listId) navDetail.endpoint.watchEndpoint.playlistId = listId;
+        if (u.searchParams.get('start_radio') === '1') navDetail.endpoint.watchEndpoint.continuePlayback = true;
         ytApp.dispatchEvent(new CustomEvent('yt-navigate', { bubbles: true, composed: true, detail: navDetail }));
+      } else if (searchQ && ytApp) {
+        ytApp.dispatchEvent(new CustomEvent('yt-navigate', {
+          bubbles: true, composed: true,
+          detail: { endpoint: { commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_SEARCH' } }, searchEndpoint: { query: searchQ } } }
+        }));
       }
       window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
-      setTimeout(buildOrRestoreUI, 200);
+      lockHudOnScreen();
       return true;
     } catch (e) { return false; }
   }
 
-  // Spy Enter Execution: Triggers real keyboard Enter + clicks Search/Submit button + follows URL transition!
+  async function inPlaceFetchNavigate(targetUrl) {
+    try {
+      const u = new URL(targetUrl, location.href);
+      if (u.origin !== location.origin) return false;
+      if (location.hostname.includes('youtube.com')) {
+        return inPlaceYouTubeNavigate(u.href);
+      }
+      if (masterShellActive && masterIframe) {
+        masterIframe.src = u.href;
+        lockHudOnScreen();
+        return true;
+      }
+      const res = await fetch(u.href);
+      const html = await res.text();
+      const parsed = new DOMParser().parseFromString(html, 'text/html');
+      history.pushState({}, parsed.title || document.title, u.href);
+      if (parsed.title) document.title = parsed.title;
+      Array.from(document.body.children).forEach(ch => {
+        if (ch.id !== 'ailab-q-hud' && ch.id !== 'ailab-q-cursor' && ch.id !== 'ailab-hover-box') ch.remove();
+      });
+      Array.from(parsed.body.children).forEach(ch => {
+        document.body.appendChild(document.importNode(ch, true));
+      });
+      lockHudOnScreen();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Global Capture-Phase Interceptors so neither manual clicks, bot clicks, nor Enter submits can EVER cause a hard page unload!
+  window.addEventListener('submit', (ev) => {
+    const form = ev.target;
+    if (!form) return;
+    form.setAttribute('target', '_self');
+    if (location.hostname.includes('youtube.com')) {
+      const inp = form.querySelector('input[name="search_query"], input#search, .ytSearchboxComponentInput');
+      if (inp && inp.value.trim()) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
+        inPlaceYouTubeNavigate('https://www.youtube.com/results?search_query=' + encodeURIComponent(inp.value.trim()));
+        if (statEl) statEl.textContent = '🔒 ค้นหา "' + inp.value.trim() + '" สำเร็จ (ตรึงกล่อง AutoMouse ไม่ให้หาย!)';
+      }
+      return;
+    }
+    if (!masterShellActive && form.action) {
+      try {
+        const dest = new URL(form.action, location.href);
+        if (dest.origin === location.origin && (!form.method || form.method.toLowerCase() === 'get')) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const qs = new URLSearchParams(new FormData(form)).toString();
+          inPlaceFetchNavigate(dest.origin + dest.pathname + (qs ? '?' + qs : ''));
+        }
+      } catch(e){}
+    }
+  }, true);
+
+  window.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    if (hud && hud.contains(ev.target)) return;
+    if (location.hostname.includes('youtube.com')) {
+      const t = ev.target;
+      if (t && (t.id === 'search' || t.name === 'search_query' || (t.className && String(t.className).includes('Searchbox')))) {
+        const q = (t.value || '').trim();
+        if (q) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          ev.stopImmediatePropagation();
+          inPlaceYouTubeNavigate('https://www.youtube.com/results?search_query=' + encodeURIComponent(q));
+          if (statEl) statEl.textContent = '🔒 กด Enter ค้นหา "' + q + '" แล้ว (กล่อง AutoMouse อยู่ครบไม่หาย!)';
+        }
+      }
+    }
+  }, true);
+
+  window.addEventListener('click', (ev) => {
+    if (hud && hud.contains(ev.target)) return;
+    const path = (typeof ev.composedPath === 'function') ? ev.composedPath() : [ev.target];
+
+    // Check if user or bot clicked the YouTube Search magnifying glass button
+    if (location.hostname.includes('youtube.com')) {
+      for (const n of path) {
+        if (n && n.tagName === 'BUTTON' && (n.id === 'search-icon-legacy' || (n.className && String(n.className).includes('SearchButton')))) {
+          const inp = document.querySelector('input#search, input[name="search_query"], .ytSearchboxComponentInput');
+          if (inp && inp.value.trim()) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            ev.stopImmediatePropagation();
+            inPlaceYouTubeNavigate('https://www.youtube.com/results?search_query=' + encodeURIComponent(inp.value.trim()));
+            if (statEl) statEl.textContent = '🔒 คลิกค้นหา "' + inp.value.trim() + '" แล้ว (กล่อง AutoMouse ไม่หาย!)';
+            return;
+          }
+        }
+      }
+    }
+
+    let link = null;
+    for (const n of path) {
+      if (n && n.tagName === 'A' && n.href) { link = n; break; }
+    }
+    if (!link && ev.target && ev.target.closest) link = ev.target.closest('a[href]');
+    if (!link || !link.href) return;
+    const rawHref = link.getAttribute('href') || '';
+    if (rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
+    link.removeAttribute('target');
+
+    if (location.hostname.includes('youtube.com')) {
+      const u = new URL(link.href, location.origin);
+      if (u.origin === location.origin && (u.pathname === '/watch' || u.pathname === '/results' || u.pathname.startsWith('/@') || u.pathname.startsWith('/channel'))) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        inPlaceYouTubeNavigate(u.href);
+        if (statEl) statEl.textContent = '🔒 เปลี่ยนเข้าหน้า ' + u.pathname + ' (ตรึงกล่อง AutoMouse อยู่กับที่ 100%!)';
+      }
+      return;
+    }
+
+    if (!masterShellActive) {
+      try {
+        const u = new URL(link.href, location.href);
+        if (u.origin === location.origin) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          inPlaceFetchNavigate(u.href);
+        }
+      } catch(e){}
+    }
+  }, true);
+
+  // Bot Enter Execution (Never unloads page; keeps AutoMouse box 100% in place!)
   function spyExecuteEnter(targetEl, tDoc) {
     const el = targetEl || lastEl || tDoc.activeElement || tDoc.body;
     if (!el) return;
     el.focus();
+
+    if (location.hostname.includes('youtube.com')) {
+      const ytSearchInput = tDoc.querySelector('input#search, input[name="search_query"], .ytSearchboxComponentInput');
+      const qVal = ((el && el.value) || (ytSearchInput && ytSearchInput.value) || '').trim();
+      if (qVal) {
+        inPlaceYouTubeNavigate('https://www.youtube.com/results?search_query=' + encodeURIComponent(qVal));
+        if (statEl) statEl.textContent = '🔒 กด Enter ค้นหา "' + qVal + '" สำเร็จ (กล่อง AutoMouse ไม่หาย!)';
+        return;
+      }
+    }
 
     const keyOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, charCode: 13, bubbles: true, cancelable: true, composed: true };
     el.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
     el.dispatchEvent(new KeyboardEvent('keypress', keyOpts));
     el.dispatchEvent(new KeyboardEvent('keyup', keyOpts));
 
-    // Special YouTube Search Box Enter Handler (Guaranteed to navigate to /results?search_query=...)
-    if (location.hostname.includes('youtube.com')) {
-      const ytSearchInput = tDoc.querySelector('input#search, input[name="search_query"], .ytSearchboxComponentInput');
-      const ytSearchBtn = tDoc.querySelector('button#search-icon-legacy, button.ytSearchboxComponentSearchButton, [aria-label="Search"], [aria-label="ค้นหา"]');
-      if (ytSearchInput && (el === ytSearchInput || ytSearchInput.value.trim())) {
-        const qVal = (el.value || ytSearchInput.value || '').trim();
-        if (ytSearchBtn) {
-          ytSearchBtn.click();
-        } else if (qVal) {
-          spyFollowYouTubeNavigation('https://www.youtube.com/results?search_query=' + encodeURIComponent(qVal));
-        }
-        return;
-      }
-    }
-
-    // Standard Form or Adjacent Submit Button Handler
     const form = el.closest && el.closest('form');
     if (form) {
       form.setAttribute('target', '_self');
-      const subBtn = form.querySelector('button[type="submit"], input[type="submit"], button:not([type="button"])');
+      if (!masterShellActive && form.action) {
+        try {
+          const dest = new URL(form.action, location.href);
+          if (dest.origin === location.origin && (!form.method || form.method.toLowerCase() === 'get')) {
+            const qs = new URLSearchParams(new FormData(form)).toString();
+            inPlaceFetchNavigate(dest.origin + dest.pathname + (qs ? '?' + qs : ''));
+            return;
+          }
+        } catch(e){}
+      }
+      const subBtn = form.querySelector('button[type="submit"], input[type="submit"]');
       if (subBtn) subBtn.click();
       else if (typeof form.requestSubmit === 'function') form.requestSubmit();
-      else form.submit();
-    } else if (el.parentElement) {
-      const box = el.parentElement.parentElement || el.parentElement;
-      const btn = box.querySelector('button, input[type="submit"], [role="button"]');
-      if (btn && (!hud || !hud.contains(btn))) btn.click();
     }
+    lockHudOnScreen();
   }
 
-  // Spy Click Execution: Climbs to real clickable node, fires full pointer/mouse sequence, and follows <a href> accurately!
+  // Bot Click Execution (Never unloads page; keeps AutoMouse box 100% in place!)
   function spyExecuteClick(rawEl, x, y, tDoc, tWin) {
     if (!rawEl) return;
-    // If clicked inside a video card / thumbnail / nested span, find the actual clickable link or button
     let el = rawEl.closest('a[href], button, input, textarea, select, [role="button"], [onclick]') || rawEl;
     if (!el.href && (rawEl.closest('ytd-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer'))) {
       const card = rawEl.closest('ytd-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer');
@@ -1710,7 +1822,17 @@
 
     lastEl = el;
     const linkAnc = (el.tagName === 'A' && el.href) ? el : (el.closest && el.closest('a[href]'));
-    if (linkAnc) linkAnc.setAttribute('target', '_self');
+    if (linkAnc && linkAnc.href && !linkAnc.getAttribute('href').startsWith('#') && !linkAnc.getAttribute('href').startsWith('javascript:')) {
+      linkAnc.removeAttribute('target');
+      if (location.hostname.includes('youtube.com')) {
+        inPlaceYouTubeNavigate(linkAnc.href);
+        return;
+      }
+      if (!masterShellActive) {
+        inPlaceFetchNavigate(linkAnc.href);
+        return;
+      }
+    }
 
     el.focus();
     const evOpts = { bubbles: true, cancelable: true, composed: true, view: tWin, clientX: x, clientY: y, button: 0, buttons: 1 };
@@ -1720,25 +1842,9 @@
     el.dispatchEvent(new MouseEvent('mouseup', evOpts));
     el.dispatchEvent(new MouseEvent('click', evOpts));
     if (typeof el.click === 'function') el.click();
-
-    // If it's a link and the page hasn't navigated yet, follow it seamlessly!
-    if (linkAnc && linkAnc.href && !linkAnc.getAttribute('href').startsWith('#') && !linkAnc.getAttribute('href').startsWith('javascript:')) {
-      const hrefVal = linkAnc.href;
-      if (location.hostname.includes('youtube.com')) {
-        spyFollowYouTubeNavigation(hrefVal, linkAnc);
-      } else if (masterShellActive && masterIframe) {
-        setTimeout(() => {
-          try {
-            if (masterIframe.contentWindow && masterIframe.contentWindow.location.href !== hrefVal) {
-              masterIframe.src = hrefVal;
-            }
-          } catch(e){}
-        }, 180);
-      }
-    }
+    lockHudOnScreen();
   }
 
-  // Master Frame Shell for Non-YouTube Multi-Page Sites (Keeps HUD alive on top while inner page follows every link/reload/enter)
   function activateMasterShellLock() {
     if (masterShellActive) return;
     if (location.hostname.includes('youtube.com')) return;
@@ -1768,7 +1874,7 @@
             history.replaceState({}, innerDoc.title || document.title, innerWin.location.href);
             if (innerDoc.title) document.title = innerDoc.title;
             innerDoc.querySelectorAll('a[target="_blank"]').forEach(a => a.setAttribute('target', '_self'));
-            if (statEl) statEl.textContent = '🕵️ [SPY TRACKER] ตามเข้าหน้าใหม่สำเร็จ: ' + innerWin.location.pathname;
+            lockHudOnScreen();
           }
         } catch (err) {}
       });
@@ -1783,6 +1889,23 @@
   }
 
   let cur = null, hud = null, statEl = null, spyTelemetryEl = null, listBox = null, title = null, bodyWrap = null;
+
+  function lockHudOnScreen() {
+    buildOrRestoreUI();
+    const fsHost = document.fullscreenElement || document.documentElement;
+    if (hud) {
+      if (hud.parentElement !== fsHost) fsHost.appendChild(hud);
+      hud.style.setProperty('display', 'block', 'important');
+      hud.style.setProperty('visibility', 'visible', 'important');
+      hud.style.setProperty('opacity', '1', 'important');
+      hud.style.setProperty('z-index', '2147483646', 'important');
+    }
+    if (cur) {
+      if (cur.parentElement !== fsHost) fsHost.appendChild(cur);
+      cur.style.setProperty('display', 'block', 'important');
+      cur.style.setProperty('z-index', '2147483647', 'important');
+    }
+  }
 
   function buildOrRestoreUI() {
     cur = document.getElementById('ailab-q-cursor');
@@ -1801,8 +1924,7 @@
     hud = document.getElementById('ailab-q-hud');
     if (hud) return;
 
-    hud = mk('div', 'position:fixed;bottom:18px;right:18px;z-index:2147483646;background:rgba(5,9,20,0.98);color:#ecfdf5;border:2.5px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 0 35px rgba(16,185,129,0.45),0 22px 55px rgba(0,0,0,0.95);width:395px;max-width:95vw;transition:transform 0.22s cubic-bezier(0.22,1,0.36,1);transform:scale(1.04);');
-    setTimeout(() => { if (hud) hud.style.transform = 'scale(1)'; }, 220);
+    hud = mk('div', 'position:fixed !important;bottom:18px;right:18px;z-index:2147483646 !important;background:rgba(5,9,20,0.98);color:#ecfdf5;border:2.5px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 0 35px rgba(16,185,129,0.45),0 22px 55px rgba(0,0,0,0.95);width:395px;max-width:95vw;display:block !important;visibility:visible !important;opacity:1 !important;');
     hud.id = 'ailab-q-hud';
     if (hudPos && hudPos.left && hudPos.top) {
       hud.style.right = 'auto'; hud.style.bottom = 'auto';
@@ -1810,41 +1932,33 @@
     }
 
     const header = mk('div', 'display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #1e293b;cursor:move;user-select:none;');
-    title = mk('div', 'font-weight:900;color:#34d399;font-size:13px;', '🕵️ Spy AutoMouse (' + QUEUE.length + ' ขั้น)');
+    title = mk('div', 'font-weight:900;color:#34d399;font-size:13px;', '🔒 AutoMouse (' + QUEUE.length + ' ขั้น - ตรึงถาวร)');
     const hdrBtns = mk('div', 'display:flex;gap:4px;align-items:center;');
+    const bNavBack = mk('button', 'background:#0284c7;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '⬅️ ย้อนกลับ');
+    bNavBack.onclick = () => {
+      try { getTargetWin().history.back(); } catch(e){ history.back(); }
+      lockHudOnScreen();
+      if (statEl) statEl.textContent = '⬅️ ย้อนกลับแล้ว (กล่อง AutoMouse อยู่ครบไม่หาย!)';
+    };
+    const bNavRefresh = mk('button', 'background:#059669;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🔄 Refresh');
+    bNavRefresh.onclick = () => {
+      idx = 0; persistState(); renderHudSteps();
+      inPlaceFetchNavigate(location.href);
+      if (statEl) statEl.textContent = '🔄 รีเฟรชและตั้งคิวกลับไปเริ่มขั้น #1 แล้ว!';
+    };
     const speedSel = mk('select', 'background:#0f172a;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-weight:700;');
     [['1','1x'],['2','2x เร็ว'],['5','5x แรง'],['10','10x สายฟ้า']].forEach(([v,lbl]) => {
       const o = mk('option', '', lbl); o.value = v; if (Number(v) === VARS.speed) o.selected = true; speedSel.appendChild(o);
     });
     speedSel.onchange = () => { VARS.speed = parseFloat(speedSel.value) || 2; persistState(); };
-    const bNavBack = mk('button', 'background:#0284c7;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '⬅️ ย้อนกลับ');
-    bNavBack.title = 'ย้อนกลับหน้าเว็บก่อนหน้าทันที';
-    bNavBack.onclick = () => {
-      try { getTargetWin().history.back(); } catch(e){ history.back(); }
-      if (statEl) statEl.textContent = '⬅️ ย้อนกลับหน้าก่อนหน้าแล้ว (แผง AutoMouse ยังอยู่ครบ!)';
-    };
-    const bNavRefresh = mk('button', 'background:#059669;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🔄 Refresh');
-    bNavRefresh.title = 'รีเฟรชหน้าเว็บ/รีเซ็ตลำดับคิวให้พร้อมรันใหม่ทันที';
-    bNavRefresh.onclick = () => {
-      idx = 0;
-      persistState();
-      renderHudSteps();
-      if (masterShellActive && masterIframe && masterIframe.contentWindow) {
-        masterIframe.contentWindow.location.reload();
-      } else if (location.hostname.includes('youtube.com')) {
-        spyFollowYouTubeNavigation(location.href);
-      }
-      if (statEl) statEl.textContent = '🔄 รีเฟรชหน้าเว็บและตั้งคิวกลับไปเริ่มขั้นที่ #1 พร้อมรันแล้ว!';
-    };
     const bClean = mk('button', 'background:#be123c;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🧹 Clean');
-    bClean.onclick = () => { running = false; commandedByUser = false; QUEUE.length = 0; idx = 0; cycles = 0; persistState(); renderHudSteps(); statEl.textContent = '🧹 ล้างคิวทั้งหมดแล้ว (รอสั่งการใหม่)'; };
-    const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
-    hdrBtns.append(bNavBack, bNavRefresh, speedSel, bClean, bMin);
+    bClean.onclick = () => { running = false; commandedByUser = false; QUEUE.length = 0; idx = 0; cycles = 0; persistState(); renderHudSteps(); statEl.textContent = '🧹 ล้างคิวทั้งหมดแล้ว (0 ขั้นตอน)'; };
+    hdrBtns.append(bNavBack, bNavRefresh, speedSel, bClean);
     header.append(title, hdrBtns);
 
-    bodyWrap = mk('div', minimized ? 'display:none;' : 'display:block;');
-    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:5px;color:#34d399;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #10b981;', '⚡ เชื่อมต่อเว็บ ' + location.hostname + ' แล้ว! (เด้งจอ AutoMouse ขึ้นมาอัตโนมัติ — รอกด ▶ สั่งการ)');
-    spyTelemetryEl = mk('div', 'font-family:monospace;font-size:10px;margin-bottom:8px;color:#fbbf24;background:#020617;padding:4px 8px;border-radius:6px;border:1px solid #1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', '🎯 SPY LOCK: เลื่อนเมาส์เพื่อสแกนเป้าหมาย...');
+    bodyWrap = mk('div', 'display:block;');
+    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:5px;color:#34d399;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #10b981;', '🔒 ตรึงกล่อง AutoMouse ถาวรแล้ว (คลิกหรือกด Enter กล่องจะไม่หาย 100%)');
+    spyTelemetryEl = mk('div', 'font-family:monospace;font-size:10px;margin-bottom:8px;color:#fbbf24;background:#020617;padding:4px 8px;border-radius:6px;border:1px solid #1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', '🎯 SPY LOCK: เลื่อนเมาส์เพื่อสแกนปุ่มเป้าหมาย...');
 
     listBox = mk('div', 'max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
 
@@ -1864,8 +1978,6 @@
     hud.append(header, bodyWrap);
     document.documentElement.appendChild(hud);
 
-    bMin.onclick = () => { minimized = !minimized; bodyWrap.style.display = minimized ? 'none' : 'block'; persistState(); };
-
     let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
     header.onmousedown = (e) => {
       if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
@@ -1877,8 +1989,8 @@
     };
     window.addEventListener('mousemove', (e) => {
       if (!dragging) return;
-      const nl = Math.max(4, il + (e.clientX - sx)) + 'px';
-      const nt = Math.max(4, it + (e.clientY - sy)) + 'px';
+      const nl = Math.max(4, Math.min(window.innerWidth - 120, il + (e.clientX - sx))) + 'px';
+      const nt = Math.max(4, Math.min(window.innerHeight - 80, it + (e.clientY - sy))) + 'px';
       hud.style.left = nl; hud.style.top = nt;
       hudPos = { left: nl, top: nt };
     });
@@ -1900,7 +2012,7 @@
     }
     bPick.onclick = () => {
       pickingMode = !pickingMode;
-      bPick.textContent = pickingMode ? '🎯 คลิกเป้าหมายบนหน้าเว็บ...' : '🎯 จิ้มล็อกเป้าหมาย (Spy Lock)';
+      bPick.textContent = pickingMode ? '🎯 คลิกเป้าหมายบนหน้าเว็บ...' : '🎯 จิ้มล็อกเป้าแม่นยำ';
       getTargetDoc().body.style.cursor = pickingMode ? 'crosshair' : '';
       if (!hoverBox) {
         hoverBox = mk('div', 'position:fixed;pointer-events:none;border:2.5px solid #f59e0b;background:rgba(245,158,11,0.18);z-index:2147483644;display:none;border-radius:6px;');
@@ -1953,8 +2065,8 @@
       });
       pickingMode = false; getTargetDoc().body.style.cursor = '';
       if (hoverBox) hoverBox.style.display = 'none';
-      bPick.textContent = '🎯 จิ้มล็อกเป้าหมาย (Spy Lock)';
-      statEl.textContent = '✓ ล็อกเป้าหมายขั้น #' + QUEUE.length + ' (' + ev.clientX + ',' + ev.clientY + ') เรียบร้อย';
+      bPick.textContent = '🎯 จิ้มล็อกเป้าแม่นยำ';
+      statEl.textContent = '✓ ล็อกเป้าขั้น #' + QUEUE.length + ' (' + snapX + ',' + snapY + ') แล้ว';
       persistState();
       renderHudSteps();
     }
@@ -1985,12 +2097,14 @@
       running = true;
       commandedByUser = true;
       persistState();
-      if (!loopActive) setTimeout(loop, 150);
+      lockHudOnScreen();
+      if (!loopActive) setTimeout(loop, 120);
     };
     bStop.onclick = () => {
       running = false;
       commandedByUser = false;
       persistState();
+      lockHudOnScreen();
       statEl.textContent = '⏹ หยุดตามคำสั่งแล้ว (ขั้น #' + (idx+1) + ' รอบ #' + cycles + ')';
       renderHudSteps();
     };
@@ -2014,9 +2128,9 @@
   function renderHudSteps() {
     if (!listBox) return;
     while (listBox.firstChild) listBox.removeChild(listBox.firstChild);
-    if (title) title.textContent = '🕵️ Spy AutoMouse (' + QUEUE.length + ' ขั้น)';
+    if (title) title.textContent = '🔒 AutoMouse (' + QUEUE.length + ' ขั้น - ตรึงถาวร)';
     if (QUEUE.length === 0) {
-      listBox.appendChild(mk('div', 'text-align:center;padding:14px;color:#64748b;border:1px dashed #334155;border-radius:8px;font-size:11px;', '0 ขั้นตอน — กด "🎯 จิ้มล็อกเป้าหมาย" หรือ "+ เพิ่มขั้น" แล้วกด "▶ สั่งการเริ่มทำงาน"'));
+      listBox.appendChild(mk('div', 'text-align:center;padding:14px;color:#64748b;border:1px dashed #334155;border-radius:8px;font-size:11px;', '0 ขั้นตอน — กด "🎯 จิ้มล็อกเป้าแม่นยำ" หรือ "+ เพิ่มขั้น" แล้วกด "▶ สั่งการเริ่มทำงาน"'));
       return;
     }
     QUEUE.forEach((step, i) => {
@@ -2154,7 +2268,7 @@
     if (loopActive) return;
     loopActive = true;
     while (running && QUEUE.length > 0) {
-      buildOrRestoreUI();
+      lockHudOnScreen();
       const stepDelay = VARS.speed >= 5 ? 45 : Math.max(100, Math.round(320 / VARS.speed));
       renderHudSteps();
       try {
@@ -2171,24 +2285,25 @@
           if (step.type === 'wait') {
             await new Promise(r => setTimeout(r, (parseFloat(val) || 1) * 1000));
           } else if (step.type === 'go_back') {
-            if (statEl) statEl.textContent = '⬅️ [SPY BACK] กำลังย้อนกลับหน้าก่อนหน้า...';
+            if (statEl) statEl.textContent = '⬅️ ย้อนกลับหน้าก่อนหน้า (กล่อง AutoMouse ไม่หาย!)';
             try { tWin.history.back(); } catch(e){ history.back(); }
-            await new Promise(r => setTimeout(r, 550));
+            lockHudOnScreen();
+            await new Promise(r => setTimeout(r, 500));
           } else if (step.type === 'refresh_page') {
-            if (statEl) statEl.textContent = '🔄 [SPY REFRESH] กำลังรีเฟรชหน้าเว็บ...';
-            if (masterShellActive && masterIframe && masterIframe.contentWindow) masterIframe.contentWindow.location.reload();
-            else if (location.hostname.includes('youtube.com')) spyFollowYouTubeNavigation(location.href);
-            await new Promise(r => setTimeout(r, 650));
+            if (statEl) statEl.textContent = '🔄 รีเฟรชหน้าเว็บ (กล่อง AutoMouse ไม่หาย!)';
+            await inPlaceFetchNavigate(location.href);
+            lockHudOnScreen();
+            await new Promise(r => setTimeout(r, 550));
           } else if (step.type === 'scroll_page') {
             tWin.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
           } else if (step.type === 'press_enter') {
-            if (statEl) statEl.textContent = '🕵️ [SPY ENTER] กดปุ่ม Enter และติดตามเข้าหน้าใหม่...';
+            if (statEl) statEl.textContent = '🔒 กดปุ่ม Enter ตามกล่อง (ตรึง AutoMouse อยู่กับที่!)';
             spyExecuteEnter(lastEl, tDoc);
-            await new Promise(r => setTimeout(r, 450));
+            lockHudOnScreen();
+            await new Promise(r => setTimeout(r, 400));
           } else {
             let x = (VARS.lockRatio && typeof step.rx === 'number') ? Math.round(step.rx * tWin.innerWidth) : (step.x || 300);
             let y = (VARS.lockRatio && typeof step.ry === 'number') ? Math.round(step.ry * tWin.innerHeight) : (step.y || 300);
-            // Spy Dual-Lock: Check smart selector first; if not found or empty, hit-test exact coordinates
             let el = findSmart(step.selector || (step.type.includes('selector') ? step.value : ''));
             if (el) {
               const r = el.getBoundingClientRect();
@@ -2197,70 +2312,55 @@
               el = tDoc.elementFromPoint(x, y);
             }
             if (cur) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
-            if (statEl) statEl.textContent = '🕵️ ขั้น #' + (executedIdx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
+            if (statEl) statEl.textContent = '🔒 ขั้น #' + (executedIdx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
             await new Promise(r => setTimeout(r, stepDelay));
             if (el && (!hud || !hud.contains(el))) {
-              spyExecuteClick(el, x, y, tDoc, tWin);
-              if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
               if (step.type.includes('type')) {
                 const inpTarget = ('value' in el && el.tagName !== 'BUTTON') ? el : (el.querySelector && el.querySelector('input,textarea')) || lastEl;
                 if (inpTarget && (('value' in inpTarget) || inpTarget.isContentEditable)) {
                   lastEl = inpTarget;
+                  inpTarget.focus();
                   setVal(inpTarget, val);
                 }
               }
+              spyExecuteClick(el, x, y, tDoc, tWin);
+              if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
             }
+            lockHudOnScreen();
           }
         }
         await new Promise(r => setTimeout(r, stepDelay));
       } catch (e) {
+        lockHudOnScreen();
         await new Promise(r => setTimeout(r, 150));
       }
     }
     loopActive = false;
   }
 
-  buildOrRestoreUI();
+  lockHudOnScreen();
   const obs = new MutationObserver(() => {
-    if (window.__AILAB_SPY_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
-      buildOrRestoreUI();
+    if (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor')) {
+      lockHudOnScreen();
     }
   });
   obs.observe(document.documentElement, { childList: true, subtree: true });
 
-  // Only auto-continue if commandedByUser was already active right before a page transition
   if (running && commandedByUser) {
-    setTimeout(loop, 300);
+    setTimeout(loop, 250);
   }
 
-  // Listen for Remote Commands from Detached AutoMouse Window
-  window.addEventListener('message', (ev) => {
-    const d = ev.data || {};
-    if (d.type === 'AILAB_REMOTE_EXEC_STEP' && d.payload && d.payload.step) {
-      const st = d.payload.step;
-      const tDoc = getTargetDoc();
-      const tWin = getTargetWin();
-      let x = (VARS.lockRatio && typeof st.rx === 'number') ? Math.round(st.rx * tWin.innerWidth) : (st.x || 300);
-      let y = (VARS.lockRatio && typeof st.ry === 'number') ? Math.round(st.ry * tWin.innerHeight) : (st.y || 300);
-      let el = findSmart(st.selector || (st.type.includes('selector') ? st.value : '')) || tDoc.elementFromPoint(x, y);
-      if (cur) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
-      if (el) spyExecuteClick(el, x, y, tDoc, tWin);
-    }
-  });
-
+  // High-frequency 120ms Anti-Hide Watchdog: Guarantees AutoMouse NEVER hides, shrinks, or disappears!
   setInterval(() => {
+    lockHudOnScreen();
     if (location.href !== lastUrl) {
       lastUrl = location.href;
-      buildOrRestoreUI();
-      if (statEl) statEl.textContent = '🕵️ [SPY FOLLOW] ตามเข้าหน้า ' + location.pathname + location.search.slice(0, 18) + ' สำเร็จ!';
+      if (statEl) statEl.textContent = '🔒 เปลี่ยนหน้าเป็น ' + location.pathname + ' (ตรึงกล่อง AutoMouse อยู่เหมือนเดิม!)';
     }
-    const fsHost = document.fullscreenElement || document.documentElement;
-    if (hud && hud.parentElement !== fsHost) fsHost.appendChild(hud);
-    if (cur && cur.parentElement !== fsHost) fsHost.appendChild(cur);
     if (running && commandedByUser && !loopActive) {
       loop();
     }
-  }, 300);
+  }, 120);
 })();`;
     }
 
