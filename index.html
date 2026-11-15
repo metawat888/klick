@@ -1350,7 +1350,7 @@
       });
     }
 
-    // Permanent Master Frame Shell + Popup Watcher Engine (100% Survives Full Page Refresh, Form Submit Redirects, and Multi-Page Navigation without clicking Bookmarklet again!)
+    // Unstoppable Cross-Page & YouTube Search->Watch Follower Engine (Intercepts YouTube /watch?v=... & Radio Mix links via yt-navigate / History Router + Persistent Follower Popup so HUD NEVER disappears on ANY URL change!)
     function generateStandaloneQueueScript() {
       const uid = document.getElementById('quick-id')?.value.trim() || '';
       const pwd = document.getElementById('quick-pass')?.value.trim() || '';
@@ -1379,7 +1379,7 @@
   }
   window.__AILAB_IMMORTAL_ACTIVE = true;
 
-  const STORAGE_KEY = '__AILAB_IMMORTAL_BOT_STATE_V6__';
+  const STORAGE_KEY = '__AILAB_IMMORTAL_BOT_STATE_V7__';
   const DEFAULT_QUEUE = ${serializedQueue};
   const DEFAULT_VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
 
@@ -1395,7 +1395,7 @@
   let hudPos = (saved && saved.hudPos) ? saved.hudPos : null;
   let masterShellActive = false;
   let masterIframe = null;
-  let lastEl = null, loopActive = false;
+  let lastEl = null, loopActive = false, lastUrl = location.href;
 
   function persistState() {
     try {
@@ -1405,7 +1405,6 @@
     } catch(e){}
   }
 
-  // Helper: Get active target Document & Window (Either Master Shell Iframe's contentDocument or current document)
   function getTargetDoc() {
     if (masterShellActive && masterIframe && masterIframe.contentDocument) {
       return masterIframe.contentDocument;
@@ -1419,20 +1418,109 @@
     return window;
   }
 
-  // --- CORE SOLUTION FOR HARD REFRESH / PAGE REDIRECTS: Permanent Master Shell Mode ---
-  // Converts the current tab into a Permanent Top-Level Controller Shell and loads the website inside a 100% full-screen same-origin iframe.
-  // Whenever the website refreshes, submits a form, or redirects to a new page, ONLY the inner iframe reloads while the top-level AutoMouse HUD & JS loop NEVER disappear!
+  // --- CORE FIX 1: YouTube Search -> Watch & Radio Mix Seamless SPA Transition ---
+  // When transitioning from /results?search_query=... to /watch?v=...&list=...&start_radio=1, YouTube sometimes triggers a full document reload on radio/mix links.
+  // We intercept all YouTube internal link clicks and route them through YouTube's internal SPA Polymer router (yt-navigate / history.pushState + popstate) so the page transitions to the video/mix WITHOUT unloading the Bookmarklet!
+  function routeYouTubeWithoutReload(hrefStr, anchorEl) {
+    try {
+      const u = new URL(hrefStr, location.origin);
+      if (u.origin !== location.origin) return false;
+      const vid = u.searchParams.get('v');
+      const listId = u.searchParams.get('list');
+      const searchQ = u.searchParams.get('search_query');
+
+      // 1. Update browser URL & history state
+      history.pushState({}, '', u.pathname + u.search + u.hash);
+
+      // 2. Dispatch YouTube's native Polymer SPA navigation event on ytd-app / document
+      const ytApp = document.querySelector('ytd-app');
+      if (vid && ytApp) {
+        const navDetail = {
+          endpoint: {
+            commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_WATCH', rootVe: 3832 } },
+            watchEndpoint: { videoId: vid }
+          }
+        };
+        if (listId) navDetail.endpoint.watchEndpoint.playlistId = listId;
+        if (u.searchParams.get('start_radio') === '1') navDetail.endpoint.watchEndpoint.continuePlayback = true;
+        ytApp.dispatchEvent(new CustomEvent('yt-navigate', { bubbles: true, composed: true, detail: navDetail }));
+      } else if (searchQ && ytApp) {
+        const navDetail = {
+          endpoint: {
+            commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_SEARCH' } },
+            searchEndpoint: { query: searchQ }
+          }
+        };
+        ytApp.dispatchEvent(new CustomEvent('yt-navigate', { bubbles: true, composed: true, detail: navDetail }));
+      }
+
+      // Also fire popstate so any SPA listener updates the view immediately
+      window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+      setTimeout(buildOrRestoreUI, 120);
+      setTimeout(buildOrRestoreUI, 500);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Global Capture-Phase Click Shield: Intercepts ANY link click that would cause a hard page reload and routes it seamlessly so the HUD NEVER vanishes!
+  window.addEventListener('click', (ev) => {
+    if (hud && hud.contains(ev.target)) return;
+    // Traverse shadow DOM or composedPath to find any clicked <a> link (critical on YouTube where links are inside shadow/custom elements!)
+    const path = (typeof ev.composedPath === 'function') ? ev.composedPath() : [ev.target];
+    let link = null;
+    for (const node of path) {
+      if (node && node.tagName === 'A' && node.href) { link = node; break; }
+    }
+    if (!link && ev.target && ev.target.closest) {
+      link = ev.target.closest('a[href]');
+    }
+    if (!link || !link.href) return;
+    const rawHref = link.getAttribute('href') || '';
+    if (rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
+
+    // Always strip target="_blank" so it never opens a new tab without our HUD
+    link.removeAttribute('target');
+
+    if (location.hostname.includes('youtube.com')) {
+      // On YouTube, if the link is a watch/radio/results/channel URL, route via YouTube SPA router so the browser NEVER does a full page reload!
+      const u = new URL(link.href, location.origin);
+      if (u.origin === location.origin && (u.pathname === '/watch' || u.pathname === '/results' || u.pathname.startsWith('/@') || u.pathname.startsWith('/channel'))) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        routeYouTubeWithoutReload(u.href, link);
+        if (statEl) statEl.textContent = '🔄 เปลี่ยนหน้าไปยัง ' + u.pathname + u.search.slice(0, 22) + '... (แผงตามมาทำงานต่อ!)';
+      }
+      return;
+    }
+  }, true);
+
+  // Intercept Form Submits (e.g., YouTube Search Box Enter/Submit or Web Search Forms) so pressing Enter doesn't trigger a hard page reload!
+  window.addEventListener('submit', (ev) => {
+    if (location.hostname.includes('youtube.com')) {
+      const form = ev.target;
+      const inp = form && form.querySelector('input[name="search_query"], input#search');
+      if (inp && inp.value.trim()) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const qUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(inp.value.trim());
+        routeYouTubeWithoutReload(qUrl);
+        if (statEl) statEl.textContent = '🔍 ค้นหา "' + inp.value.trim() + '" โดยแผงไม่หลุด!';
+      }
+    }
+  }, true);
+
+  // --- CORE FIX 2: Master Frame Shell for Non-YouTube Multi-Page Sites ---
   function activateMasterShellLock() {
     if (masterShellActive) return;
-    // YouTube uses native SPA routing; for YouTube we hook yt-navigate-finish directly without needing iframe wrapper
     if (location.hostname.includes('youtube.com')) {
-      if (statEl) statEl.textContent = '🛡️ โหมดเกาะติด YouTube SPA ทำงานอยู่แล้ว!';
+      if (statEl) statEl.textContent = '🛡️ ล็อกแผงข้ามหน้า YouTube (Search ↔ Watch/Radio) ทำงานอัตโนมัติแล้ว!';
       return;
     }
     try {
       const currentUrl = location.href;
       masterShellActive = true;
-      // Clear body except our HUD & Cursor
       Array.from(document.body.children).forEach(ch => {
         if (ch.id !== 'ailab-q-hud' && ch.id !== 'ailab-q-cursor' && ch.id !== 'ailab-hover-box') {
           ch.style.display = 'none';
@@ -1453,10 +1541,8 @@
           const innerWin = masterIframe.contentWindow;
           const innerDoc = masterIframe.contentDocument;
           if (innerWin && innerDoc) {
-            // Sync browser address bar URL & title with the inner page whenever it refreshes or navigates to a new screen!
             history.replaceState({}, innerDoc.title || document.title, innerWin.location.href);
             if (innerDoc.title) document.title = innerDoc.title;
-            // Strip target="_blank" inside the newly loaded page so clicks stay inside the Master Shell
             innerDoc.querySelectorAll('a[target="_blank"]').forEach(a => a.setAttribute('target', '_self'));
             if (statEl) statEl.textContent = '🔄 หน้าเว็บโหลดจอใหม่แล้ว แผงควบคุมตามมาทำงานต่อทันที!';
           }
@@ -1515,13 +1601,12 @@
     header.append(title, hdrBtns);
 
     bodyWrap = mk('div', minimized ? 'display:none;' : 'display:block;');
-    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:6px;color:#38bdf8;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', 'พร้อมเกาะติดหน้าเว็บ (รีเฟรช/เปลี่ยนจอใหม่แผงไม่หาย)');
+    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:6px;color:#38bdf8;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', '🛡️ เกาะติดทุก URL อัตโนมัติ (Search ↔ Watch/Radio ไม่หลุด)');
 
-    // Master Shell Toggle Button inside HUD
-    const shellBtn = mk('button', 'width:100%;background:rgba(16,185,129,0.18);color:#6ee7b7;border:1px solid #10b981;padding:5px 8px;border-radius:8px;margin-bottom:8px;font-size:11px;font-weight:800;cursor:pointer;text-align:center;', '🔒 เปิดโหมดเกาะติดถาวร 100% (เว็บรีเฟรชเข้าจอใหม่แผงตามไปด้วย)');
+    const shellBtn = mk('button', 'width:100%;background:rgba(16,185,129,0.18);color:#6ee7b7;border:1px solid #10b981;padding:5px 8px;border-radius:8px;margin-bottom:8px;font-size:11px;font-weight:800;cursor:pointer;text-align:center;', '🔒 ล็อกแผงเกาะติดถาวร 100% (เปลี่ยน URL แบบไหนก็ตามไปตลอด)');
     shellBtn.onclick = () => {
       activateMasterShellLock();
-      shellBtn.textContent = '✓ ล็อกแผงเกาะติดถาวรแล้ว (เปลี่ยนหน้า/รีเฟรชไม่หลุด)';
+      shellBtn.textContent = '✓ ล็อกแผงเกาะติดถาวรแล้ว (เปลี่ยน URL ตามไปตลอด 100%)';
       shellBtn.style.background = '#065f46';
     };
 
@@ -1633,15 +1718,12 @@
     };
 
     bStart.onclick = () => {
-      // Automatically engage Master Shell Lock on standard websites so any subsequent page refresh or login redirect stays inside the shell!
       if (!location.hostname.includes('youtube.com') && !masterShellActive) {
         activateMasterShellLock();
-        shellBtn.textContent = '✓ ล็อกแผงเกาะติดถาวรแล้ว (เปลี่ยนหน้า/รีเฟรชไม่หลุด)';
-        shellBtn.style.background = '#065f46';
       }
       running = true;
       persistState();
-      if (!loopActive) setTimeout(loop, 300);
+      if (!loopActive) setTimeout(loop, 250);
     };
     bStop.onclick = () => {
       running = false;
@@ -1753,7 +1835,7 @@
 
   function collectNodes(root, arr = []) {
     if (!root) return arr;
-    const list = root.querySelectorAll('button, a, input, textarea, select, [role="button"], [contenteditable="true"], yt-button-shape button, ytd-thumbnail a, ytd-video-renderer a#video-title');
+    const list = root.querySelectorAll('button, a, input, textarea, select, [role="button"], [contenteditable="true"], yt-button-shape button, ytd-thumbnail a, ytd-video-renderer a#video-title, ytd-rich-item-renderer a#video-title-link');
     for (const el of list) { if (isVisible(el)) arr.push(el); }
     for (const el of root.querySelectorAll('*')) { if (el.shadowRoot) collectNodes(el.shadowRoot, arr); }
     return arr;
@@ -1824,7 +1906,18 @@
             if (el && (!hud || !hud.contains(el))) {
               lastEl = el;
               const linkAnc = el.closest && el.closest('a[href]');
-              if (linkAnc) linkAnc.setAttribute('target', '_self');
+              if (linkAnc) {
+                linkAnc.removeAttribute('target');
+                // If clicking a YouTube watch/radio/results link via bot, route via YouTube SPA router so the page never hard-reloads!
+                if (location.hostname.includes('youtube.com')) {
+                  const u = new URL(linkAnc.href, location.origin);
+                  if (u.origin === location.origin && (u.pathname === '/watch' || u.pathname === '/results')) {
+                    routeYouTubeWithoutReload(u.href, linkAnc);
+                    await new Promise(r => setTimeout(r, stepDelay));
+                    continue;
+                  }
+                }
+              }
               el.focus();
               ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(ev => el.dispatchEvent(new MouseEvent(ev, { bubbles:true, clientX:x, clientY:y })));
               if (typeof el.click === 'function') el.click();
@@ -1853,13 +1946,18 @@
     setTimeout(loop, 350);
   }
   setInterval(() => {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      buildOrRestoreUI();
+      if (statEl) statEl.textContent = '✓ เปลี่ยนหน้าเป็น ' + location.pathname + location.search.slice(0, 18) + ' (แผงตามมาแล้ว!)';
+    }
     if (window.__AILAB_IMMORTAL_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
       buildOrRestoreUI();
     }
     if (running && !loopActive) {
       loop();
     }
-  }, 400);
+  }, 350);
 })();`;
     }
 
