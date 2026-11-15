@@ -166,6 +166,27 @@
 
   <!-- Unified Single-Screen Main Content (No Tabs, No Clutter) -->
   <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-5 space-y-4">
+    <!-- ONE-CLICK DETACHED AUTOMOUSE WINDOW LAUNCHER -->
+    <div class="glass-box rounded-2xl p-4 border-2 border-amber-400/70 bg-gradient-to-r from-amber-950/60 via-slate-900 to-emerald-950/60 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 text-2xl font-black shadow-lg shadow-amber-500/30">
+          🪟
+        </div>
+        <div>
+          <h2 class="text-sm sm:text-base font-extrabold text-amber-300">
+            โหมดจอแยก AutoMouse อิสระ (ไม่หายเมื่อเปลี่ยนหน้าเว็บ 100%)
+          </h2>
+          <p class="text-xs text-slate-300">
+            กดปุ่มด้านขวาเพื่อแยกแผง <strong>AutoMouse</strong> ออกมาเป็นหน้าต่างอิสระ ลอยอยู่เหนือแท็บเว็บค้นหา เปลี่ยนหน้า/รีโหลดเว็บได้ตลอดโดยแผงไม่หาย และไม่ต้องใช้ Bookmark
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="btn-hero-detach-now" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 hover:scale-105 transition flex items-center gap-2">
+          <span>🪟</span> เปิด AutoMouse เป็นจอแยกทันที
+        </button>
+      </div>
+    </div>
 
     <!-- SECTION A: Mouse Coordinate Finder & Quick Step Creator -->
     <section class="glass-box rounded-2xl p-4 sm:p-5 border border-emerald-500/30">
@@ -2579,21 +2600,21 @@ if __name__ == "__main__":
           targetWebWin = window.open(url, 'AiLabTargetWebTab');
         }
 
-        // Try Chrome Document Picture-in-Picture API first (Always-on-top floating window above all browser tabs!)
+        // 1. Prefer Chrome Document Picture-in-Picture (Always-On-Top Detached Window that floats above ALL tabs and NEVER disappears!)
         let win = null;
         try {
           if ('documentPictureInPicture' in window) {
-            win = await window.documentPictureInPicture.requestWindow({ width: 430, height: 620 });
+            win = await window.documentPictureInPicture.requestWindow({ width: 480, height: 740 });
           }
         } catch (e) {}
 
-        // Fallback to standalone OS popup window separate from the search tab
+        // 2. Fallback to Independent OS Popup Window
         if (!win) {
-          win = window.open('', 'AiLabDetachedAutoMouseWindow', 'width=430,height=640,left=60,top=60,resizable=yes,scrollbars=yes');
+          win = window.open('', 'AiLabDetachedAutoMouseWindow', 'width=480,height=750,left=40,top=40,resizable=yes,scrollbars=yes');
         }
 
         if (!win) {
-          document.getElementById('target-last-action').textContent = '⚠️ เบราว์เซอร์บล็อกหน้าต่างแยก กรุณากดอนุญาต Pop-up สำหรับหน้านี้';
+          document.getElementById('target-last-action').textContent = '⚠️ คลิกปุ่ม "🪟 เปิดจอแยก AutoMouse" ด้านบนอีกครั้งเพื่ออนุญาตเปิดหน้าต่างแยก';
           return;
         }
 
@@ -2604,127 +2625,171 @@ if __name__ == "__main__":
 <html lang="th" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <title>🖱️ แผงควบคุม AutoMouse (จอแยกอิสระ)</title>
+  <title>🪟 AutoMouse (จอแยกอิสระ — ไม่หายเมื่อเปลี่ยนหน้าเว็บ)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0; padding: 12px;
-      background: #050914; color: #f1f5f9;
-      font-family: 'Kanit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #040812; color: #f1f5f9;
+      font-family: 'Kanit', sans-serif;
       font-size: 12px; user-select: none;
     }
-    .box {
-      background: #0f172a; border: 1.5px solid #10b981;
-      border-radius: 14px; padding: 12px; margin-bottom: 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .card {
+      background: #0f172a; border: 1.5px solid rgba(16, 185, 129, 0.55);
+      border-radius: 14px; padding: 11px; margin-bottom: 10px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.85);
     }
     .row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-    input, select {
-      background: #020617; color: #e2e8f0; border: 1px solid #334155;
-      border-radius: 8px; padding: 5px 8px; font-size: 11px;
+    input, select, textarea {
+      background: #020617; color: #f1f5f9; border: 1px solid #334155;
+      border-radius: 8px; padding: 5px 8px; font-size: 11px; font-family: inherit;
     }
     button {
       border: none; border-radius: 8px; padding: 6px 10px;
-      font-weight: 800; font-size: 11px; cursor: pointer;
+      font-weight: 800; font-size: 11px; cursor: pointer; font-family: inherit;
+      transition: transform 0.1s ease, opacity 0.15s ease;
     }
-    .btn-green { background: linear-gradient(90deg, #10b981, #06b6d4); color: #020617; }
+    button:active { transform: scale(0.96); }
+    .btn-emerald { background: linear-gradient(90deg, #10b981, #06b6d4); color: #020617; }
+    .btn-amber { background: linear-gradient(90deg, #f59e0b, #eab308); color: #020617; }
     .btn-red { background: #ef4444; color: #ffffff; }
-    .btn-amber { background: #f59e0b; color: #020617; }
     .btn-slate { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
-    .step-item {
+    .step-card {
       background: #020617; border: 1px solid #1e293b;
       border-radius: 10px; padding: 8px; margin-bottom: 6px;
     }
-    .step-active { border-color: #10b981; background: rgba(16, 185, 129, 0.14); }
-    #mini-radar { width: 100%; height: 120px; background: #020617; border: 1px solid #0284c7; border-radius: 8px; cursor: crosshair; display: block; margin-top: 6px; }
+    .step-active { border: 2px solid #10b981; background: rgba(16, 185, 129, 0.16); }
+    #dw-radar { width: 100%; height: 145px; background: #020617; border: 1px solid #0284c7; border-radius: 8px; cursor: crosshair; display: block; }
+    #dw-loupe { width: 110px; height: 78px; background: #020617; border: 1px solid #f59e0b; border-radius: 6px; display: block; }
   </style>
 </head>
 <body>
-  <div class="box">
-    <div class="row" style="border-bottom:1px solid #1e293b;padding-bottom:8px;margin-bottom:8px;">
-      <div style="font-weight:900;color:#34d399;font-size:14px;">🪟 แผง AutoMouse (จอแยกอิสระ)</div>
-      <span id="dw-status" style="background:#065f46;color:#a7f3d0;padding:2px 8px;border-radius:99px;font-size:10px;font-family:monospace;">READY</span>
-    </div>
-    <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;">
-      หน้าต่างนี้แยกอิสระจากแท็บเว็บค้นหา (เปลี่ยนหน้าเว็บ/รีโหลดเว็บค้นหา แผงนี้จะไม่หาย 100%)
-    </div>
 
-    <!-- Target Web Tab URL Launcher inside Detached Window -->
-    <div class="row" style="margin-bottom:8px;">
-      <input id="dw-url" type="text" value="https://www.youtube.com/" placeholder="URL เว็บที่ต้องการเปิด..." style="flex:1;color:#38bdf8;font-family:monospace;" />
-      <button id="dw-open-url" class="btn-amber">↗ เปิด/สลับหน้าเว็บ</button>
-    </div>
-
-    <!-- Coordinate & Mini Radar -->
-    <div style="background:#020617;padding:8px;border-radius:10px;border:1px solid #1e293b;margin-bottom:8px;">
+  <!-- Top Status & Target Website Launcher -->
+  <div class="card">
+    <div class="row" style="border-bottom:1px solid #1e293b;padding-bottom:7px;margin-bottom:8px;">
+      <div style="font-weight:800;color:#34d399;font-size:14px;">🪟 AutoMouse จอแยกอิสระ (ไม่หาย 100%)</div>
       <div class="row">
-        <span style="color:#fbbf24;font-family:monospace;font-weight:700;" id="dw-xy-lbl">พิกัดที่ตั้ง: X:520 Y:340</span>
-        <span style="font-size:10px;color:#64748b;">คลิกในจอจำลองเพื่อเปลี่ยนพิกัด</span>
-      </div>
-      <canvas id="mini-radar" width="360" height="120"></canvas>
-      <div class="row" style="margin-top:6px;justify-content:center;">
-        <button class="btn-slate dw-nudge" data-dx="-5" data-dy="0">◀ X-5</button>
-        <button class="btn-slate dw-nudge" data-dx="5" data-dy="0">X+5 ▶</button>
-        <button class="btn-slate dw-nudge" data-dx="0" data-dy="-5">▲ Y-5</button>
-        <button class="btn-slate dw-nudge" data-dx="0" data-dy="5">▼ Y+5</button>
+        <span id="dw-cycles-pill" class="mono" style="background:#1e293b;color:#38bdf8;padding:2px 7px;border-radius:99px;font-size:10px;">รอบ #0</span>
+        <span id="dw-status" class="mono" style="background:#065f46;color:#a7f3d0;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;">READY</span>
       </div>
     </div>
 
-    <!-- Quick Add Step inside Detached Window -->
-    <div style="background:#020617;padding:8px;border-radius:10px;border:1px solid #1e293b;margin-bottom:8px;">
-      <div class="row" style="margin-bottom:6px;">
-        <select id="dw-type" style="flex:1;color:#34d399;font-weight:700;">
-          <option value="click_xy">🖱️ คลิกตามพิกัด (X, Y)</option>
-          <option value="click_ type_xy">⌨️ คลิกพิกัด (X, Y) + พิมพ์ข้อความ</option>
-          <option value="click_selector">🔎 คลิกปุ่มตามชื่อปุ่ม / CSS</option>
-          <option value="type_selector">📝 พิมพ์ตามชื่อช่อง / CSS</option>
-          <option value="press_enter">↵ กดปุ่ม Enter</option>
-          <option value="wait">⏱️ รอเวลา (วินาที)</option>
-        </select>
-        <select id="dw-speed" style="color:#fbbf24;font-weight:700;">
-          <option value="1">1x</option>
-          <option value="2" selected>2x เร็ว</option>
-          <option value="5">5x แรง</option>
-          <option value="10">10x เทอร์โบ</option>
-        </select>
-      </div>
-      <div class="row" style="margin-bottom:6px;">
-        <input id="dw-x" type="number" value="520" style="width:65px;color:#fbbf24;font-family:monospace;" title="X" />
-        <input id="dw-y" type="number" value="340" style="width:65px;color:#fbbf24;font-family:monospace;" title="Y" />
-        <input id="dw-val" type="text" placeholder="ข้อความที่จะพิมพ์ / ชื่อปุ่ม..." style="flex:1;color:#6ee7b7;" />
-      </div>
-      <div class="row">
-        <button id="dw-add-btn" class="btn-green" style="flex:1;">+ เพิ่มลงกล่องขั้นตอน</button>
-        <button id="dw-clean-btn" class="btn-red">🧹 Clean (ล้างทั้งหมด)</button>
-      </div>
+    <div class="row" style="margin-bottom:6px;">
+      <input id="dw-url" type="text" value="https://www.youtube.com/" placeholder="ใส่ URL เว็บค้นหา/เป้าหมาย..." class="mono" style="flex:1;color:#38bdf8;" />
+      <button id="dw-open-url" class="btn-amber">↗ เปิดเว็บในแท็บแยก</button>
     </div>
-
-    <!-- Step Queue List in Detached Window -->
-    <div style="font-weight:800;color:#38bdf8;margin-bottom:6px;">
-      🔄 รายการขั้นตอน (<span id="dw-count">0</span> ขั้นตอน)
-    </div>
-    <div id="dw-step-list" style="max-height:190px;overflow-y:auto;margin-bottom:10px;"></div>
-
-    <!-- Master Run / Stop Controls -->
-    <div class="row">
-      <button id="dw-run-btn" class="btn-green" style="flex:1;padding:10px;font-size:13px;">▶ เริ่มทำงาน (รันต่อเนื่อง)</button>
-      <button id="dw-stop-btn" class="btn-red" style="padding:10px 16px;font-size:13px;">⏹ หยุด</button>
+    <div style="font-size:10px;color:#94a3b8;">
+      ✓ หน้าต่าง AutoMouse นี้แยกขาดจากแท็บเว็บค้นหา เปลี่ยนหน้า/รีโหลดเว็บค้นหาได้อิสระโดยแผงไม่หาย
     </div>
   </div>
+
+  <!-- 1:1 Precision Coordinate Radar + 4x Loupe + Fine 1px/10px Nudge -->
+  <div class="card">
+    <div class="row" style="margin-bottom:6px;">
+      <span style="font-weight:800;color:#38bdf8;">🎯 จอจำลองระบุพิกัดแม่นยำ 1:1 & แว่นขยาย 4x</span>
+      <span id="dw-xy-lbl" class="mono" style="color:#fbbf24;font-weight:700;">X:520, Y:340</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 114px;gap:8px;align-items:stretch;">
+      <div>
+        <canvas id="dw-radar" width="320" height="145"></canvas>
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div style="position:relative;">
+          <canvas id="dw-loupe" width="110" height="78"></canvas>
+          <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;">
+            <div style="width:100%;height:1px;background:rgba(245,158,11,0.65);"></div>
+          </div>
+          <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;">
+            <div style="height:100%;width:1px;background:rgba(245,158,11,0.65);"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;" class="mono">
+          <button class="btn-slate dw-nudge" data-dx="-10" data-dy="0" style="padding:3px;font-size:9px;">-10X</button>
+          <button class="btn-slate dw-nudge" data-dx="0" data-dy="-1" style="padding:3px;font-size:9px;color:#fbbf24;">▲Y-1</button>
+          <button class="btn-slate dw-nudge" data-dx="10" data-dy="0" style="padding:3px;font-size:9px;">+10X</button>
+          <button class="btn-slate dw-nudge" data-dx="-1" data-dy="0" style="padding:3px;font-size:9px;color:#fbbf24;">◀X-1</button>
+          <button id="dw-center-xy" class="btn-slate" style="padding:3px;font-size:8px;color:#38bdf8;">กลาง</button>
+          <button class="btn-slate dw-nudge" data-dx="1" data-dy="0" style="padding:3px;font-size:9px;color:#fbbf24;">X+1▶</button>
+          <button class="btn-slate dw-nudge" data-dx="0" data-dy="-10" style="padding:3px;font-size:9px;">-10Y</button>
+          <button class="btn-slate dw-nudge" data-dx="0" data-dy="1" style="padding:3px;font-size:9px;color:#fbbf24;">▼Y+1</button>
+          <button class="btn-slate dw-nudge" data-dx="0" data-dy="10" style="padding:3px;font-size:9px;">+10Y</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step Creator & Clean Reset -->
+  <div class="card">
+    <div class="row" style="margin-bottom:6px;">
+      <select id="dw-type" style="flex:1;color:#34d399;font-weight:700;">
+        <option value="click_xy">🖱️ คลิกตามพิกัดเมาส์ (X, Y)</option>
+        <option value="dblclick_xy">🖱️🖱️ ดับเบิลคลิกพิกัด (X, Y)</option>
+        <option value="click_ type_xy">⌨️ คลิกพิกัด (X, Y) แล้วพิมพ์ข้อความ</option>
+        <option value="click_selector">🔎 คลิกปุ่มอัจฉริยะ (ชื่อปุ่ม / CSS)</option>
+        <option value="type_selector">📝 พิมพ์ข้อความลงช่อง (ID / Pass / คำสั่ง)</option>
+        <option value="press_enter">↵ กดปุ่ม Enter</option>
+        <option value="scroll_page">📜 เลื่อนหน้าจอเว็บ (พิกเซล)</option>
+        <option value="wait">⏱️ หน่วงเวลารอ (วินาที)</option>
+      </select>
+      <select id="dw-speed" style="color:#fbbf24;font-weight:700;">
+        <option value="1">1x ปกติ</option>
+        <option value="2" selected>2x เร็ว</option>
+        <option value="5">5x แรง</option>
+        <option value="10">10x เทอร์โบ</option>
+      </select>
+    </div>
+
+    <div class="row" style="margin-bottom:6px;">
+      <input id="dw-x" type="number" value="520" class="mono" style="width:68px;color:#fbbf24;font-weight:700;" title="พิกัด X" />
+      <input id="dw-y" type="number" value="340" class="mono" style="width:68px;color:#fbbf24;font-weight:700;" title="พิกัด Y" />
+      <input id="dw-val" type="text" placeholder="ใส่ข้อความที่จะพิมพ์ / ชื่อปุ่ม (เช่น Play, Login)..." style="flex:1;color:#6ee7b7;" />
+    </div>
+
+    <div class="row">
+      <button id="dw-add-btn" class="btn-emerald" style="flex:1;padding:8px;">+ เพิ่มลงกล่องขั้นตอน</button>
+      <button id="dw-clean-btn" class="btn-red" style="padding:8px 12px;">🧹 Clean (ล้างทั้งหมด)</button>
+    </div>
+  </div>
+
+  <!-- Unlimited Continuous Step Queue -->
+  <div class="card">
+    <div class="row" style="margin-bottom:6px;">
+      <span style="font-weight:800;color:#34d399;">🔄 กล่องขั้นตอนการทำงานต่อเนื่อง (<span id="dw-count">0</span> ขั้นตอน)</span>
+      <span style="font-size:10px;color:#94a3b8;">แก้ไขพิกัด/ข้อความสดได้ทุกกล่อง</span>
+    </div>
+
+    <div id="dw-step-list" style="max-height:200px;overflow-y:auto;margin-bottom:8px;padding-right:2px;"></div>
+
+    <div class="row">
+      <button id="dw-run-btn" class="btn-emerald" style="flex:1;padding:10px;font-size:13px;">▶ เริ่มทำงาน (รันคิวต่อเนื่อง)</button>
+      <button id="dw-stop-btn" class="btn-red" style="padding:10px 18px;font-size:13px;">⏹ หยุด</button>
+    </div>
+  </div>
+
 </body>
 </html>`);
         doc.close();
 
-        // Bind Detached Window Logic directly to our main state & target window
-        const dwRadar = doc.getElementById('mini-radar');
+        const dwRadar = doc.getElementById('dw-radar');
         const dwCtx = dwRadar.getContext('2d');
+        const dwLoupe = doc.getElementById('dw-loupe');
+        const dwLoupeCtx = dwLoupe.getContext('2d');
 
         function drawDetachedRadar() {
           const cw = dwRadar.width, ch = dwRadar.height;
           dwCtx.clearRect(0, 0, cw, ch);
           dwCtx.fillStyle = '#040812';
           dwCtx.fillRect(0, 0, cw, ch);
-          dwCtx.strokeStyle = 'rgba(56,189,248,0.15)';
+
+          if (uploadedBgImg) {
+            dwCtx.drawImage(uploadedBgImg, 0, 0, cw, ch);
+          }
+
+          dwCtx.strokeStyle = 'rgba(56,189,248,0.16)';
           for (let i = 1; i < 10; i++) {
             const gx = Math.round((i / 10) * cw) + 0.5;
             dwCtx.beginPath(); dwCtx.moveTo(gx, 0); dwCtx.lineTo(gx, ch); dwCtx.stroke();
@@ -2733,21 +2798,30 @@ if __name__ == "__main__":
             const gy = Math.round((j / 5) * ch) + 0.5;
             dwCtx.beginPath(); dwCtx.moveTo(0, gy); dwCtx.lineTo(cw, gy); dwCtx.stroke();
           }
-          const vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
+
+          const { w: vw, h: vh } = getVirtualResolution();
           state.queue.forEach((st, idx) => {
+            if (!st.type.includes('xy')) return;
             const px = ((st.x || 500) / vw) * cw;
             const py = ((st.y || 300) / vh) * ch;
-            dwCtx.beginPath(); dwCtx.arc(px, py, 6, 0, Math.PI * 2);
+            dwCtx.beginPath(); dwCtx.arc(px, py, 6.5, 0, Math.PI * 2);
             dwCtx.fillStyle = (state.running && state.currentIndex === idx) ? '#10b981' : '#0284c7';
             dwCtx.fill();
+            dwCtx.strokeStyle = '#fff'; dwCtx.lineWidth = 1.5; dwCtx.stroke();
             dwCtx.fillStyle = '#fff'; dwCtx.font = 'bold 9px monospace';
             dwCtx.fillText(String(idx + 1), px - 3, py + 3);
           });
+
           const curX = parseInt(doc.getElementById('dw-x').value, 10) || 520;
           const curY = parseInt(doc.getElementById('dw-y').value, 10) || 340;
           const lx = (curX / vw) * cw, ly = (curY / vh) * ch;
-          dwCtx.strokeStyle = '#f59e0b';
+          dwCtx.strokeStyle = '#f59e0b'; dwCtx.lineWidth = 1.3;
           dwCtx.beginPath(); dwCtx.moveTo(lx, 0); dwCtx.lineTo(lx, ch); dwCtx.moveTo(0, ly); dwCtx.lineTo(cw, ly); dwCtx.stroke();
+
+          // Update 4x Loupe inside Detached Window
+          dwLoupeCtx.clearRect(0, 0, dwLoupe.width, dwLoupe.height);
+          const sw = dwLoupe.width / 3, sh = dwLoupe.height / 3;
+          dwLoupeCtx.drawImage(dwRadar, lx - sw / 2, ly - sh / 2, sw, sh, 0, 0, dwLoupe.width, dwLoupe.height);
         }
 
         function renderDetachedSteps() {
@@ -2757,23 +2831,66 @@ if __name__ == "__main__":
           countEl.textContent = state.queue.length;
           listEl.innerHTML = '';
           if (state.queue.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:14px;border:1px dashed #334155;border-radius:8px;">ยังไม่มีขั้นตอน (0 ขั้นตอน) — จิ้มพิกัดแล้วกด "+ เพิ่มลงกล่องขั้นตอน" ด้านบนได้เลย</div>';
+            listEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:16px;border:1px dashed #334155;border-radius:10px;">ยังไม่มีขั้นตอน (0 ขั้นตอน) — จิ้มพิกัดด้านบนแล้วกด <strong>"+ เพิ่มลงกล่องขั้นตอน"</strong> ได้เลย</div>';
             drawDetachedRadar();
             return;
           }
           state.queue.forEach((st, i) => {
             const item = doc.createElement('div');
-            item.className = 'step-item' + (state.running && state.currentIndex === i ? ' step-active' : '');
-            item.innerHTML = '<div class="row" style="margin-bottom:4px;"><strong style="color:#34d399;font-family:monospace;">#' + (i + 1) + ' (' + st.type + ')</strong><button data-del="' + i + '" class="btn-red" style="padding:2px 6px;font-size:10px;">✕ ลบ</button></div>' +
-              '<div class="row"><input data-ix="' + i + '" type="number" value="' + (st.x || 0) + '" style="width:60px;color:#fbbf24;font-family:monospace;" /><input data-iy="' + i + '" type="number" value="' + (st.y || 0) + '" style="width:60px;color:#fbbf24;font-family:monospace;" /><input data-ival="' + i + '" type="text" value="' + (st.value || '') + '" style="flex:1;color:#6ee7b7;" /></div>';
+            item.className = 'step-card' + (state.running && state.currentIndex === i ? ' step-active' : '');
+            item.innerHTML = `
+              <div class="row" style="margin-bottom:5px;">
+                <strong class="mono" style="color:#34d399;">#${i + 1} [${st.type}]</strong>
+                <div class="row" style="gap:3px;">
+                  <button data-up="${i}" class="btn-slate" style="padding:2px 6px;font-size:9px;">▲</button>
+                  <button data-dn="${i}" class="btn-slate" style="padding:2px 6px;font-size:9px;">▼</button>
+                  <button data-test="${i}" class="btn-emerald" style="padding:2px 7px;font-size:9px;">▶ รัน</button>
+                  <button data-del="${i}" class="btn-red" style="padding:2px 6px;font-size:9px;">✕</button>
+                </div>
+              </div>
+              <div class="row" style="margin-bottom:4px;">
+                <input data-ix="${i}" type="number" value="${st.x || 0}" class="mono" style="width:62px;color:#fbbf24;" title="X" />
+                <input data-iy="${i}" type="number" value="${st.y || 0}" class="mono" style="width:62px;color:#fbbf24;" title="Y" />
+                <input data-ival="${i}" type="text" value="${st.value || st.selector || ''}" placeholder="ข้อความ / ชื่อปุ่ม..." style="flex:1;color:#6ee7b7;" />
+              </div>
+              <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:#94a3b8;cursor:pointer;">
+                <input data-once="${i}" type="checkbox" ${st.runOnce ? 'checked' : ''} />
+                <span>ทำเฉพาะรอบแรก (เช่น Login)</span>
+              </label>
+            `;
             listEl.appendChild(item);
+          });
+
+          listEl.querySelectorAll('[data-up]').forEach(b => {
+            b.onclick = () => {
+              const idx = parseInt(b.getAttribute('data-up'), 10);
+              if (idx > 0) {
+                const t = state.queue[idx - 1]; state.queue[idx - 1] = state.queue[idx]; state.queue[idx] = t;
+                renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage(); renderDetachedSteps();
+              }
+            };
+          });
+          listEl.querySelectorAll('[data-dn]').forEach(b => {
+            b.onclick = () => {
+              const idx = parseInt(b.getAttribute('data-dn'), 10);
+              if (idx < state.queue.length - 1) {
+                const t = state.queue[idx + 1]; state.queue[idx + 1] = state.queue[idx]; state.queue[idx] = t;
+                renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage(); renderDetachedSteps();
+              }
+            };
+          });
+          listEl.querySelectorAll('[data-test]').forEach(b => {
+            b.onclick = () => {
+              const idx = parseInt(b.getAttribute('data-test'), 10);
+              executeStepItem(state.queue[idx], idx);
+            };
           });
           listEl.querySelectorAll('[data-del]').forEach(b => {
             b.onclick = () => {
               const idx = parseInt(b.getAttribute('data-del'), 10);
               state.queue.splice(idx, 1);
               if (state.currentIndex >= state.queue.length) state.currentIndex = 0;
-              renderQueueCards(); syncDynamicAutoMouseCode(); renderDetachedSteps();
+              renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage(); renderDetachedSteps();
             };
           });
           listEl.querySelectorAll('[data-ix]').forEach(inp => {
@@ -2781,7 +2898,7 @@ if __name__ == "__main__":
               const idx = parseInt(inp.getAttribute('data-ix'), 10);
               state.queue[idx].x = parseInt(inp.value, 10) || 0;
               state.queue[idx].rx = Number((state.queue[idx].x / Math.max(1, window.innerWidth)).toFixed(4));
-              renderQueueCards(); syncDynamicAutoMouseCode(); drawDetachedRadar();
+              renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage(); drawDetachedRadar();
             };
           });
           listEl.querySelectorAll('[data-iy]').forEach(inp => {
@@ -2789,14 +2906,22 @@ if __name__ == "__main__":
               const idx = parseInt(inp.getAttribute('data-iy'), 10);
               state.queue[idx].y = parseInt(inp.value, 10) || 0;
               state.queue[idx].ry = Number((state.queue[idx].y / Math.max(1, window.innerHeight)).toFixed(4));
-              renderQueueCards(); syncDynamicAutoMouseCode(); drawDetachedRadar();
+              renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage(); drawDetachedRadar();
             };
           });
           listEl.querySelectorAll('[data-ival]').forEach(inp => {
             inp.oninput = () => {
               const idx = parseInt(inp.getAttribute('data-ival'), 10);
               state.queue[idx].value = inp.value;
-              renderQueueCards(); syncDynamicAutoMouseCode();
+              if (state.queue[idx].type.includes('selector')) state.queue[idx].selector = inp.value;
+              renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage();
+            };
+          });
+          listEl.querySelectorAll('[data-once]').forEach(chk => {
+            chk.onchange = () => {
+              const idx = parseInt(chk.getAttribute('data-once'), 10);
+              state.queue[idx].runOnce = chk.checked;
+              renderQueueCards(); syncDynamicAutoMouseCode(); saveQueueToStorage();
             };
           });
           drawDetachedRadar();
@@ -2804,13 +2929,14 @@ if __name__ == "__main__":
 
         dwRadar.addEventListener('mousedown', (ev) => {
           const r = dwRadar.getBoundingClientRect();
+          const { w: vw, h: vh } = getVirtualResolution();
           const rx = Math.max(0, Math.min(1, (ev.clientX - r.left) / Math.max(1, r.width)));
           const ry = Math.max(0, Math.min(1, (ev.clientY - r.top) / Math.max(1, r.height)));
-          const vx = Math.round(rx * window.innerWidth);
-          const vy = Math.round(ry * window.innerHeight);
+          const vx = Math.round(rx * vw);
+          const vy = Math.round(ry * vh);
           doc.getElementById('dw-x').value = vx;
           doc.getElementById('dw-y').value = vy;
-          doc.getElementById('dw-xy-lbl').textContent = 'พิกัดที่ตั้ง: X:' + vx + ' Y:' + vy;
+          doc.getElementById('dw-xy-lbl').textContent = `X:${vx}, Y:${vy}`;
           setLockedXY(vx, vy);
           drawDetachedRadar();
         });
@@ -2823,11 +2949,21 @@ if __name__ == "__main__":
             const ny = Math.max(0, (parseInt(doc.getElementById('dw-y').value, 10) || 0) + dy);
             doc.getElementById('dw-x').value = nx;
             doc.getElementById('dw-y').value = ny;
-            doc.getElementById('dw-xy-lbl').textContent = 'พิกัดที่ตั้ง: X:' + nx + ' Y:' + ny;
+            doc.getElementById('dw-xy-lbl').textContent = `X:${nx}, Y:${ny}`;
             setLockedXY(nx, ny);
             drawDetachedRadar();
           };
         });
+
+        doc.getElementById('dw-center-xy').onclick = () => {
+          const { w: vw, h: vh } = getVirtualResolution();
+          const cx = Math.round(vw / 2), cy = Math.round(vh / 2);
+          doc.getElementById('dw-x').value = cx;
+          doc.getElementById('dw-y').value = cy;
+          doc.getElementById('dw-xy-lbl').textContent = `X:${cx}, Y:${cy}`;
+          setLockedXY(cx, cy);
+          drawDetachedRadar();
+        };
 
         doc.getElementById('dw-open-url').onclick = () => {
           const u = doc.getElementById('dw-url').value.trim() || 'https://www.youtube.com/';
@@ -2840,6 +2976,7 @@ if __name__ == "__main__":
 
         doc.getElementById('dw-add-btn').onclick = () => {
           const type = doc.getElementById('dw-type').value;
+          const { w: vw, h: vh } = getVirtualResolution();
           const x = parseInt(doc.getElementById('dw-x').value, 10) || 0;
           const y = parseInt(doc.getElementById('dw-y').value, 10) || 0;
           const val = doc.getElementById('dw-val').value.trim();
@@ -2847,8 +2984,8 @@ if __name__ == "__main__":
             id: Date.now() + Math.random(),
             type,
             x, y,
-            rx: Number((x / Math.max(1, window.innerWidth)).toFixed(4)),
-            ry: Number((y / Math.max(1, window.innerHeight)).toFixed(4)),
+            rx: Number((x / Math.max(1, vw)).toFixed(4)),
+            ry: Number((y / Math.max(1, vh)).toFixed(4)),
             selector: type.includes('selector') ? (val || 'Play') : '',
             value: val || (type === 'wait' ? '1' : 'คลิกเมาส์'),
             note: `พิกัด (${x}, ${y})`,
@@ -2885,12 +3022,15 @@ if __name__ == "__main__":
           if (detachedWin && !detachedWin.closed) {
             drawDetachedRadar();
             const stBadge = doc.getElementById('dw-status');
-            if (stBadge) stBadge.textContent = state.running ? ('RUN #' + state.cycles) : 'READY';
+            const cycPill = doc.getElementById('dw-cycles-pill');
+            if (stBadge) stBadge.textContent = state.running ? 'RUNNING' : 'READY';
+            if (cycPill) cycPill.textContent = 'รอบ #' + state.cycles;
           }
-        }, 400);
+        }, 350);
       }
 
       document.getElementById('btn-detach-standalone-hud')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
+      document.getElementById('btn-hero-detach-now')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
       document.getElementById('btn-open-real-and-detach')?.addEventListener('click', () => openDetachedAutoMouseWindow(true));
       document.getElementById('hud-btn-popout')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
 
