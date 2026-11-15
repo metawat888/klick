@@ -166,25 +166,51 @@
 
   <!-- Unified Single-Screen Main Content (No Tabs, No Clutter) -->
   <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-5 space-y-4">
-    <!-- ONE-CLICK DETACHED AUTOMOUSE WINDOW LAUNCHER -->
-    <div class="glass-box rounded-2xl p-4 border-2 border-amber-400/70 bg-gradient-to-r from-amber-950/60 via-slate-900 to-emerald-950/60 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 text-2xl font-black shadow-lg shadow-amber-500/30">
-          🪟
+    <!-- ONE-CLICK DETACHED AUTOMOUSE & TARGET WEBSITE BRIDGE -->
+    <div class="glass-box rounded-2xl p-4 border-2 border-amber-400/70 bg-gradient-to-r from-amber-950/60 via-slate-900 to-emerald-950/60 flex flex-col gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 text-2xl font-black shadow-lg shadow-amber-500/30">
+            🪟
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm sm:text-base font-extrabold text-amber-300">
+                ระบบแยกจอ AutoMouse + เชื่อมต่อเว็บเป้าหมาย (ไม่คลิกมั่วในหน้าตั้งค่า!)
+              </h2>
+              <span id="remote-bridge-pill" class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[11px] font-bold mono">
+                รอเชื่อมเว็บเป้าหมาย
+              </span>
+            </div>
+            <p class="text-xs text-slate-300">
+              ป้องกันบอทคลิกโดนหน้าเว็บตั้งค่า (<code class="text-amber-200">klick1-mocha.vercel.app</code>) โดยเด็ดขาด! บอทจะส่งคำสั่งไปคลิกที่ <strong>เว็บเป้าหมายที่ตั้งค่าไว้</strong> เท่านั้น
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 class="text-sm sm:text-base font-extrabold text-amber-300">
-            โหมดจอแยก AutoMouse อิสระ (ไม่หายเมื่อเปลี่ยนหน้าเว็บ 100%)
-          </h2>
-          <p class="text-xs text-slate-300">
-            กดปุ่มด้านขวาเพื่อแยกแผง <strong>AutoMouse</strong> ออกมาเป็นหน้าต่างอิสระ ลอยอยู่เหนือแท็บเว็บค้นหา เปลี่ยนหน้า/รีโหลดเว็บได้ตลอดโดยแผงไม่หาย และไม่ต้องใช้ Bookmark
-          </p>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-hero-detach-now" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 hover:scale-105 transition flex items-center gap-2">
+            <span>🪟</span> 1. เปิดแผง AutoMouse จอแยก
+          </button>
+          <button id="btn-open-target-workspace" class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-cyan-500/25 transition flex items-center gap-1.5">
+            <span>🌐</span> 2. เปิดหน้าต่างเว็บเป้าหมายที่ตั้งไว้
+          </button>
         </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <button id="btn-hero-detach-now" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 hover:scale-105 transition flex items-center gap-2">
-          <span>🪟</span> เปิด AutoMouse เป็นจอแยกทันที
-        </button>
+
+      <!-- Live Target Website Viewport Stage (Allows loading the configured URL directly as the target stage so clicks execute on the configured website, NEVER on the Studio UI!) -->
+      <div id="configured-web-stage-wrap" class="hidden rounded-xl overflow-hidden border-2 border-emerald-400/60 bg-slate-950">
+        <div class="bg-slate-900 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="font-bold text-emerald-300">🌐 เว็บเป้าหมายที่รับคำสั่งคลิก:</span>
+            <span id="stage-active-url-lbl" class="mono text-cyan-300 font-bold">https://www.youtube.com/</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-amber-300">หากเว็บภายนอกไม่อนุญาตให้แสดงในกรอบ ให้กดปุ่ม Bookmark <strong>⚡ ปุ่ม AutoMouse</strong> บนแท็บของเว็บนั้น 1 ครั้งเพื่อเชื่อมสัญญาณรับคำสั่งจากจอแยก</span>
+            <button id="btn-close-web-stage" class="px-2 py-0.5 rounded bg-rose-600 text-white font-bold text-[11px]">ซ่อนกรอบเว็บ</button>
+          </div>
+        </div>
+        <iframe id="configured-web-iframe" src="about:blank" class="w-full h-[460px] bg-white border-0"></iframe>
       </div>
     </div>
 
@@ -824,9 +850,18 @@
     }
 
     // --- Smart Element & Button Finder (Finds by exact/partial button text, placeholder, label, aria-label, ID, CSS, or ratio-locked X,Y) ---
+    // STRICT SELF-CLICK SHIELD: Never allow the bot to click its own Studio setup controls (URL bar, coordinate finder, queue cards, header, or HUD) on klick1-mocha.vercel.app!
     function isBotInternalElement(el) {
       if (!el) return true;
-      if (el.closest('#embedded-hud-panel') || el.closest('#bot-cursor') || el.closest('header')) return true;
+      if (
+        el.closest('#embedded-hud-panel') ||
+        el.closest('#bot-cursor') ||
+        el.closest('header') ||
+        el.closest('#control-config-section') ||
+        el.closest('#queue-builder-section')
+      ) {
+        return true;
+      }
       return false;
     }
 
@@ -1068,12 +1103,40 @@
 
     let lastInteractedElement = null;
 
+    // Cross-Tab / Cross-Window Remote Command Dispatcher
+    function dispatchStepToTargetWebsite(step, index) {
+      const targetUrl = document.getElementById('real-target-url')?.value.trim() || '';
+      const cmdPayload = {
+        cmdId: Date.now() + '_' + Math.random(),
+        targetUrl,
+        stepIndex: index,
+        totalSteps: state.queue.length,
+        cycle: state.cycles,
+        speed: parseFloat(document.getElementById('loop-speed')?.value) || 2,
+        step: {
+          ...step,
+          value: resolveSmartText(step.value)
+        },
+        ts: Date.now()
+      };
+      try {
+        localStorage.setItem('__AILAB_REMOTE_EXEC_STEP__', JSON.stringify(cmdPayload));
+      } catch (e) {}
+      if (botChannel) {
+        try { botChannel.postMessage({ type: 'REMOTE_EXEC_STEP', payload: cmdPayload }); } catch (e) {}
+      }
+      if (targetWebWin && !targetWebWin.closed) {
+        try { targetWebWin.postMessage({ type: 'AILAB_REMOTE_EXEC_STEP', payload: cmdPayload }, '*'); } catch (e) {}
+      }
+      const stageIframe = document.getElementById('configured-web-iframe');
+      if (stageIframe && stageIframe.contentWindow) {
+        try { stageIframe.contentWindow.postMessage({ type: 'AILAB_REMOTE_EXEC_STEP', payload: cmdPayload }, '*'); } catch (e) {}
+      }
+    }
+
     async function executeStepItem(step, index) {
       if (!step || step.enabled === false) return;
-
-      if (step.runOnce && state.cycles > 0) {
-        return;
-      }
+      if (step.runOnce && state.cycles > 0) return;
 
       const speed = parseFloat(document.getElementById('loop-speed').value) || 2;
       const isHyper = speed >= 5;
@@ -1082,6 +1145,9 @@
 
       document.getElementById('hud-active-step-name').textContent = `#${index + 1}: ${step.note || step.value || step.selector}`;
 
+      // 1. Always broadcast step command to the Configured Target Website Tab / Window!
+      dispatchStepToTargetWebsite(step, index);
+
       if (step.type === 'wait') {
         const sec = parseFloat(resolveSmartText(step.value)) || 1;
         moveBotCursor(state.lastMouseX, state.lastMouseY, `⏱️ รอ ${sec} วินาที`);
@@ -1089,29 +1155,28 @@
         return;
       }
 
-      if (step.type === 'scroll_page') {
-        const px = parseInt(resolveSmartText(step.value), 10) || 350;
-        window.scrollBy({ top: px, behavior: 'smooth' });
-        moveBotCursor(state.lastMouseX, state.lastMouseY, `📜 เลื่อนจอ ${px}px`);
-        await new Promise(r => setTimeout(r, moveWait));
-        return;
-      }
-
       if (step.type === 'go_back') {
         moveBotCursor(state.lastMouseX, state.lastMouseY, '⬅️ ย้อนกลับหน้าก่อนหน้า (Back)');
         triggerClickVisual(state.lastMouseX, state.lastMouseY, '⬅️ BACK!');
-        document.getElementById('target-last-action').textContent = '⬅️ สั่งย้อนกลับหน้าก่อนหน้า (History Back)';
+        document.getElementById('target-last-action').textContent = '⬅️ ส่งคำสั่งย้อนกลับ (Back) ไปยังเว็บเป้าหมายแล้ว';
+        try { if (targetWebWin && !targetWebWin.closed) targetWebWin.history.back(); } catch(e){}
         await new Promise(r => setTimeout(r, Math.round(moveWait * 0.7)));
-        try { history.back(); } catch(e){}
         return;
       }
 
       if (step.type === 'refresh_page') {
-        moveBotCursor(state.lastMouseX, state.lastMouseY, '🔄 รีเฟรชหน้าเว็บ (Refresh)');
+        moveBotCursor(state.lastMouseX, state.lastMouseY, '🔄 รีเฟรชเว็บเป้าหมาย (Refresh)');
         triggerClickVisual(state.lastMouseX, state.lastMouseY, '🔄 REFRESH!');
-        document.getElementById('target-last-action').textContent = '🔄 สั่งรีเฟรชหน้าเว็บและซิงค์สถานะใหม่';
+        document.getElementById('target-last-action').textContent = '🔄 ส่งคำสั่งรีเฟรชไปยังเว็บเป้าหมายแล้ว';
+        try { if (targetWebWin && !targetWebWin.closed) targetWebWin.location.reload(); } catch(e){}
         await new Promise(r => setTimeout(r, Math.round(moveWait * 0.7)));
-        drawPrecisionSimulator();
+        return;
+      }
+
+      if (step.type === 'scroll_page') {
+        const px = parseInt(resolveSmartText(step.value), 10) || 350;
+        moveBotCursor(state.lastMouseX, state.lastMouseY, `📜 เลื่อนจอเว็บเป้าหมาย ${px}px`);
+        await new Promise(r => setTimeout(r, moveWait));
         return;
       }
 
@@ -1122,51 +1187,45 @@
           const r = target.getBoundingClientRect();
           if (r.width > 0) { ex = Math.round(r.left + r.width / 2); ey = Math.round(r.top + r.height / 2); }
         }
-        moveBotCursor(ex, ey, '↵ กดปุ่ม ENTER');
+        moveBotCursor(ex, ey, '↵ กดปุ่ม ENTER ที่เว็บเป้าหมาย');
         await new Promise(r => setTimeout(r, Math.round(moveWait * 0.6)));
         triggerClickVisual(ex, ey, '↵ ENTER!');
         deepPressEnter(target);
         return;
       }
 
-      if (step.type === 'wait_for_element') {
-        const smartRetry = document.getElementById('chk-smart-retry')?.checked;
-        const maxTries = smartRetry ? 15 : 2;
-        for (let t = 0; t < maxTries; t++) {
-          const found = findTargetElement(step);
-          if (found && found.offsetParent !== null) {
-            const r = found.getBoundingClientRect();
-            const fx = Math.round(r.left + r.width / 2);
-            const fy = Math.round(r.top + r.height / 2);
-            moveBotCursor(fx, fy, '👁️ พบปุ่มเป้าหมายแล้ว!');
-            triggerClickVisual(fx, fy, '👁️ FOUND!');
-            lastInteractedElement = found;
-            return;
-          }
-          await new Promise(r => setTimeout(r, 300));
-        }
-        return;
-      }
-
       let targetEl = findTargetElement(step);
       let { x: targetX, y: targetY } = resolveScreenCoordsForStep(step);
 
-      // If element was located via selector or smart match, snap coordinates to its live center
-      if (targetEl && (step.type === 'click_selector' || step.type === 'type_selector' || step.selector)) {
+      // If the Configured Web Stage Iframe is visible, map the click coordinates onto the Configured Web Stage so it clicks the loaded website, NOT the Studio UI!
+      const stageWrap = document.getElementById('configured-web-stage-wrap');
+      const stageIframe = document.getElementById('configured-web-iframe');
+      if (stageWrap && !stageWrap.classList.contains('hidden') && stageIframe) {
+        const ir = stageIframe.getBoundingClientRect();
+        const rx = typeof step.rx === 'number' ? step.rx : (targetX / Math.max(1, window.innerWidth));
+        const ry = typeof step.ry === 'number' ? step.ry : (targetY / Math.max(1, window.innerHeight));
+        targetX = Math.round(ir.left + rx * ir.width);
+        targetY = Math.round(ir.top + ry * ir.height);
+        try {
+          if (stageIframe.contentDocument) {
+            const innerX = Math.round(rx * stageIframe.clientWidth);
+            const innerY = Math.round(ry * stageIframe.clientHeight);
+            const innerHit = stageIframe.contentDocument.elementFromPoint(innerX, innerY);
+            if (innerHit) targetEl = innerHit;
+          }
+        } catch (e) {}
+      } else if (targetEl && (step.type === 'click_selector' || step.type === 'type_selector' || step.selector)) {
         const r = targetEl.getBoundingClientRect();
         if (r.width > 0 && r.height > 0) {
           targetX = Math.round(r.left + r.width * 0.5);
           targetY = Math.round(r.top + r.height * 0.5);
-          step.x = targetX;
-          step.y = targetY;
-          step.rx = Number((targetX / Math.max(1, window.innerWidth)).toFixed(4));
-          step.ry = Number((targetY / Math.max(1, window.innerHeight)).toFixed(4));
         }
       }
 
-      moveBotCursor(targetX, targetY, `🖱️ #${index + 1} (${targetX}, ${targetY})`);
+      moveBotCursor(targetX, targetY, `🖱️ #${index + 1} -> เว็บเป้าหมาย (${targetX}, ${targetY})`);
       await new Promise(r => setTimeout(r, moveWait));
 
+      // Hit-test ONLY non-internal elements (never click Studio setup UI on klick1-mocha.vercel.app!)
       if (!targetEl) {
         const hit = document.elementFromPoint(targetX, targetY);
         if (hit && !isBotInternalElement(hit)) {
@@ -1174,9 +1233,13 @@
         }
       }
 
-      if (targetEl) {
+      if (targetEl && !isBotInternalElement(targetEl)) {
         lastInteractedElement = targetEl;
+      } else {
+        targetEl = null; // Guard: Refuse to click on Studio's own configuration inputs/buttons!
       }
+
+      const configuredUrl = document.getElementById('real-target-url')?.value.trim() || 'เว็บเป้าหมาย';
 
       if (step.type === 'click_xy' || step.type === 'click_selector') {
         triggerClickVisual(targetX, targetY, `🖱️ CLICK (${targetX}, ${targetY})`);
@@ -1184,9 +1247,8 @@
         document.getElementById('stat-clicks').textContent = state.clicks;
         if (targetEl) {
           deepClickElement(targetEl, targetX, targetY);
-        } else {
-          document.getElementById('target-last-action').textContent = `🖱️ คลิกที่พิกัด (X: ${targetX}, Y: ${targetY})`;
         }
+        document.getElementById('target-last-action').textContent = `📡 ส่งคำสั่งคลิกพิกัด (${targetX}, ${targetY}) ไปยังเว็บ [${configuredUrl}] แล้ว`;
       } else if (step.type === 'dblclick_xy') {
         triggerClickVisual(targetX, targetY, `🖱️🖱️ 2x CLICK (${targetX}, ${targetY})`);
         state.clicks += 2;
@@ -1195,6 +1257,7 @@
           deepClickElement(targetEl, targetX, targetY);
           targetEl.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: targetX, clientY: targetY }));
         }
+        document.getElementById('target-last-action').textContent = `📡 ส่งคำสั่งดับเบิลคลิก (${targetX}, ${targetY}) ไปยังเว็บ [${configuredUrl}] แล้ว`;
       } else if (step.type === 'click_ type_xy' || step.type === 'type_selector') {
         const resolvedText = resolveSmartText(step.value);
         triggerClickVisual(targetX, targetY, `⌨️ พิมพ์: "${resolvedText}"`);
@@ -1203,7 +1266,7 @@
         if (targetEl) {
           deepClickElement(targetEl, targetX, targetY);
           const inputTarget = ('value' in targetEl) ? targetEl : (targetEl.querySelector('input, textarea') || document.getElementById('test-box-msg'));
-          if (inputTarget && ('value' in inputTarget)) {
+          if (inputTarget && ('value' in inputTarget) && !isBotInternalElement(inputTarget)) {
             lastInteractedElement = inputTarget;
             inputTarget.focus();
             setNativeValue(inputTarget, '');
@@ -1218,9 +1281,9 @@
                 await new Promise(r => setTimeout(r, charWait));
               }
             }
-            document.getElementById('target-last-action').textContent = `⌨️ พิมพ์ข้อความ "${resolvedText}" ลงใน #${inputTarget.id || inputTarget.tagName}`;
           }
         }
+        document.getElementById('target-last-action').textContent = `📡 ส่งคำสั่งพิมพ์ "${resolvedText}" ที่พิกัด (${targetX}, ${targetY}) ไปยังเว็บ [${configuredUrl}] แล้ว`;
       }
     }
 
@@ -2161,6 +2224,21 @@
     setTimeout(loop, 300);
   }
 
+  // Listen for Remote Commands from Detached AutoMouse Window
+  window.addEventListener('message', (ev) => {
+    const d = ev.data || {};
+    if (d.type === 'AILAB_REMOTE_EXEC_STEP' && d.payload && d.payload.step) {
+      const st = d.payload.step;
+      const tDoc = getTargetDoc();
+      const tWin = getTargetWin();
+      let x = (VARS.lockRatio && typeof st.rx === 'number') ? Math.round(st.rx * tWin.innerWidth) : (st.x || 300);
+      let y = (VARS.lockRatio && typeof st.ry === 'number') ? Math.round(st.ry * tWin.innerHeight) : (st.y || 300);
+      let el = findSmart(st.selector || (st.type.includes('selector') ? st.value : '')) || tDoc.elementFromPoint(x, y);
+      if (cur) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
+      if (el) spyExecuteClick(el, x, y, tDoc, tWin);
+    }
+  });
+
   setInterval(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
@@ -2869,24 +2947,29 @@ if __name__ == "__main__":
 </head>
 <body>
 
-  <!-- Top Status & Target Website Launcher -->
-  <div class="card">
+  <!-- STEP 1: รับเว็บเป้าหมายที่จะให้คลิก (Target Website Receiver Lock) -->
+  <div class="card" style="border-color:#f59e0b;">
     <div class="row" style="border-bottom:1px solid #1e293b;padding-bottom:7px;margin-bottom:8px;">
-      <div style="font-weight:800;color:#34d399;font-size:14px;">🪟 AutoMouse จอแยกอิสระ (ไม่หาย 100%)</div>
+      <div style="font-weight:800;color:#fbbf24;font-size:13px;">🌐 ขั้นที่ 1: รับเว็บเป้าหมายที่จะให้บอทคลิก</div>
       <div class="row">
         <span id="dw-cycles-pill" class="mono" style="background:#1e293b;color:#38bdf8;padding:2px 7px;border-radius:99px;font-size:10px;">รอบ #0</span>
-        <span id="dw-status" class="mono" style="background:#065f46;color:#a7f3d0;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;">READY</span>
+        <span id="dw-status" class="mono" style="background:#7f1d1d;color:#fecaca;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;">รอรับเว็บ</span>
       </div>
     </div>
 
     <div class="row" style="margin-bottom:6px;">
-      <button id="dw-nav-back" class="btn-slate" title="สั่งย้อนกลับหน้าเว็บ">⬅️ ย้อนกลับ</button>
-      <button id="dw-nav-refresh" class="btn-slate" title="รีเฟรชหน้าเว็บและรีเซ็ตคิว">🔄 Refresh</button>
-      <input id="dw-url" type="text" value="https://www.youtube.com/" placeholder="ใส่ URL เว็บค้นหา/เป้าหมาย..." class="mono" style="flex:1;color:#38bdf8;" />
-      <button id="dw-open-url" class="btn-amber">↗ เปิดเว็บ</button>
+      <input id="dw-url" type="text" value="https://www.youtube.com/" placeholder="วาง URL เว็บที่ต้องการให้คลิก..." class="mono" style="flex:1;color:#38bdf8;font-weight:700;" />
+      <button id="dw-open-url" class="btn-amber" style="padding:6px 12px;">🌐 รับเว็บ & เปิดหน้าเว็บนี้</button>
     </div>
-    <div style="font-size:10px;color:#94a3b8;">
-      ✓ หน้าต่าง AutoMouse นี้แยกขาดจากแท็บเว็บค้นหา เปลี่ยนหน้า/รีโหลดเว็บค้นหาได้อิสระโดยแผงไม่หาย
+
+    <div class="row" style="margin-bottom:6px;">
+      <button id="dw-nav-back" class="btn-slate" style="flex:1;">⬅️ สั่งย้อนกลับ (Back)</button>
+      <button id="dw-nav-refresh" class="btn-slate" style="flex:1;">🔄 สั่ง Refresh เว็บ</button>
+      <button id="dw-open-stage-iframe" class="btn-slate" style="flex:1;color:#34d399;border-color:#10b981;">🖥️ โหลดเว็บเข้ากรอบทำงาน</button>
+    </div>
+
+    <div id="dw-target-lock-banner" style="background:#020617;border:1px solid #334155;border-radius:8px;padding:6px 8px;font-size:10px;color:#cbd5e1;">
+      🎯 <strong>เว็บที่ล็อกเป้าปัจจุบัน:</strong> <span id="dw-locked-site-text" class="mono" style="color:#34d399;">ยังไม่รับเว็บ (กรุณากดปุ่ม "🌐 รับเว็บ & เปิดหน้าเว็บนี้" ก่อนเริ่มทำงาน)</span>
     </div>
   </div>
 
@@ -3171,9 +3254,56 @@ if __name__ == "__main__":
           drawDetachedRadar();
         };
 
+        let targetSiteAccepted = false;
+        // Initialize dw-url from main Studio's #real-target-url
+        const mainUrlInp = document.getElementById('real-target-url');
+        if (mainUrlInp && mainUrlInp.value) {
+          doc.getElementById('dw-url').value = mainUrlInp.value;
+        }
+
+        function acceptAndLockTargetWebsite(openInNewTab, openInStage) {
+          let u = doc.getElementById('dw-url').value.trim() || 'https://www.youtube.com/';
+          if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+          doc.getElementById('dw-url').value = u;
+          if (mainUrlInp) mainUrlInp.value = u;
+
+          targetSiteAccepted = true;
+          doc.getElementById('dw-locked-site-text').textContent = u + ' (รับเว็บพร้อมสั่งคลิกแล้ว!)';
+          doc.getElementById('dw-status').textContent = 'LOCKED WEB';
+          doc.getElementById('dw-status').style.background = '#065f46';
+          doc.getElementById('dw-status').style.color = '#a7f3d0';
+
+          const pill = document.getElementById('remote-bridge-pill');
+          if (pill) {
+            pill.textContent = 'ล็อกเว็บ: ' + u.slice(0, 28);
+            pill.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold mono';
+          }
+
+          syncDynamicAutoMouseCode();
+          copyCodeToClipboard();
+
+          if (openInStage) {
+            const wrap = document.getElementById('configured-web-stage-wrap');
+            const ifr = document.getElementById('configured-web-iframe');
+            const lbl = document.getElementById('stage-active-url-lbl');
+            if (wrap && ifr) {
+              wrap.classList.remove('hidden');
+              ifr.src = u;
+              if (lbl) lbl.textContent = u;
+            }
+          }
+
+          if (openInNewTab) {
+            targetWebWin = window.open(u, 'AiLabTargetWebTab');
+          }
+        }
+
         doc.getElementById('dw-open-url').onclick = () => {
-          const u = doc.getElementById('dw-url').value.trim() || 'https://www.youtube.com/';
-          targetWebWin = window.open(u, 'AiLabTargetWebTab');
+          acceptAndLockTargetWebsite(true, true);
+        };
+
+        doc.getElementById('dw-open-stage-iframe').onclick = () => {
+          acceptAndLockTargetWebsite(false, true);
         };
         doc.getElementById('dw-nav-back').onclick = () => {
           try { if (targetWebWin && !targetWebWin.closed) targetWebWin.history.back(); else history.back(); } catch(e){ history.back(); }
@@ -3223,6 +3353,10 @@ if __name__ == "__main__":
         };
 
         doc.getElementById('dw-run-btn').onclick = () => {
+          if (!targetSiteAccepted) {
+            // Automatically accept and open the configured target website so it NEVER clicks on the Studio setup page!
+            acceptAndLockTargetWebsite(true, true);
+          }
           doc.getElementById('dw-status').textContent = 'RUNNING';
           startQueueLoop();
           renderDetachedSteps();
@@ -3248,6 +3382,28 @@ if __name__ == "__main__":
 
       document.getElementById('btn-detach-standalone-hud')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
       document.getElementById('btn-hero-detach-now')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
+      document.getElementById('btn-open-target-workspace')?.addEventListener('click', () => {
+        let u = document.getElementById('real-target-url')?.value.trim() || 'https://www.youtube.com/';
+        if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+        document.getElementById('real-target-url').value = u;
+        const wrap = document.getElementById('configured-web-stage-wrap');
+        const ifr = document.getElementById('configured-web-iframe');
+        const lbl = document.getElementById('stage-active-url-lbl');
+        if (wrap && ifr) {
+          wrap.classList.remove('hidden');
+          ifr.src = u;
+          if (lbl) lbl.textContent = u;
+        }
+        targetWebWin = window.open(u, 'AiLabTargetWebTab');
+        const pill = document.getElementById('remote-bridge-pill');
+        if (pill) {
+          pill.textContent = 'ล็อกเว็บ: ' + u.slice(0, 28);
+          pill.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold mono';
+        }
+      });
+      document.getElementById('btn-close-web-stage')?.addEventListener('click', () => {
+        document.getElementById('configured-web-stage-wrap')?.classList.add('hidden');
+      });
       document.getElementById('btn-open-real-and-detach')?.addEventListener('click', () => openDetachedAutoMouseWindow(true));
       document.getElementById('hud-btn-popout')?.addEventListener('click', () => openDetachedAutoMouseWindow(false));
 
