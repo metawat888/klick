@@ -345,6 +345,8 @@
             <option value="wait_for_element">👁️ รอจนกว่าปุ่ม/ช่องจะปรากฏบนเว็บ</option>
             <option value="scroll_page">📜 เลื่อนหน้าจอเว็บ (พิกเซล เช่น 400 หรือ -400)</option>
             <option value="press_enter">↵ กดปุ่ม Enter</option>
+            <option value="go_back">⬅️ ย้อนกลับหน้าก่อนหน้า (Back)</option>
+            <option value="refresh_page">🔄 รีเฟรชหน้าเว็บ (Refresh)</option>
             <option value="wait">⏱️ หน่วงเวลารอ (วินาที)</option>
           </select>
         </div>
@@ -573,6 +575,17 @@
     </div>
 
     <div id="hud-body" class="space-y-2">
+      <div class="flex items-center justify-between gap-1.5 bg-slate-900/95 border border-slate-800 rounded-lg px-2 py-1">
+        <button id="hud-btn-nav-back" class="flex-1 py-1 px-2 rounded bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 font-bold text-[10px] transition flex items-center justify-center gap-1" title="ย้อนกลับหน้าก่อนหน้า">
+          <span>⬅️</span> ย้อนกลับ (Back)
+        </button>
+        <button id="hud-btn-nav-refresh" class="flex-1 py-1 px-2 rounded bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-emerald-300 font-bold text-[10px] transition flex items-center justify-center gap-1" title="รีเฟรชหน้าเว็บและรีเซ็ตคิวพร้อมรันใหม่">
+          <span>🔄</span> Refresh
+        </button>
+        <button id="hud-btn-add-back-step" class="py-1 px-2 rounded bg-amber-500/20 hover:bg-amber-500 hover:text-slate-950 text-amber-300 border border-amber-500/40 font-bold text-[10px] transition" title="เพิ่มคำสั่งย้อนกลับลงคิว">
+          +ขั้นย้อนกลับ
+        </button>
+      </div>
       <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5">
         <span class="text-[11px] text-slate-300">พิกัดเมาส์: <strong id="hud-xy-readout" class="text-amber-300 mono">X:0 Y:0</strong></span>
         <button id="hud-btn-pick-xy" class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[10px] hover:bg-amber-400 transition">
@@ -912,20 +925,35 @@
       return r.width > 0 && r.height > 0;
     }
 
+    function normalizeMatchStr(str) {
+      return String(str || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    function getDirectTextOnly(el) {
+      if (!el) return '';
+      let txt = '';
+      for (const child of el.childNodes) {
+        if (child.nodeType === 3) txt += child.nodeValue + ' ';
+      }
+      return normalizeMatchStr(txt);
+    }
+
     function findElementBySmartQuery(queryStr, preferInput = false) {
       const raw = String(queryStr || '').trim();
       if (!raw) return null;
 
-      // Expand terms with pipe-split + smart synonyms
-      const baseTerms = raw.split('|').map(t => t.trim()).filter(Boolean);
+      const baseTerms = raw.split('|').map(t => normalizeMatchStr(t)).filter(Boolean);
       const terms = [...baseTerms];
       for (const bt of baseTerms) {
-        const syns = SMART_SYNONYMS[bt.toLowerCase()];
-        if (syns) syns.forEach(syn => { if (!terms.includes(syn)) terms.push(syn); });
+        const syns = SMART_SYNONYMS[bt];
+        if (syns) syns.forEach(syn => {
+          const ns = normalizeMatchStr(syn);
+          if (!terms.includes(ns)) terms.push(ns);
+        });
       }
 
-      // 1. Direct CSS Selector / ID check first
-      for (const term of baseTerms) {
+      // 1. Direct CSS Selector or exact ID check first
+      for (const term of raw.split('|').map(t => t.trim()).filter(Boolean)) {
         if (term.startsWith('#') || term.startsWith('.') || term.startsWith('[') || term.includes('input') || term.includes('button')) {
           try {
             const direct = document.querySelector(term);
@@ -936,7 +964,7 @@
         if (byId && !isBotInternalElement(byId) && isElementVisibleAndEnabled(byId)) return byId;
       }
 
-      // 2. Scored Fuzzy Ranking across Target Pad & Page (Excluding Bot Config Controls)
+      // 2. Ultra-Accurate Multi-Layer Scored Search
       const targetPad = document.getElementById('target-pad-section');
       const rawPool = collectAllInteractiveNodes(document).filter(el => !el.closest('#control-config-section') && !el.closest('#queue-builder-section'));
 
@@ -944,39 +972,47 @@
       let bestScore = -1;
 
       for (const el of rawPool) {
-        const visible = isElementVisibleAndEnabled(el);
-        if (!visible) continue;
+        if (!isElementVisibleAndEnabled(el)) continue;
 
         const isInputLike = ('value' in el && el.tagName !== 'BUTTON') || el.tagName === 'TEXTAREA' || el.getAttribute('contenteditable') === 'true';
         if (preferInput && !isInputLike && el.tagName !== 'LABEL') continue;
 
-        const text = (el.innerText || el.textContent || '').trim().toLowerCase();
-        const val = (el.value || '').trim().toLowerCase();
-        const ph = (el.getAttribute('placeholder') || '').trim().toLowerCase();
-        const aria = (el.getAttribute('aria-label') || '').trim().toLowerCase();
-        const title = (el.getAttribute('title') || '').trim().toLowerCase();
-        const idStr = (el.id || '').trim().toLowerCase();
-        const nameStr = (el.getAttribute('name') || '').trim().toLowerCase();
-        const haystacks = [text, val, ph, aria, title, idStr, nameStr].filter(Boolean);
+        const directText = getDirectTextOnly(el);
+        const fullText = normalizeMatchStr(el.innerText || el.textContent || '');
+        const val = normalizeMatchStr(el.value || '');
+        const ph = normalizeMatchStr(el.getAttribute('placeholder') || '');
+        const aria = normalizeMatchStr(el.getAttribute('aria-label') || '');
+        const title = normalizeMatchStr(el.getAttribute('title') || '');
+        const idStr = normalizeMatchStr(el.id || '');
+        const nameStr = normalizeMatchStr(el.getAttribute('name') || '');
 
         let score = 0;
         for (let ti = 0; ti < terms.length; ti++) {
-          const lt = terms[ti].toLowerCase();
-          const isPrimaryTerm = ti < baseTerms.length;
-          const weight = isPrimaryTerm ? 1.0 : 0.65;
+          const lt = terms[ti];
+          const weight = (ti < baseTerms.length) ? 1.0 : 0.7;
 
-          for (const h of haystacks) {
-            if (h === lt) score = Math.max(score, 120 * weight);
-            else if (h.startsWith(lt) || h.endsWith(lt)) score = Math.max(score, 85 * weight);
-            else if (h.includes(lt)) score = Math.max(score, 55 * weight);
+          // Exact match on direct text, value, aria-label, title, or placeholder gets highest priority
+          if (directText === lt || val === lt || aria === lt || title === lt || ph === lt || idStr === lt) {
+            score = Math.max(score, 200 * weight);
+          } else if (fullText === lt) {
+            score = Math.max(score, 175 * weight);
+          } else if (directText.startsWith(lt) || val.startsWith(lt) || aria.startsWith(lt) || title.startsWith(lt) || ph.startsWith(lt)) {
+            score = Math.max(score, 140 * weight);
+          } else if (fullText.startsWith(lt)) {
+            score = Math.max(score, 115 * weight);
+          } else if (directText.includes(lt) || val.includes(lt) || aria.includes(lt) || title.includes(lt) || ph.includes(lt) || idStr.includes(lt) || nameStr.includes(lt)) {
+            score = Math.max(score, 95 * weight);
+          } else if (fullText.includes(lt)) {
+            // Penalize huge parent containers whose fullText happens to include the word
+            const lenPenalty = Math.min(45, Math.floor(fullText.length / 12));
+            score = Math.max(score, (75 - lenPenalty) * weight);
           }
         }
 
         if (score > 0) {
-          // Bonus for targetPad, interactive tags, and visible size
-          if (targetPad && targetPad.contains(el)) score += 35;
-          if (!preferInput && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button' || el.type === 'submit')) score += 25;
-          if (preferInput && isInputLike) score += 25;
+          if (targetPad && targetPad.contains(el)) score += 40;
+          if (!preferInput && (el.tagName === 'BUTTON' || el.tagName === 'A' || el.getAttribute('role') === 'button' || el.type === 'submit')) score += 30;
+          if (preferInput && isInputLike) score += 35;
 
           if (score > bestScore) {
             bestScore = score;
@@ -1058,6 +1094,24 @@
         window.scrollBy({ top: px, behavior: 'smooth' });
         moveBotCursor(state.lastMouseX, state.lastMouseY, `📜 เลื่อนจอ ${px}px`);
         await new Promise(r => setTimeout(r, moveWait));
+        return;
+      }
+
+      if (step.type === 'go_back') {
+        moveBotCursor(state.lastMouseX, state.lastMouseY, '⬅️ ย้อนกลับหน้าก่อนหน้า (Back)');
+        triggerClickVisual(state.lastMouseX, state.lastMouseY, '⬅️ BACK!');
+        document.getElementById('target-last-action').textContent = '⬅️ สั่งย้อนกลับหน้าก่อนหน้า (History Back)';
+        await new Promise(r => setTimeout(r, Math.round(moveWait * 0.7)));
+        try { history.back(); } catch(e){}
+        return;
+      }
+
+      if (step.type === 'refresh_page') {
+        moveBotCursor(state.lastMouseX, state.lastMouseY, '🔄 รีเฟรชหน้าเว็บ (Refresh)');
+        triggerClickVisual(state.lastMouseX, state.lastMouseY, '🔄 REFRESH!');
+        document.getElementById('target-last-action').textContent = '🔄 สั่งรีเฟรชหน้าเว็บและซิงค์สถานะใหม่';
+        await new Promise(r => setTimeout(r, Math.round(moveWait * 0.7)));
+        drawPrecisionSimulator();
         return;
       }
 
@@ -1239,6 +1293,8 @@
         'wait_for_element': '<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold mono">👁️ รอปุ่ม</span>',
         'scroll_page': '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] font-bold mono">📜 เลื่อนจอ</span>',
         'press_enter': '<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold mono">↵ Enter</span>',
+        'go_back': '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold mono">⬅️ ย้อนกลับ</span>',
+        'refresh_page': '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold mono">🔄 Refresh</span>',
         'wait': '<span class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 text-[10px] font-bold mono">⏱️ รอ</span>'
       };
 
@@ -1689,10 +1745,29 @@
       const o = mk('option', '', lbl); o.value = v; if (Number(v) === VARS.speed) o.selected = true; speedSel.appendChild(o);
     });
     speedSel.onchange = () => { VARS.speed = parseFloat(speedSel.value) || 2; persistState(); };
+    const bNavBack = mk('button', 'background:#0284c7;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '⬅️ ย้อนกลับ');
+    bNavBack.title = 'ย้อนกลับหน้าเว็บก่อนหน้าทันที';
+    bNavBack.onclick = () => {
+      try { getTargetWin().history.back(); } catch(e){ history.back(); }
+      if (statEl) statEl.textContent = '⬅️ ย้อนกลับหน้าก่อนหน้าแล้ว (แผง AutoMouse ยังอยู่ครบ!)';
+    };
+    const bNavRefresh = mk('button', 'background:#059669;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🔄 Refresh');
+    bNavRefresh.title = 'รีเฟรชหน้าเว็บ/รีเซ็ตลำดับคิวให้พร้อมรันใหม่ทันที';
+    bNavRefresh.onclick = () => {
+      idx = 0;
+      persistState();
+      renderHudSteps();
+      if (masterShellActive && masterIframe && masterIframe.contentWindow) {
+        masterIframe.contentWindow.location.reload();
+      } else if (location.hostname.includes('youtube.com')) {
+        spyFollowYouTubeNavigation(location.href);
+      }
+      if (statEl) statEl.textContent = '🔄 รีเฟรชหน้าเว็บและตั้งคิวกลับไปเริ่มขั้นที่ #1 พร้อมรันแล้ว!';
+    };
     const bClean = mk('button', 'background:#be123c;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🧹 Clean');
     bClean.onclick = () => { running = false; commandedByUser = false; QUEUE.length = 0; idx = 0; cycles = 0; persistState(); renderHudSteps(); statEl.textContent = '🧹 ล้างคิวทั้งหมดแล้ว (รอสั่งการใหม่)'; };
     const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
-    hdrBtns.append(speedSel, bClean, bMin);
+    hdrBtns.append(bNavBack, bNavRefresh, speedSel, bClean, bMin);
     header.append(title, hdrBtns);
 
     bodyWrap = mk('div', minimized ? 'display:none;' : 'display:block;');
@@ -1702,10 +1777,11 @@
     listBox = mk('div', 'max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
 
     const pickRow = mk('div', 'display:flex;gap:5px;margin-bottom:6px;');
-    const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มล็อกเป้าหมาย (Spy Lock)');
+    const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มล็อกเป้าแม่นยำ');
     const bAdd = mk('button', 'background:#0284c7;color:#fff;border:none;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '+ เพิ่มขั้น');
     const bEnterStep = mk('button', 'background:#0f766e;color:#fff;border:none;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '+ Enter');
-    pickRow.append(bPick, bAdd, bEnterStep);
+    const bBackStep = mk('button', 'background:#4f46e5;color:#fff;border:none;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '+ ย้อนกลับ');
+    pickRow.append(bPick, bAdd, bEnterStep, bBackStep);
 
     const btnRow = mk('div', 'display:flex;gap:6px;');
     const bStart = mk('button', 'flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;border:none;padding:8px 12px;border-radius:9px;font-weight:900;cursor:pointer;font-size:12px;', '▶ สั่งการเริ่มทำงาน');
@@ -1781,15 +1857,24 @@
     function onSpyClick(ev) {
       if (!pickingMode || (hud && hud.contains(ev.target))) return;
       ev.preventDefault(); ev.stopPropagation();
-      const rawT = ev.target;
-      const t = rawT.closest('a[href], button, input, textarea, select, [role="button"]') || rawT;
+      const tDoc = getTargetDoc();
+      const rawT = tDoc.elementFromPoint(ev.clientX, ev.clientY) || ev.target;
+      const t = rawT.closest('a[href], button, input, textarea, select, [role="button"], ytd-thumbnail, ytd-video-renderer') || rawT;
       const sel = getSpySelector(t);
       const isInput = ('value' in t && t.tagName !== 'BUTTON') || t.isContentEditable;
+      let snapX = ev.clientX, snapY = ev.clientY;
+      if (t && t.getBoundingClientRect) {
+        const r = t.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0 && r.width < window.innerWidth * 0.85) {
+          snapX = Math.round(r.left + r.width * 0.5);
+          snapY = Math.round(r.top + r.height * 0.5);
+        }
+      }
       QUEUE.push({
-        type: isInput ? 'click_ type_xy' : 'click_xy',
-        x: ev.clientX, y: ev.clientY,
-        rx: Number((ev.clientX / Math.max(1, window.innerWidth)).toFixed(4)),
-        ry: Number((ev.clientY / Math.max(1, window.innerHeight)).toFixed(4)),
+        type: isInput ? 'click_ type_xy' : (sel ? 'click_selector' : 'click_xy'),
+        x: snapX, y: snapY,
+        rx: Number((snapX / Math.max(1, window.innerWidth)).toFixed(4)),
+        ry: Number((snapY / Math.max(1, window.innerHeight)).toFixed(4)),
         selector: sel,
         value: isInput ? (VARS.msg || '') : (sel || 'คลิกเป้าหมาย'),
         note: 'Spy Lock', runOnce: false
@@ -1810,6 +1895,10 @@
     };
     bEnterStep.onclick = () => {
       QUEUE.push({ type: 'press_enter', x: 500, y: 300, rx: 0.5, ry: 0.35, selector: '', value: 'กด Enter', note: 'Enter', runOnce: false });
+      persistState(); renderHudSteps(); listBox.scrollTop = listBox.scrollHeight;
+    };
+    bBackStep.onclick = () => {
+      QUEUE.push({ type: 'go_back', x: 0, y: 0, rx: 0, ry: 0, selector: '', value: 'ย้อนกลับหน้าก่อนหน้า', note: 'Back', runOnce: false });
       persistState(); renderHudSteps(); listBox.scrollTop = listBox.scrollHeight;
     };
 
@@ -1844,6 +1933,8 @@
     ['click_selector', '🔎 คลิกตามชื่อ/CSS'],
     ['type_selector', '📝 พิมพ์ตามชื่อ/CSS'],
     ['press_enter', '↵ กด Enter'],
+    ['go_back', '⬅️ ย้อนกลับ (Back)'],
+    ['refresh_page', '🔄 รีเฟรช (Refresh)'],
     ['scroll_page', '📜 เลื่อนจอ (px)'],
     ['wait', '⏱️ รอ (วินาที)']
   ];
@@ -1945,28 +2036,43 @@
     return arr;
   }
 
+  function normTxt(s) { return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+  function directTxt(el) {
+    let t = '';
+    for (const c of (el.childNodes || [])) { if (c.nodeType === 3) t += c.nodeValue + ' '; }
+    return normTxt(t);
+  }
   function findSmart(qStr) {
     if (!qStr) return null;
     const tDoc = getTargetDoc();
-    const terms = qStr.split('|').map(t => t.trim()).filter(Boolean);
-    for (const t of terms) {
-      try { const d = tDoc.querySelector(t); if (d && isVisible(d)) return d; } catch(e){}
+    const rawTerms = qStr.split('|').map(t => t.trim()).filter(Boolean);
+    for (const t of rawTerms) {
+      if (t.startsWith('#') || t.startsWith('.') || t.startsWith('[')) {
+        try { const d = tDoc.querySelector(t); if (d && isVisible(d)) return d; } catch(e){}
+      }
       const byId = tDoc.getElementById(t); if (byId && isVisible(byId)) return byId;
     }
     const pool = collectNodes(tDoc);
     let best = null, bestSc = -1;
     for (const el of pool) {
-      const fields = [el.innerText, el.value, el.placeholder, el.getAttribute('aria-label'), el.title, el.id, el.name].map(x => (x||'').trim().toLowerCase()).filter(Boolean);
+      const dTxt = directTxt(el);
+      const fTxt = normTxt(el.innerText || el.textContent || '');
+      const attrs = [el.value, el.placeholder, el.getAttribute('aria-label'), el.title, el.id, el.name].map(normTxt).filter(Boolean);
       let sc = 0;
-      for (const t of terms) {
-        const lt = t.toLowerCase();
-        for (const f of fields) {
-          if (f === lt) sc = Math.max(sc, 100);
-          else if (f.startsWith(lt)) sc = Math.max(sc, 70);
-          else if (f.includes(lt)) sc = Math.max(sc, 40);
+      for (const rt of rawTerms) {
+        const lt = normTxt(rt);
+        if (!lt) continue;
+        if (dTxt === lt || attrs.includes(lt)) sc = Math.max(sc, 210);
+        else if (fTxt === lt) sc = Math.max(sc, 180);
+        else if (dTxt.startsWith(lt) || attrs.some(a => a.startsWith(lt))) sc = Math.max(sc, 145);
+        else if (fTxt.startsWith(lt)) sc = Math.max(sc, 120);
+        else if (dTxt.includes(lt) || attrs.some(a => a.includes(lt))) sc = Math.max(sc, 100);
+        else if (fTxt.includes(lt)) {
+          const pen = Math.min(45, Math.floor(fTxt.length / 10));
+          sc = Math.max(sc, 80 - pen);
         }
       }
-      if (sc > 0 && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button' || el.tagName === 'A')) sc += 20;
+      if (sc > 0 && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button' || el.tagName === 'A')) sc += 25;
       if (sc > bestSc) { bestSc = sc; best = el; }
     }
     return best;
@@ -1992,6 +2098,15 @@
           const val = resolveVal(step.value);
           if (step.type === 'wait') {
             await new Promise(r => setTimeout(r, (parseFloat(val) || 1) * 1000));
+          } else if (step.type === 'go_back') {
+            if (statEl) statEl.textContent = '⬅️ [SPY BACK] กำลังย้อนกลับหน้าก่อนหน้า...';
+            try { tWin.history.back(); } catch(e){ history.back(); }
+            await new Promise(r => setTimeout(r, 550));
+          } else if (step.type === 'refresh_page') {
+            if (statEl) statEl.textContent = '🔄 [SPY REFRESH] กำลังรีเฟรชหน้าเว็บ...';
+            if (masterShellActive && masterIframe && masterIframe.contentWindow) masterIframe.contentWindow.location.reload();
+            else if (location.hostname.includes('youtube.com')) spyFollowYouTubeNavigation(location.href);
+            await new Promise(r => setTimeout(r, 650));
           } else if (step.type === 'scroll_page') {
             tWin.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
           } else if (step.type === 'press_enter') {
@@ -2210,12 +2325,28 @@ if __name__ == "__main__":
         if (e.target.closest('#btn-pick-xy') || e.target.closest('#hud-btn-pick-xy')) return;
         e.preventDefault();
         e.stopPropagation();
-        setLockedXY(e.clientX, e.clientY);
+        // Snap to center of interactive element if user clicked a button/input/link for maximum accuracy!
+        const rawEl = document.elementFromPoint(e.clientX, e.clientY);
+        const interEl = rawEl && !isBotInternalElement(rawEl) ? (rawEl.closest('button, a, input, textarea, select, [role="button"]') || rawEl) : null;
+        let finalX = e.clientX, finalY = e.clientY;
+        let detectedName = '';
+        if (interEl && interEl.getBoundingClientRect) {
+          const r = interEl.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0 && r.width < window.innerWidth * 0.8) {
+            finalX = Math.round(r.left + r.width * 0.5);
+            finalY = Math.round(r.top + r.height * 0.5);
+          }
+          detectedName = interEl.id ? ('#' + interEl.id) : (interEl.getAttribute('aria-label') || interEl.getAttribute('placeholder') || (interEl.innerText || '').trim().slice(0, 25));
+          if (detectedName) {
+            document.getElementById('input-selector').value = detectedName;
+          }
+        }
+        setLockedXY(finalX, finalY);
         state.pickingXY = false;
         document.body.classList.remove('coord-finder-active');
-        const rx = ((e.clientX / Math.max(1, window.innerWidth)) * 100).toFixed(1);
-        const ry = ((e.clientY / Math.max(1, window.innerHeight)) * 100).toFixed(1);
-        document.getElementById('pick-xy-text').textContent = `✓ ล็อกพิกัด X:${e.clientX}, Y:${e.clientY} (สัดส่วน ${rx}%, ${ry}%)`;
+        const rx = ((finalX / Math.max(1, window.innerWidth)) * 100).toFixed(1);
+        const ry = ((finalY / Math.max(1, window.innerHeight)) * 100).toFixed(1);
+        document.getElementById('pick-xy-text').textContent = `✓ ล็อกเป้าแม่นยำ X:${finalX}, Y:${finalY} (${rx}%, ${ry}%) ${detectedName ? '[' + detectedName + ']' : ''}`;
       }, true);
 
       document.getElementById('btn-test-xy-click').addEventListener('click', async () => {
@@ -2749,8 +2880,10 @@ if __name__ == "__main__":
     </div>
 
     <div class="row" style="margin-bottom:6px;">
+      <button id="dw-nav-back" class="btn-slate" title="สั่งย้อนกลับหน้าเว็บ">⬅️ ย้อนกลับ</button>
+      <button id="dw-nav-refresh" class="btn-slate" title="รีเฟรชหน้าเว็บและรีเซ็ตคิว">🔄 Refresh</button>
       <input id="dw-url" type="text" value="https://www.youtube.com/" placeholder="ใส่ URL เว็บค้นหา/เป้าหมาย..." class="mono" style="flex:1;color:#38bdf8;" />
-      <button id="dw-open-url" class="btn-amber">↗ เปิดเว็บในแท็บแยก</button>
+      <button id="dw-open-url" class="btn-amber">↗ เปิดเว็บ</button>
     </div>
     <div style="font-size:10px;color:#94a3b8;">
       ✓ หน้าต่าง AutoMouse นี้แยกขาดจากแท็บเว็บค้นหา เปลี่ยนหน้า/รีโหลดเว็บค้นหาได้อิสระโดยแผงไม่หาย
@@ -2803,6 +2936,8 @@ if __name__ == "__main__":
         <option value="click_selector">🔎 คลิกปุ่มอัจฉริยะ (ชื่อปุ่ม / CSS)</option>
         <option value="type_selector">📝 พิมพ์ข้อความลงช่อง (ID / Pass / คำสั่ง)</option>
         <option value="press_enter">↵ กดปุ่ม Enter</option>
+        <option value="go_back">⬅️ ย้อนกลับหน้าก่อนหน้า (Back)</option>
+        <option value="refresh_page">🔄 รีเฟรชหน้าเว็บ (Refresh)</option>
         <option value="scroll_page">📜 เลื่อนหน้าจอเว็บ (พิกเซล)</option>
         <option value="wait">⏱️ หน่วงเวลารอ (วินาที)</option>
       </select>
@@ -3040,6 +3175,17 @@ if __name__ == "__main__":
           const u = doc.getElementById('dw-url').value.trim() || 'https://www.youtube.com/';
           targetWebWin = window.open(u, 'AiLabTargetWebTab');
         };
+        doc.getElementById('dw-nav-back').onclick = () => {
+          try { if (targetWebWin && !targetWebWin.closed) targetWebWin.history.back(); else history.back(); } catch(e){ history.back(); }
+          doc.getElementById('dw-status').textContent = '⬅️ BACK';
+        };
+        doc.getElementById('dw-nav-refresh').onclick = () => {
+          state.currentIndex = 0;
+          renderQueueCards();
+          renderDetachedSteps();
+          try { if (targetWebWin && !targetWebWin.closed) targetWebWin.location.reload(); } catch(e){}
+          doc.getElementById('dw-status').textContent = '🔄 REFRESHED';
+        };
 
         doc.getElementById('dw-speed').onchange = (e) => {
           document.getElementById('loop-speed').value = e.target.value;
@@ -3185,6 +3331,31 @@ if __name__ == "__main__":
       });
       document.getElementById('hud-minimize').addEventListener('click', () => {
         document.getElementById('hud-body').classList.toggle('hidden');
+      });
+      document.getElementById('hud-btn-nav-back')?.addEventListener('click', () => {
+        try { history.back(); } catch(e){}
+        document.getElementById('target-last-action').textContent = '⬅️ สั่งย้อนกลับหน้าก่อนหน้า (Back)';
+      });
+      document.getElementById('hud-btn-nav-refresh')?.addEventListener('click', () => {
+        state.currentIndex = 0;
+        renderQueueCards();
+        drawPrecisionSimulator();
+        document.getElementById('target-last-action').textContent = '🔄 รีเฟรชสถานะและตั้งคิวกลับไปเริ่มที่ขั้นตอน #1 พร้อมรันแล้ว';
+      });
+      document.getElementById('hud-btn-add-back-step')?.addEventListener('click', () => {
+        state.queue.push({
+          id: Date.now() + Math.random(),
+          type: 'go_back',
+          x: 0, y: 0, rx: 0, ry: 0,
+          selector: '',
+          value: 'ย้อนกลับหน้าก่อนหน้า',
+          note: 'คำสั่งย้อนกลับ (Back)',
+          runOnce: false,
+          enabled: true
+        });
+        renderQueueCards();
+        syncDynamicAutoMouseCode();
+        saveQueueToStorage();
       });
 
       (function makeDraggable() {
