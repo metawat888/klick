@@ -518,7 +518,7 @@
             </div>
           </div>
           <p class="text-[11px] text-slate-400 mb-2 leading-snug">
-            <strong class="text-amber-300">ทิป YouTube / Google:</strong> เว็บใหญ่บล็อก Bookmarklet ให้ใช้ <strong>⚡ Tampermonkey</strong> หรือวางใน Console (F12) ซึ่งตัด <code>innerHTML</code> ออกทั้งหมดเพื่อผ่านระบบ Trusted Types แล้ว หรือใช้ <strong>🐍 Python (.py)</strong>
+            <strong class="text-emerald-300">🛡️ ระบบ Immortal Cross-Page (ไม่เด้งหลุดเมื่อเปลี่ยนหน้า):</strong> บันทึกคิวและขั้นตอนปัจจุบันลงหน่วยความจำอัตโนมัติก่อนคลิกเปลี่ยนหน้า (เช่น จากหน้าแรก <code>youtube.com</code> ไปหน้าดูคลิป <code>/watch?v=...</code>) หากติดตั้งผ่าน <strong>⚡ Tampermonkey</strong> แผงจะตามไปโผล่และรันต่อทันทีแม้เปลี่ยนเว็บหรือรีเฟรชหน้า!
           </p>
           <pre id="live-generated-code" class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-[10px] mono text-emerald-200 overflow-x-auto h-24"></pre>
         </div>
@@ -1350,7 +1350,7 @@
       });
     }
 
-    // Universal Cross-Site Editable Floating AutoMouse Panel (Zero innerHTML -> 100% Trusted Types Safe on YouTube/Google, Full Live Queue Editor)
+    // Immortal Cross-Page & SPA Persistent Floating AutoMouse Panel (Never disappears on YouTube navigation or page transitions, auto-resumes from exact step!)
     function generateStandaloneQueueScript() {
       const uid = document.getElementById('quick-id')?.value.trim() || '';
       const pwd = document.getElementById('quick-pass')?.value.trim() || '';
@@ -1373,35 +1373,36 @@
       })));
 
       return `(function(){
-  const QUEUE = ${serializedQueue};
-  const VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
-  let running = false, idx = 0, cycles = 0, lastEl = null, minimized = false;
-
-  // Floating Bot Cursor (Pure DOM, Zero innerHTML)
-  let cur = document.getElementById('ailab-q-cursor');
-  if (!cur) {
-    cur = document.createElement('div');
-    cur.id = 'ailab-q-cursor';
-    cur.style.cssText = 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:all 0.24s ease;filter:drop-shadow(0 0 10px #10b981);';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '32');
-    svg.setAttribute('height', '32');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z');
-    path.setAttribute('fill', '#10b981');
-    path.setAttribute('stroke', '#ffffff');
-    path.setAttribute('stroke-width', '2');
-    svg.appendChild(path);
-    cur.appendChild(svg);
-    document.documentElement.appendChild(cur);
+  if (window.__AILAB_IMMORTAL_ACTIVE && document.getElementById('ailab-q-hud')) {
+    document.getElementById('ailab-q-hud').style.display = 'block';
+    return;
   }
+  window.__AILAB_IMMORTAL_ACTIVE = true;
 
-  let hud = document.getElementById('ailab-q-hud');
-  if (hud) hud.remove();
-  hud = document.createElement('div');
-  hud.id = 'ailab-q-hud';
-  hud.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:rgba(6,11,23,0.97);color:#ecfdf5;border:2px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 20px 50px rgba(0,0,0,0.9);width:370px;max-width:95vw;';
+  const STORAGE_KEY = '__AILAB_IMMORTAL_BOT_STATE_V4__';
+  const DEFAULT_QUEUE = ${serializedQueue};
+  const DEFAULT_VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
+
+  // Load persisted state across page transitions (e.g. YouTube Home -> Watch Video page)
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY) || 'null'); } catch(e){}
+
+  const QUEUE = (saved && Array.isArray(saved.queue) && saved.queue.length > 0) ? saved.queue : DEFAULT_QUEUE;
+  const VARS = (saved && saved.vars) ? Object.assign({}, DEFAULT_VARS, saved.vars) : DEFAULT_VARS;
+  let running = Boolean(saved && saved.running);
+  let idx = (saved && typeof saved.idx === 'number') ? (saved.idx % Math.max(1, QUEUE.length)) : 0;
+  let cycles = (saved && typeof saved.cycles === 'number') ? saved.cycles : 0;
+  let minimized = Boolean(saved && saved.minimized);
+  let hudPos = (saved && saved.hudPos) ? saved.hudPos : null;
+  let lastEl = null, loopActive = false;
+
+  function persistState() {
+    try {
+      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, idx, cycles, minimized, hudPos, ts: Date.now() });
+      localStorage.setItem(STORAGE_KEY, payload);
+      sessionStorage.setItem(STORAGE_KEY, payload);
+    } catch(e){}
+  }
 
   function mk(tag, css, txt) {
     const el = document.createElement(tag);
@@ -1410,25 +1411,168 @@
     return el;
   }
 
-  // Draggable Header
-  const header = mk('div', 'display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #1e293b;cursor:move;user-select:none;');
-  const title = mk('div', 'font-weight:800;color:#34d399;font-size:13px;', '🖱️ AutoMouse Studio (' + QUEUE.length + ' ขั้น)');
-  const hdrBtns = mk('div', 'display:flex;gap:4px;align-items:center;');
-  const speedSel = mk('select', 'background:#0f172a;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-weight:700;');
-  [['1','1x'],['2','2x'],['5','5x'],['10','10x']].forEach(([v,lbl]) => {
-    const o = mk('option', '', lbl); o.value = v; if (Number(v) === VARS.speed) o.selected = true; speedSel.appendChild(o);
-  });
-  speedSel.onchange = () => { VARS.speed = parseFloat(speedSel.value) || 2; };
-  const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
-  const bClose = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '✕');
-  hdrBtns.append(speedSel, bMin, bClose);
-  header.append(title, hdrBtns);
+  // Create Floating Cursor & HUD elements once, and re-attach automatically if YouTube/SPA wipes DOM
+  let cur = null, hud = null, statEl = null, listBox = null, title = null, bodyWrap = null;
 
-  const bodyWrap = mk('div', '');
-  const statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:8px;color:#38bdf8;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', 'พร้อมแก้ไขและสั่งงานบน ' + location.hostname);
+  function buildOrRestoreUI() {
+    cur = document.getElementById('ailab-q-cursor');
+    if (!cur) {
+      cur = mk('div', 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:top 0.22s ease,left 0.22s ease,transform 0.1s;filter:drop-shadow(0 0 10px #10b981);');
+      cur.id = 'ailab-q-cursor';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '32'); svg.setAttribute('height', '32'); svg.setAttribute('viewBox', '0 0 24 24');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z');
+      path.setAttribute('fill', '#10b981'); path.setAttribute('stroke', '#ffffff'); path.setAttribute('stroke-width', '2');
+      svg.appendChild(path); cur.appendChild(svg);
+      document.documentElement.appendChild(cur);
+    }
 
-  // Live Editable Step List Container (Unlimited Steps)
-  const listBox = mk('div', 'max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
+    hud = document.getElementById('ailab-q-hud');
+    if (hud) return;
+
+    hud = mk('div', 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:rgba(6,11,23,0.97);color:#ecfdf5;border:2px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 20px 50px rgba(0,0,0,0.92);width:375px;max-width:95vw;');
+    hud.id = 'ailab-q-hud';
+    if (hudPos && hudPos.left && hudPos.top) {
+      hud.style.right = 'auto'; hud.style.bottom = 'auto';
+      hud.style.left = hudPos.left; hud.style.top = hudPos.top;
+    }
+
+    const header = mk('div', 'display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #1e293b;cursor:move;user-select:none;');
+    title = mk('div', 'font-weight:800;color:#34d399;font-size:13px;', '🛡️ Immortal AutoMouse (' + QUEUE.length + ' ขั้น)');
+    const hdrBtns = mk('div', 'display:flex;gap:4px;align-items:center;');
+    const speedSel = mk('select', 'background:#0f172a;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-weight:700;');
+    [['1','1x'],['2','2x'],['5','5x'],['10','10x']].forEach(([v,lbl]) => {
+      const o = mk('option', '', lbl); o.value = v; if (Number(v) === VARS.speed) o.selected = true; speedSel.appendChild(o);
+    });
+    speedSel.onchange = () => { VARS.speed = parseFloat(speedSel.value) || 2; persistState(); };
+    const bResetDefault = mk('button', 'background:#1e293b;color:#38bdf8;border:none;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:10px;', 'รีเซ็ตคิว');
+    bResetDefault.title = 'โหลดคิวเริ่มต้นใหม่';
+    bResetDefault.onclick = () => { QUEUE.length = 0; DEFAULT_QUEUE.forEach(s => QUEUE.push(Object.assign({}, s))); idx = 0; cycles = 0; persistState(); renderHudSteps(); };
+    const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
+    const bClose = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '✕');
+    hdrBtns.append(speedSel, bResetDefault, bMin, bClose);
+    header.append(title, hdrBtns);
+
+    bodyWrap = mk('div', minimized ? 'display:none;' : 'display:block;');
+    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:8px;color:#38bdf8;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', running ? ('กำลังทำงานต่อเนื่อง... (ขั้น #' + (idx+1) + ' รอบ #' + cycles + ')') : ('พร้อมทำงานข้ามหน้าเว็บอัตโนมัติบน ' + location.hostname));
+    listBox = mk('div', 'max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
+
+    const pickRow = mk('div', 'display:flex;gap:5px;margin-bottom:6px;');
+    const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ');
+    const bAdd = mk('button', 'background:#0284c7;color:#fff;border:none;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '+ เพิ่มขั้น');
+    const bExport = mk('button', 'background:#1e293b;color:#38bdf8;border:1px solid #38bdf8;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '📤 ส่งออก');
+    pickRow.append(bPick, bAdd, bExport);
+
+    const btnRow = mk('div', 'display:flex;gap:6px;');
+    const bStart = mk('button', 'flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;border:none;padding:7px 12px;border-radius:9px;font-weight:800;cursor:pointer;font-size:12px;', '▶ เริ่มทำงาน (ไม่หลุดเมื่อเปลี่ยนหน้า)');
+    const bStop = mk('button', 'background:#ef4444;color:#fff;border:none;padding:7px 12px;border-radius:9px;font-weight:700;cursor:pointer;font-size:12px;', '⏹ หยุด');
+    btnRow.append(bStart, bStop);
+
+    bodyWrap.append(statEl, listBox, pickRow, btnRow);
+    hud.append(header, bodyWrap);
+    document.documentElement.appendChild(hud);
+
+    bMin.onclick = () => { minimized = !minimized; bodyWrap.style.display = minimized ? 'none' : 'block'; persistState(); };
+    bClose.onclick = () => { running = false; window.__AILAB_IMMORTAL_ACTIVE = false; persistState(); hud.remove(); cur.remove(); };
+
+    let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
+    header.onmousedown = (e) => {
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+      dragging = true;
+      const r = hud.getBoundingClientRect();
+      hud.style.right = 'auto'; hud.style.bottom = 'auto';
+      hud.style.left = r.left + 'px'; hud.style.top = r.top + 'px';
+      sx = e.clientX; sy = e.clientY; il = r.left; it = r.top;
+    };
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const nl = Math.max(4, il + (e.clientX - sx)) + 'px';
+      const nt = Math.max(4, it + (e.clientY - sy)) + 'px';
+      hud.style.left = nl; hud.style.top = nt;
+      hudPos = { left: nl, top: nt };
+    });
+    window.addEventListener('mouseup', () => { if (dragging) { dragging = false; persistState(); } });
+
+    let pickingMode = false, hoverBox = null;
+    function getUniqueSelector(el) {
+      if (el.id) return '#' + CSS.escape(el.id);
+      const aria = el.getAttribute('aria-label');
+      if (aria) return '[aria-label="' + aria.replace(/"/g, '') + '"]';
+      const titleAttr = el.getAttribute('title');
+      if (titleAttr) return '[title="' + titleAttr.replace(/"/g, '') + '"]';
+      if (el.name) return el.tagName.toLowerCase() + '[name="' + el.name + '"]';
+      return '';
+    }
+    bPick.onclick = () => {
+      pickingMode = !pickingMode;
+      bPick.textContent = pickingMode ? '🎯 คลิกปุ่มเป้าหมายบนเว็บ...' : '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
+      document.body.style.cursor = pickingMode ? 'crosshair' : '';
+      if (!hoverBox) {
+        hoverBox = mk('div', 'position:fixed;pointer-events:none;border:2.5px solid #f59e0b;background:rgba(245,158,11,0.18);z-index:2147483644;display:none;border-radius:6px;');
+        document.documentElement.appendChild(hoverBox);
+      }
+    };
+    window.addEventListener('mousemove', (ev) => {
+      if (!pickingMode || !hoverBox) return;
+      const t = document.elementFromPoint(ev.clientX, ev.clientY);
+      if (!t || hud.contains(t)) { hoverBox.style.display = 'none'; return; }
+      const r = t.getBoundingClientRect();
+      hoverBox.style.display = 'block';
+      hoverBox.style.left = r.left + 'px'; hoverBox.style.top = r.top + 'px';
+      hoverBox.style.width = r.width + 'px'; hoverBox.style.height = r.height + 'px';
+      statEl.textContent = 'ชี้: X:' + ev.clientX + ' Y:' + ev.clientY + ' <' + t.tagName.toLowerCase() + '>';
+    }, true);
+    window.addEventListener('click', (ev) => {
+      if (!pickingMode || hud.contains(ev.target)) return;
+      ev.preventDefault(); ev.stopPropagation();
+      const t = ev.target;
+      const sel = getUniqueSelector(t);
+      const isInput = ('value' in t && t.tagName !== 'BUTTON') || t.isContentEditable;
+      QUEUE.push({
+        type: isInput ? 'click_ type_xy' : 'click_xy',
+        x: ev.clientX, y: ev.clientY,
+        rx: Number((ev.clientX / Math.max(1, window.innerWidth)).toFixed(4)),
+        ry: Number((ev.clientY / Math.max(1, window.innerHeight)).toFixed(4)),
+        selector: sel,
+        value: isInput ? (VARS.msg || 'ข้อความ') : ('คลิก ' + (sel || t.tagName)),
+        note: 'จิ้มจากเว็บจริง', runOnce: false
+      });
+      pickingMode = false; document.body.style.cursor = '';
+      if (hoverBox) hoverBox.style.display = 'none';
+      bPick.textContent = '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
+      statEl.textContent = '✓ เพิ่มขั้น #' + QUEUE.length + ' (' + ev.clientX + ',' + ev.clientY + ') บันทึกข้ามหน้าเว็บแล้ว';
+      persistState();
+      renderHudSteps();
+    }, true);
+
+    bAdd.onclick = () => {
+      QUEUE.push({ type: 'click_selector', x: 400, y: 300, rx: 0.5, ry: 0.5, selector: 'Play', value: 'คลิกปุ่ม', note: 'ขั้นใหม่', runOnce: false });
+      persistState();
+      renderHudSteps();
+      listBox.scrollTop = listBox.scrollHeight;
+    };
+    bExport.onclick = () => {
+      const jsonStr = JSON.stringify(QUEUE);
+      navigator.clipboard?.writeText(jsonStr).catch(() => {});
+      const ta = document.createElement('textarea'); ta.value = jsonStr; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      statEl.textContent = '📤 คัดลอกคิว ' + QUEUE.length + ' ขั้นตอนแล้ว!';
+    };
+
+    bStart.onclick = () => {
+      running = true;
+      persistState();
+      if (!loopActive) loop();
+    };
+    bStop.onclick = () => {
+      running = false;
+      persistState();
+      statEl.textContent = 'หยุดพัก (ขั้น #' + (idx+1) + ' รอบ #' + cycles + ')';
+      renderHudSteps();
+    };
+
+    renderHudSteps();
+  }
 
   const ACTION_TYPES = [
     ['click_xy', '🖱️ คลิกพิกัด X,Y'],
@@ -1442,163 +1586,61 @@
   ];
 
   function renderHudSteps() {
+    if (!listBox) return;
     while (listBox.firstChild) listBox.removeChild(listBox.firstChild);
-    title.textContent = '🖱️ AutoMouse Studio (' + QUEUE.length + ' ขั้น)';
+    if (title) title.textContent = '🛡️ Immortal AutoMouse (' + QUEUE.length + ' ขั้น)';
     QUEUE.forEach((step, i) => {
-      const row = mk('div', 'background:' + (running && idx === i ? 'rgba(16,185,129,0.18)' : '#0f172a') + ';border:1px solid ' + (running && idx === i ? '#10b981' : '#334155') + ';border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;');
-
-      // Top row: # + type select + move/dup/del buttons
+      const row = mk('div', 'background:' + (running && idx === i ? 'rgba(16,185,129,0.2)' : '#0f172a') + ';border:1px solid ' + (running && idx === i ? '#10b981' : '#334155') + ';border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;');
       const topR = mk('div', 'display:flex;justify-content:space-between;align-items:center;gap:4px;');
       const numBadge = mk('span', 'background:#1e293b;color:#34d399;font-weight:800;font-family:monospace;font-size:10px;padding:2px 6px;border-radius:6px;', '#' + (i + 1));
       const typeSel = mk('select', 'flex:1;background:#020617;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;');
       ACTION_TYPES.forEach(([val, lbl]) => {
         const o = mk('option', '', lbl); o.value = val; if (step.type === val) o.selected = true; typeSel.appendChild(o);
       });
-      typeSel.onchange = () => { step.type = typeSel.value; renderHudSteps(); };
+      typeSel.onchange = () => { step.type = typeSel.value; persistState(); renderHudSteps(); };
 
       const miniBtns = mk('div', 'display:flex;gap:2px;');
       const bUp = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '▲');
       const bDn = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '▼');
       const bDup = mk('button', 'background:#1e293b;color:#38bdf8;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '⧉');
       const bDel = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '✕');
-      bUp.onclick = () => { if (i > 0) { const t = QUEUE[i-1]; QUEUE[i-1] = QUEUE[i]; QUEUE[i] = t; renderHudSteps(); } };
-      bDn.onclick = () => { if (i < QUEUE.length - 1) { const t = QUEUE[i+1]; QUEUE[i+1] = QUEUE[i]; QUEUE[i] = t; renderHudSteps(); } };
-      bDup.onclick = () => { QUEUE.splice(i + 1, 0, Object.assign({}, step)); renderHudSteps(); };
-      bDel.onclick = () => { QUEUE.splice(i, 1); if (idx >= QUEUE.length) idx = 0; renderHudSteps(); };
+      bUp.onclick = () => { if (i > 0) { const t = QUEUE[i-1]; QUEUE[i-1] = QUEUE[i]; QUEUE[i] = t; persistState(); renderHudSteps(); } };
+      bDn.onclick = () => { if (i < QUEUE.length - 1) { const t = QUEUE[i+1]; QUEUE[i+1] = QUEUE[i]; QUEUE[i] = t; persistState(); renderHudSteps(); } };
+      bDup.onclick = () => { QUEUE.splice(i + 1, 0, Object.assign({}, step)); persistState(); renderHudSteps(); };
+      bDel.onclick = () => { QUEUE.splice(i, 1); if (idx >= QUEUE.length) idx = 0; persistState(); renderHudSteps(); };
       miniBtns.append(bUp, bDn, bDup, bDel);
       topR.append(numBadge, typeSel, miniBtns);
 
-      // Middle row: X,Y or Selector input + Value input
       const midR = mk('div', 'display:flex;gap:4px;align-items:center;');
       if (step.type.includes('xy')) {
         const ix = mk('input', 'width:52px;background:#020617;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-family:monospace;');
-        ix.type = 'number'; ix.value = step.x || 0; ix.title = 'X';
-        ix.oninput = () => { step.x = parseInt(ix.value, 10) || 0; step.rx = Number((step.x / Math.max(1, window.innerWidth)).toFixed(4)); };
+        ix.type = 'number'; ix.value = step.x || 0;
+        ix.oninput = () => { step.x = parseInt(ix.value, 10) || 0; step.rx = Number((step.x / Math.max(1, window.innerWidth)).toFixed(4)); persistState(); };
         const iy = mk('input', 'width:52px;background:#020617;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-family:monospace;');
-        iy.type = 'number'; iy.value = step.y || 0; iy.title = 'Y';
-        iy.oninput = () => { step.y = parseInt(iy.value, 10) || 0; step.ry = Number((step.y / Math.max(1, window.innerHeight)).toFixed(4)); };
+        iy.type = 'number'; iy.value = step.y || 0;
+        iy.oninput = () => { step.y = parseInt(iy.value, 10) || 0; step.ry = Number((step.y / Math.max(1, window.innerHeight)).toFixed(4)); persistState(); };
         midR.append(ix, iy);
       } else if (step.type.includes('selector')) {
         const isel = mk('input', 'width:110px;background:#020617;color:#38bdf8;border:1px solid #334155;border-radius:6px;padding:2px 5px;font-size:10px;font-family:monospace;');
         isel.value = step.selector || ''; isel.placeholder = 'ชื่อปุ่ม / #id';
-        isel.oninput = () => { step.selector = isel.value; };
+        isel.oninput = () => { step.selector = isel.value; persistState(); };
         midR.append(isel);
       }
 
       const ival = mk('input', 'flex:1;min-width:60px;background:#020617;color:#6ee7b7;border:1px solid #334155;border-radius:6px;padding:2px 6px;font-size:10px;');
       ival.value = step.value || ''; ival.placeholder = 'ข้อความ / วินาที...';
-      ival.oninput = () => { step.value = ival.value; };
+      ival.oninput = () => { step.value = ival.value; persistState(); };
       midR.append(ival);
 
-      // Bottom row: Run Once toggle
       const botR = mk('label', 'display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8;cursor:pointer;');
       const chkOnce = mk('input', ''); chkOnce.type = 'checkbox'; chkOnce.checked = Boolean(step.runOnce);
-      chkOnce.onchange = () => { step.runOnce = chkOnce.checked; };
+      chkOnce.onchange = () => { step.runOnce = chkOnce.checked; persistState(); };
       botR.append(chkOnce, mk('span', '', 'ทำเฉพาะรอบแรก (เช่น Login)'));
 
       row.append(topR, midR, botR);
       listBox.appendChild(row);
     });
   }
-
-  // Action Buttons: Pick from Real Site, Add Empty Step, Export Queue
-  const pickRow = mk('div', 'display:flex;gap:5px;margin-bottom:6px;');
-  const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ');
-  const bAdd = mk('button', 'background:#0284c7;color:#fff;border:none;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '+ เพิ่มขั้น');
-  const bExport = mk('button', 'background:#1e293b;color:#38bdf8;border:1px solid #38bdf8;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '📤 ส่งออก');
-  pickRow.append(bPick, bAdd, bExport);
-
-  const btnRow = mk('div', 'display:flex;gap:6px;');
-  const bStart = mk('button', 'flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;border:none;padding:7px 12px;border-radius:9px;font-weight:800;cursor:pointer;font-size:12px;', '▶ เริ่มทำงาน');
-  const bStop = mk('button', 'background:#ef4444;color:#fff;border:none;padding:7px 12px;border-radius:9px;font-weight:700;cursor:pointer;font-size:12px;', '⏹ หยุด');
-  btnRow.append(bStart, bStop);
-
-  bodyWrap.append(statEl, listBox, pickRow, btnRow);
-  hud.append(header, bodyWrap);
-  document.documentElement.appendChild(hud);
-  renderHudSteps();
-
-  bMin.onclick = () => { minimized = !minimized; bodyWrap.style.display = minimized ? 'none' : 'block'; };
-  bClose.onclick = () => { running = false; hud.remove(); cur.remove(); };
-
-  // Draggable Floating Panel
-  let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
-  header.onmousedown = (e) => {
-    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
-    dragging = true;
-    const r = hud.getBoundingClientRect();
-    hud.style.right = 'auto'; hud.style.bottom = 'auto';
-    hud.style.left = r.left + 'px'; hud.style.top = r.top + 'px';
-    sx = e.clientX; sy = e.clientY; il = r.left; it = r.top;
-  };
-  window.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    hud.style.left = Math.max(4, il + (e.clientX - sx)) + 'px';
-    hud.style.top = Math.max(4, it + (e.clientY - sy)) + 'px';
-  });
-  window.addEventListener('mouseup', () => { dragging = false; });
-
-  // Live Real-Site Element & Coordinate Picker
-  let pickingMode = false, hoverBox = null;
-  function getUniqueSelector(el) {
-    if (el.id) return '#' + CSS.escape(el.id);
-    const aria = el.getAttribute('aria-label');
-    if (aria) return '[aria-label="' + aria.replace(/"/g, '') + '"]';
-    if (el.name) return el.tagName.toLowerCase() + '[name="' + el.name + '"]';
-    return '';
-  }
-  bPick.onclick = () => {
-    pickingMode = !pickingMode;
-    bPick.textContent = pickingMode ? '🎯 คลิกปุ่มเป้าหมายบนเว็บ...' : '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
-    document.body.style.cursor = pickingMode ? 'crosshair' : '';
-    if (!hoverBox) {
-      hoverBox = mk('div', 'position:fixed;pointer-events:none;border:2.5px solid #f59e0b;background:rgba(245,158,11,0.18);z-index:2147483644;display:none;border-radius:6px;');
-      document.documentElement.appendChild(hoverBox);
-    }
-  };
-  window.addEventListener('mousemove', (ev) => {
-    if (!pickingMode || !hoverBox) return;
-    const t = document.elementFromPoint(ev.clientX, ev.clientY);
-    if (!t || hud.contains(t)) { hoverBox.style.display = 'none'; return; }
-    const r = t.getBoundingClientRect();
-    hoverBox.style.display = 'block';
-    hoverBox.style.left = r.left + 'px'; hoverBox.style.top = r.top + 'px';
-    hoverBox.style.width = r.width + 'px'; hoverBox.style.height = r.height + 'px';
-    statEl.textContent = 'ชี้: X:' + ev.clientX + ' Y:' + ev.clientY + ' <' + t.tagName.toLowerCase() + '>';
-  }, true);
-  window.addEventListener('click', (ev) => {
-    if (!pickingMode || hud.contains(ev.target)) return;
-    ev.preventDefault(); ev.stopPropagation();
-    const t = ev.target;
-    const sel = getUniqueSelector(t);
-    const isInput = ('value' in t && t.tagName !== 'BUTTON') || t.isContentEditable;
-    QUEUE.push({
-      type: isInput ? 'click_ type_xy' : 'click_xy',
-      x: ev.clientX, y: ev.clientY,
-      rx: Number((ev.clientX / Math.max(1, window.innerWidth)).toFixed(4)),
-      ry: Number((ev.clientY / Math.max(1, window.innerHeight)).toFixed(4)),
-      selector: sel,
-      value: isInput ? (VARS.msg || 'ข้อความ') : ('คลิก ' + (sel || t.tagName)),
-      note: 'จิ้มจากเว็บจริง', runOnce: false
-    });
-    pickingMode = false; document.body.style.cursor = '';
-    if (hoverBox) hoverBox.style.display = 'none';
-    bPick.textContent = '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
-    statEl.textContent = '✓ เพิ่มขั้น #' + QUEUE.length + ' (' + ev.clientX + ',' + ev.clientY + ') แก้ไขข้อความในรายการได้ทันที';
-    renderHudSteps();
-  }, true);
-
-  bAdd.onclick = () => {
-    QUEUE.push({ type: 'click_selector', x: 400, y: 300, rx: 0.5, ry: 0.5, selector: 'Play', value: 'คลิกปุ่ม', note: 'ขั้นใหม่', runOnce: false });
-    renderHudSteps();
-    listBox.scrollTop = listBox.scrollHeight;
-  };
-  bExport.onclick = () => {
-    const jsonStr = JSON.stringify(QUEUE);
-    navigator.clipboard?.writeText(jsonStr).catch(() => {});
-    const ta = document.createElement('textarea'); ta.value = jsonStr; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
-    statEl.textContent = '📤 คัดลอกคิว ' + QUEUE.length + ' ขั้นตอนแล้ว! นำไปวางใน Studio ได้เลย';
-  };
 
   function resolveVal(raw) {
     const lv = VARS.list.length ? VARS.list[cycles % VARS.list.length] : '';
@@ -1622,7 +1664,7 @@
   }
 
   function isVisible(el) {
-    if (!el || el.disabled || hud.contains(el)) return false;
+    if (!el || el.disabled || (hud && hud.contains(el))) return false;
     const st = window.getComputedStyle(el);
     if (st.display === 'none' || st.visibility === 'hidden' || st.opacity === '0') return false;
     const r = el.getBoundingClientRect();
@@ -1631,7 +1673,7 @@
 
   function collectNodes(root, arr = []) {
     if (!root) return arr;
-    const list = root.querySelectorAll('button, a, input, textarea, select, [role="button"], [contenteditable="true"], yt-button-shape button');
+    const list = root.querySelectorAll('button, a, input, textarea, select, [role="button"], [contenteditable="true"], yt-button-shape button, ytd-thumbnail a, ytd-video-renderer a#video-title');
     for (const el of list) { if (isVisible(el)) arr.push(el); }
     for (const el of root.querySelectorAll('*')) { if (el.shadowRoot) collectNodes(el.shadowRoot, arr); }
     return arr;
@@ -1657,21 +1699,27 @@
           else if (f.includes(lt)) sc = Math.max(sc, 40);
         }
       }
-      if (sc > 0 && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button')) sc += 20;
+      if (sc > 0 && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button' || el.tagName === 'A')) sc += 20;
       if (sc > bestSc) { bestSc = sc; best = el; }
     }
     return best;
   }
 
-  bStart.onclick = () => { if (!running) { running = true; loop(); } };
-  bStop.onclick = () => { running = false; statEl.textContent = 'หยุดพัก (รอบ #' + cycles + ')'; renderHudSteps(); };
-
   async function loop() {
+    if (loopActive) return;
+    loopActive = true;
     while (running && QUEUE.length > 0) {
-      const stepDelay = VARS.speed >= 5 ? 55 : Math.max(110, Math.round(340 / VARS.speed));
+      buildOrRestoreUI();
+      const stepDelay = VARS.speed >= 5 ? 60 : Math.max(120, Math.round(350 / VARS.speed));
       renderHudSteps();
       try {
         const step = QUEUE[idx];
+        // Pre-advance & persist index BEFORE clicking a link that might navigate to a new URL!
+        const executedIdx = idx;
+        idx++;
+        if (idx >= QUEUE.length) { idx = 0; cycles++; }
+        persistState();
+
         if (!(step.runOnce && cycles > 0)) {
           const val = resolveVal(step.value);
           if (step.type === 'wait') {
@@ -1688,10 +1736,10 @@
             let el = findSmart(step.selector || (step.type.includes('selector') ? step.value : ''));
             if (el) { const r = el.getBoundingClientRect(); if (r.width > 0) { x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); } }
             else { el = document.elementFromPoint(x, y); if (el) el = el.closest('button,a,input,textarea,select,[role="button"],[contenteditable="true"]') || el; }
-            cur.style.left = x + 'px'; cur.style.top = y + 'px';
-            statEl.textContent = 'รันขั้น #' + (idx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
+            if (cur) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
+            if (statEl) statEl.textContent = 'รันขั้น #' + (executedIdx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
             await new Promise(r => setTimeout(r, stepDelay));
-            if (el && !hud.contains(el)) {
+            if (el && (!hud || !hud.contains(el))) {
               lastEl = el;
               el.focus();
               ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(ev => el.dispatchEvent(new MouseEvent(ev, { bubbles:true, clientX:x, clientY:y })));
@@ -1701,15 +1749,33 @@
             }
           }
         }
-        idx++;
-        if (idx >= QUEUE.length) { idx = 0; cycles++; }
         await new Promise(r => setTimeout(r, stepDelay));
       } catch (e) {
-        idx = (idx + 1) % Math.max(1, QUEUE.length);
-        await new Promise(r => setTimeout(r, 150));
+        await new Promise(r => setTimeout(r, 180));
       }
     }
+    loopActive = false;
   }
+
+  // Immortal Watchdog: Survive YouTube (yt-navigate-finish), pushState, replaceState, popstate, and DOM wipes!
+  buildOrRestoreUI();
+  if (running) {
+    setTimeout(loop, 450);
+  }
+  setInterval(() => {
+    if (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor')) {
+      buildOrRestoreUI();
+    }
+    if (running && !loopActive) {
+      loop();
+    }
+  }, 600);
+  ['yt-navigate-finish', 'yt-page-data-updated', 'popstate', 'hashchange', 'pageshow'].forEach(evName => {
+    window.addEventListener(evName, () => {
+      buildOrRestoreUI();
+      if (running && !loopActive) setTimeout(loop, 300);
+    });
+  });
 })();`;
     }
 
