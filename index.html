@@ -819,18 +819,25 @@
 
     function deepClickElement(el, clientX, clientY) {
       if (!el) return false;
-      // Climb up to actual interactive button/link/input if a child span/icon was hit
-      const interactive = el.closest('button, a, input, textarea, select, [role="button"], [onclick]') || el;
+      const interactive = el.closest('button, a, input, textarea, select, [role="button"], [onclick], ytd-thumbnail, ytd-video-renderer, ytd-rich-item-renderer') || el;
       interactive.focus();
 
-      const opts = { bubbles: true, cancelable: true, view: window, clientX: clientX || 0, clientY: clientY || 0, button: 0, buttons: 1 };
+      const opts = { bubbles: true, cancelable: true, composed: true, view: window, clientX: clientX || 0, clientY: clientY || 0, button: 0, buttons: 1 };
       interactive.dispatchEvent(new PointerEvent('pointerdown', opts));
       interactive.dispatchEvent(new MouseEvent('mousedown', opts));
       interactive.dispatchEvent(new PointerEvent('pointerup', opts));
       interactive.dispatchEvent(new MouseEvent('mouseup', opts));
-      interactive.dispatchEvent(new MouseEvent('click', opts));
+      const clickEv = new MouseEvent('click', opts);
+      interactive.dispatchEvent(clickEv);
       if (typeof interactive.click === 'function') {
         interactive.click();
+      }
+
+      // Spy Navigation Follow: If element is or contains an <a href="...">, ensure the browser/SPA actually follows the link!
+      const linkEl = interactive.closest('a[href]') || interactive.querySelector('a[href]');
+      if (linkEl && linkEl.href && !linkEl.getAttribute('href').startsWith('#') && !linkEl.getAttribute('href').startsWith('javascript:')) {
+        linkEl.setAttribute('target', '_self');
+        if (typeof linkEl.click === 'function') linkEl.click();
       }
       return true;
     }
@@ -839,20 +846,32 @@
       const target = (el && !isBotInternalElement(el)) ? el : (document.activeElement && !isBotInternalElement(document.activeElement) ? document.activeElement : document.getElementById('test-box-msg'));
       if (!target) return false;
       target.focus();
-      const keyOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true };
+      const keyOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, charCode: 13, bubbles: true, cancelable: true, composed: true };
       target.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
       target.dispatchEvent(new KeyboardEvent('keypress', keyOpts));
+      target.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertLineBreak', bubbles: true, cancelable: true }));
       target.dispatchEvent(new KeyboardEvent('keyup', keyOpts));
 
-      // Trigger parent form submit or associated action button
+      // Spy Smart Form & Search Submit Follow:
       const form = target.closest('form');
       if (form) {
-        if (typeof form.requestSubmit === 'function') form.requestSubmit();
-        else form.submit();
+        const submitBtn = form.querySelector('button[type="submit"], input[type="submit"], button#search-icon-legacy, button.ytSearchboxComponentSearchButton, [aria-label*="Search" i], [aria-label*="ค้นหา" i]');
+        if (submitBtn) {
+          submitBtn.click();
+        } else if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.submit();
+        }
       } else if (target.id === 'test-box-id' || target.id === 'test-box-pass') {
         document.getElementById('test-btn-login')?.click();
       } else if (target.id === 'test-box-msg') {
         document.getElementById('test-btn-play')?.click();
+      } else {
+        // Look for adjacent submit/search/send button in the same container
+        const parentBox = target.parentElement && target.parentElement.parentElement;
+        const nearBtn = parentBox && parentBox.querySelector('button, [role="button"], input[type="submit"]');
+        if (nearBtn && !isBotInternalElement(nearBtn)) nearBtn.click();
       }
       return true;
     }
@@ -1382,7 +1401,7 @@
       });
     }
 
-    // Unstoppable Cross-Page & YouTube Search->Watch Follower Engine (Intercepts YouTube /watch?v=... & Radio Mix links via yt-navigate / History Router + Persistent Follower Popup so HUD NEVER disappears on ANY URL change!)
+    // SPY-GRADE IMMORTAL ENGINE (1. Manual First-Start Only: Never Auto-Starts on initial injection; 2. True Click/Enter Navigation Follower across SPA, YouTube, and Multi-Page sites; 3. Live Spy Telemetry)
     function generateStandaloneQueueScript() {
       const uid = document.getElementById('quick-id')?.value.trim() || '';
       const pwd = document.getElementById('quick-pass')?.value.trim() || '';
@@ -1405,22 +1424,26 @@
       })));
 
       return `(function(){
-  if (window.__AILAB_IMMORTAL_ACTIVE && document.getElementById('ailab-q-hud')) {
+  if (window.__AILAB_SPY_ACTIVE && document.getElementById('ailab-q-hud')) {
     document.getElementById('ailab-q-hud').style.display = 'block';
     return;
   }
-  window.__AILAB_IMMORTAL_ACTIVE = true;
+  window.__AILAB_SPY_ACTIVE = true;
 
-  const STORAGE_KEY = '__AILAB_IMMORTAL_BOT_STATE_V7__';
+  const STORAGE_KEY = '__AILAB_SPY_BOT_STATE_V11__';
   const DEFAULT_QUEUE = ${serializedQueue};
   const DEFAULT_VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
 
   let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY) || 'null'); } catch(e){}
+  try { saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e){}
+
+  // RULE: First start is NEVER Auto! It only resumes if the user explicitly clicked "▶ สั่งการเริ่มทำงาน" within the last 18 seconds right before a page transition!
+  const isRecentCommandedRun = Boolean(saved && saved.commandedByUser && saved.running && (Date.now() - (saved.ts || 0) < 18000));
 
   const QUEUE = (saved && Array.isArray(saved.queue) && saved.queue.length > 0) ? saved.queue : DEFAULT_QUEUE;
   const VARS = (saved && saved.vars) ? Object.assign({}, DEFAULT_VARS, saved.vars) : DEFAULT_VARS;
-  let running = Boolean(saved && saved.running);
+  let running = isRecentCommandedRun;
+  let commandedByUser = isRecentCommandedRun;
   let idx = (saved && typeof saved.idx === 'number') ? (saved.idx % Math.max(1, QUEUE.length)) : 0;
   let cycles = (saved && typeof saved.cycles === 'number') ? saved.cycles : 0;
   let minimized = Boolean(saved && saved.minimized);
@@ -1431,42 +1454,66 @@
 
   function persistState() {
     try {
-      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, idx, cycles, minimized, hudPos, ts: Date.now() });
-      localStorage.setItem(STORAGE_KEY, payload);
+      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, commandedByUser, idx, cycles, minimized, hudPos, ts: Date.now() });
       sessionStorage.setItem(STORAGE_KEY, payload);
+      localStorage.setItem(STORAGE_KEY, payload);
     } catch(e){}
   }
 
   function getTargetDoc() {
-    if (masterShellActive && masterIframe && masterIframe.contentDocument) {
-      return masterIframe.contentDocument;
-    }
+    if (masterShellActive && masterIframe && masterIframe.contentDocument) return masterIframe.contentDocument;
     return document;
   }
   function getTargetWin() {
-    if (masterShellActive && masterIframe && masterIframe.contentWindow) {
-      return masterIframe.contentWindow;
-    }
+    if (masterShellActive && masterIframe && masterIframe.contentWindow) return masterIframe.contentWindow;
     return window;
   }
 
-  // --- CORE FIX 1: YouTube Search -> Watch & Radio Mix Seamless SPA Transition ---
-  // When transitioning from /results?search_query=... to /watch?v=...&list=...&start_radio=1, YouTube sometimes triggers a full document reload on radio/mix links.
-  // We intercept all YouTube internal link clicks and route them through YouTube's internal SPA Polymer router (yt-navigate / history.pushState + popstate) so the page transitions to the video/mix WITHOUT unloading the Bookmarklet!
-  function routeYouTubeWithoutReload(hrefStr, anchorEl) {
+  // --- SPY NAVIGATION FOLLOWER (Follows Clicks, Links, YouTube Search/Watch/Radio, and Enter Submits 100% Accurately) ---
+  function spyFollowYouTubeNavigation(targetUrl, linkNode) {
     try {
-      const u = new URL(hrefStr, location.origin);
+      const u = new URL(targetUrl, location.origin);
       if (u.origin !== location.origin) return false;
       const vid = u.searchParams.get('v');
       const listId = u.searchParams.get('list');
       const searchQ = u.searchParams.get('search_query');
 
-      // 1. Update browser URL & history state
-      history.pushState({}, '', u.pathname + u.search + u.hash);
+      // 1. If we have a real anchor node inside YouTube DOM, let YouTube's native Polymer handler process a clean synthetic click without our wrapper blocking it
+      if (linkNode && !linkNode.__SPY_CLICKING__) {
+        linkNode.__SPY_CLICKING__ = true;
+        linkNode.removeAttribute('target');
+        history.pushState({}, '', u.pathname + u.search + u.hash);
+        const ytApp = document.querySelector('ytd-app');
+        if (vid && ytApp) {
+          const navDetail = {
+            endpoint: {
+              commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_WATCH', rootVe: 3832 } },
+              watchEndpoint: { videoId: vid }
+            }
+          };
+          if (listId) navDetail.endpoint.watchEndpoint.playlistId = listId;
+          if (u.searchParams.get('start_radio') === '1') navDetail.endpoint.watchEndpoint.continuePlayback = true;
+          ytApp.dispatchEvent(new CustomEvent('yt-navigate', { bubbles: true, composed: true, detail: navDetail }));
+        } else if (searchQ && ytApp) {
+          ytApp.dispatchEvent(new CustomEvent('yt-navigate', {
+            bubbles: true, composed: true,
+            detail: { endpoint: { commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_SEARCH' } }, searchEndpoint: { query: searchQ } } }
+          }));
+        }
+        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+        setTimeout(() => { linkNode.__SPY_CLICKING__ = false; buildOrRestoreUI(); }, 250);
+        return true;
+      }
 
-      // 2. Dispatch YouTube's native Polymer SPA navigation event on ytd-app / document
+      // 2. Direct URL navigation via YouTube Polymer SPA router (e.g. when pressing Enter on Search box)
+      history.pushState({}, '', u.pathname + u.search + u.hash);
       const ytApp = document.querySelector('ytd-app');
-      if (vid && ytApp) {
+      if (searchQ && ytApp) {
+        ytApp.dispatchEvent(new CustomEvent('yt-navigate', {
+          bubbles: true, composed: true,
+          detail: { endpoint: { commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_SEARCH' } }, searchEndpoint: { query: searchQ } } }
+        }));
+      } else if (vid && ytApp) {
         const navDetail = {
           endpoint: {
             commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_WATCH', rootVe: 3832 } },
@@ -1474,82 +1521,100 @@
           }
         };
         if (listId) navDetail.endpoint.watchEndpoint.playlistId = listId;
-        if (u.searchParams.get('start_radio') === '1') navDetail.endpoint.watchEndpoint.continuePlayback = true;
-        ytApp.dispatchEvent(new CustomEvent('yt-navigate', { bubbles: true, composed: true, detail: navDetail }));
-      } else if (searchQ && ytApp) {
-        const navDetail = {
-          endpoint: {
-            commandMetadata: { webCommandMetadata: { url: u.pathname + u.search, webPageType: 'WEB_PAGE_TYPE_SEARCH' } },
-            searchEndpoint: { query: searchQ }
-          }
-        };
         ytApp.dispatchEvent(new CustomEvent('yt-navigate', { bubbles: true, composed: true, detail: navDetail }));
       }
-
-      // Also fire popstate so any SPA listener updates the view immediately
       window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
-      setTimeout(buildOrRestoreUI, 120);
-      setTimeout(buildOrRestoreUI, 500);
+      setTimeout(buildOrRestoreUI, 200);
       return true;
-    } catch (e) {
-      return false;
+    } catch (e) { return false; }
+  }
+
+  // Spy Enter Execution: Triggers real keyboard Enter + clicks Search/Submit button + follows URL transition!
+  function spyExecuteEnter(targetEl, tDoc) {
+    const el = targetEl || lastEl || tDoc.activeElement || tDoc.body;
+    if (!el) return;
+    el.focus();
+
+    const keyOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, charCode: 13, bubbles: true, cancelable: true, composed: true };
+    el.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
+    el.dispatchEvent(new KeyboardEvent('keypress', keyOpts));
+    el.dispatchEvent(new KeyboardEvent('keyup', keyOpts));
+
+    // Special YouTube Search Box Enter Handler (Guaranteed to navigate to /results?search_query=...)
+    if (location.hostname.includes('youtube.com')) {
+      const ytSearchInput = tDoc.querySelector('input#search, input[name="search_query"], .ytSearchboxComponentInput');
+      const ytSearchBtn = tDoc.querySelector('button#search-icon-legacy, button.ytSearchboxComponentSearchButton, [aria-label="Search"], [aria-label="ค้นหา"]');
+      if (ytSearchInput && (el === ytSearchInput || ytSearchInput.value.trim())) {
+        const qVal = (el.value || ytSearchInput.value || '').trim();
+        if (ytSearchBtn) {
+          ytSearchBtn.click();
+        } else if (qVal) {
+          spyFollowYouTubeNavigation('https://www.youtube.com/results?search_query=' + encodeURIComponent(qVal));
+        }
+        return;
+      }
+    }
+
+    // Standard Form or Adjacent Submit Button Handler
+    const form = el.closest && el.closest('form');
+    if (form) {
+      form.setAttribute('target', '_self');
+      const subBtn = form.querySelector('button[type="submit"], input[type="submit"], button:not([type="button"])');
+      if (subBtn) subBtn.click();
+      else if (typeof form.requestSubmit === 'function') form.requestSubmit();
+      else form.submit();
+    } else if (el.parentElement) {
+      const box = el.parentElement.parentElement || el.parentElement;
+      const btn = box.querySelector('button, input[type="submit"], [role="button"]');
+      if (btn && (!hud || !hud.contains(btn))) btn.click();
     }
   }
 
-  // Global Capture-Phase Click Shield: Intercepts ANY link click that would cause a hard page reload and routes it seamlessly so the HUD NEVER vanishes!
-  window.addEventListener('click', (ev) => {
-    if (hud && hud.contains(ev.target)) return;
-    // Traverse shadow DOM or composedPath to find any clicked <a> link (critical on YouTube where links are inside shadow/custom elements!)
-    const path = (typeof ev.composedPath === 'function') ? ev.composedPath() : [ev.target];
-    let link = null;
-    for (const node of path) {
-      if (node && node.tagName === 'A' && node.href) { link = node; break; }
+  // Spy Click Execution: Climbs to real clickable node, fires full pointer/mouse sequence, and follows <a href> accurately!
+  function spyExecuteClick(rawEl, x, y, tDoc, tWin) {
+    if (!rawEl) return;
+    // If clicked inside a video card / thumbnail / nested span, find the actual clickable link or button
+    let el = rawEl.closest('a[href], button, input, textarea, select, [role="button"], [onclick]') || rawEl;
+    if (!el.href && (rawEl.closest('ytd-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer'))) {
+      const card = rawEl.closest('ytd-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer');
+      const cardLink = card && card.querySelector('a#thumbnail[href], a#video-title[href], a#video-title-link[href], a[href*="/watch"]');
+      if (cardLink) el = cardLink;
     }
-    if (!link && ev.target && ev.target.closest) {
-      link = ev.target.closest('a[href]');
-    }
-    if (!link || !link.href) return;
-    const rawHref = link.getAttribute('href') || '';
-    if (rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
 
-    // Always strip target="_blank" so it never opens a new tab without our HUD
-    link.removeAttribute('target');
+    lastEl = el;
+    const linkAnc = (el.tagName === 'A' && el.href) ? el : (el.closest && el.closest('a[href]'));
+    if (linkAnc) linkAnc.setAttribute('target', '_self');
 
-    if (location.hostname.includes('youtube.com')) {
-      // On YouTube, if the link is a watch/radio/results/channel URL, route via YouTube SPA router so the browser NEVER does a full page reload!
-      const u = new URL(link.href, location.origin);
-      if (u.origin === location.origin && (u.pathname === '/watch' || u.pathname === '/results' || u.pathname.startsWith('/@') || u.pathname.startsWith('/channel'))) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        routeYouTubeWithoutReload(u.href, link);
-        if (statEl) statEl.textContent = '🔄 เปลี่ยนหน้าไปยัง ' + u.pathname + u.search.slice(0, 22) + '... (แผงตามมาทำงานต่อ!)';
-      }
-      return;
-    }
-  }, true);
+    el.focus();
+    const evOpts = { bubbles: true, cancelable: true, composed: true, view: tWin, clientX: x, clientY: y, button: 0, buttons: 1 };
+    el.dispatchEvent(new PointerEvent('pointerdown', evOpts));
+    el.dispatchEvent(new MouseEvent('mousedown', evOpts));
+    el.dispatchEvent(new PointerEvent('pointerup', evOpts));
+    el.dispatchEvent(new MouseEvent('mouseup', evOpts));
+    el.dispatchEvent(new MouseEvent('click', evOpts));
+    if (typeof el.click === 'function') el.click();
 
-  // Intercept Form Submits (e.g., YouTube Search Box Enter/Submit or Web Search Forms) so pressing Enter doesn't trigger a hard page reload!
-  window.addEventListener('submit', (ev) => {
-    if (location.hostname.includes('youtube.com')) {
-      const form = ev.target;
-      const inp = form && form.querySelector('input[name="search_query"], input#search');
-      if (inp && inp.value.trim()) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        const qUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(inp.value.trim());
-        routeYouTubeWithoutReload(qUrl);
-        if (statEl) statEl.textContent = '🔍 ค้นหา "' + inp.value.trim() + '" โดยแผงไม่หลุด!';
+    // If it's a link and the page hasn't navigated yet, follow it seamlessly!
+    if (linkAnc && linkAnc.href && !linkAnc.getAttribute('href').startsWith('#') && !linkAnc.getAttribute('href').startsWith('javascript:')) {
+      const hrefVal = linkAnc.href;
+      if (location.hostname.includes('youtube.com')) {
+        spyFollowYouTubeNavigation(hrefVal, linkAnc);
+      } else if (masterShellActive && masterIframe) {
+        setTimeout(() => {
+          try {
+            if (masterIframe.contentWindow && masterIframe.contentWindow.location.href !== hrefVal) {
+              masterIframe.src = hrefVal;
+            }
+          } catch(e){}
+        }, 180);
       }
     }
-  }, true);
+  }
 
-  // --- CORE FIX 2: Master Frame Shell for Non-YouTube Multi-Page Sites ---
+  // Master Frame Shell for Non-YouTube Multi-Page Sites (Keeps HUD alive on top while inner page follows every link/reload/enter)
   function activateMasterShellLock() {
     if (masterShellActive) return;
-    if (location.hostname.includes('youtube.com')) {
-      if (statEl) statEl.textContent = '🛡️ ล็อกแผงข้ามหน้า YouTube (Search ↔ Watch/Radio) ทำงานอัตโนมัติแล้ว!';
-      return;
-    }
+    if (location.hostname.includes('youtube.com')) return;
     try {
       const currentUrl = location.href;
       masterShellActive = true;
@@ -1576,11 +1641,10 @@
             history.replaceState({}, innerDoc.title || document.title, innerWin.location.href);
             if (innerDoc.title) document.title = innerDoc.title;
             innerDoc.querySelectorAll('a[target="_blank"]').forEach(a => a.setAttribute('target', '_self'));
-            if (statEl) statEl.textContent = '🔄 หน้าเว็บโหลดจอใหม่แล้ว แผงควบคุมตามมาทำงานต่อทันที!';
+            if (statEl) statEl.textContent = '🕵️ [SPY TRACKER] ตามเข้าหน้าใหม่สำเร็จ: ' + innerWin.location.pathname;
           }
         } catch (err) {}
       });
-      if (statEl) statEl.textContent = '🛡️ เปิดโหมดเกาะติดถาวรแล้ว! เว็บรีเฟรชเข้าจอใหม่แผงจะไม่หาย 100%';
     } catch (e) {}
   }
 
@@ -1591,15 +1655,15 @@
     return el;
   }
 
-  let cur = null, hud = null, statEl = null, listBox = null, title = null, bodyWrap = null;
+  let cur = null, hud = null, statEl = null, spyTelemetryEl = null, listBox = null, title = null, bodyWrap = null;
 
   function buildOrRestoreUI() {
     cur = document.getElementById('ailab-q-cursor');
     if (!cur) {
-      cur = mk('div', 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:top 0.22s ease,left 0.22s ease,transform 0.1s;filter:drop-shadow(0 0 10px #10b981);');
+      cur = mk('div', 'position:fixed;top:90px;left:36px;z-index:2147483647;pointer-events:none;transition:top 0.18s cubic-bezier(0.22,1,0.36,1),left 0.18s cubic-bezier(0.22,1,0.36,1),transform 0.08s;filter:drop-shadow(0 0 12px #10b981);');
       cur.id = 'ailab-q-cursor';
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('width', '32'); svg.setAttribute('height', '32'); svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('width', '34'); svg.setAttribute('height', '34'); svg.setAttribute('viewBox', '0 0 24 24');
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', 'M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z');
       path.setAttribute('fill', '#10b981'); path.setAttribute('stroke', '#ffffff'); path.setAttribute('stroke-width', '2');
@@ -1610,7 +1674,7 @@
     hud = document.getElementById('ailab-q-hud');
     if (hud) return;
 
-    hud = mk('div', 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:rgba(6,11,23,0.97);color:#ecfdf5;border:2px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 20px 50px rgba(0,0,0,0.92);width:385px;max-width:95vw;');
+    hud = mk('div', 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:rgba(5,9,20,0.97);color:#ecfdf5;border:2px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 22px 55px rgba(0,0,0,0.95);width:390px;max-width:95vw;');
     hud.id = 'ailab-q-hud';
     if (hudPos && hudPos.left && hudPos.top) {
       hud.style.right = 'auto'; hud.style.bottom = 'auto';
@@ -1618,49 +1682,41 @@
     }
 
     const header = mk('div', 'display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #1e293b;cursor:move;user-select:none;');
-    title = mk('div', 'font-weight:800;color:#34d399;font-size:13px;', '🛡️ Immortal AutoMouse (' + QUEUE.length + ' ขั้น)');
+    title = mk('div', 'font-weight:900;color:#34d399;font-size:13px;', '🕵️ Spy AutoMouse (' + QUEUE.length + ' ขั้น)');
     const hdrBtns = mk('div', 'display:flex;gap:4px;align-items:center;');
     const speedSel = mk('select', 'background:#0f172a;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-weight:700;');
-    [['1','1x'],['2','2x'],['5','5x'],['10','10x']].forEach(([v,lbl]) => {
+    [['1','1x'],['2','2x เร็ว'],['5','5x แรง'],['10','10x สายฟ้า']].forEach(([v,lbl]) => {
       const o = mk('option', '', lbl); o.value = v; if (Number(v) === VARS.speed) o.selected = true; speedSel.appendChild(o);
     });
     speedSel.onchange = () => { VARS.speed = parseFloat(speedSel.value) || 2; persistState(); };
-    const bResetDefault = mk('button', 'background:#1e293b;color:#38bdf8;border:none;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:10px;', 'รีเซ็ตคิว');
-    bResetDefault.onclick = () => { QUEUE.length = 0; DEFAULT_QUEUE.forEach(s => QUEUE.push(Object.assign({}, s))); idx = 0; cycles = 0; persistState(); renderHudSteps(); };
+    const bClean = mk('button', 'background:#be123c;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🧹 Clean');
+    bClean.onclick = () => { running = false; commandedByUser = false; QUEUE.length = 0; idx = 0; cycles = 0; persistState(); renderHudSteps(); statEl.textContent = '🧹 ล้างคิวทั้งหมดแล้ว (รอสั่งการใหม่)'; };
     const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
-    const bClose = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '✕');
-    hdrBtns.append(speedSel, bResetDefault, bMin, bClose);
+    hdrBtns.append(speedSel, bClean, bMin);
     header.append(title, hdrBtns);
 
     bodyWrap = mk('div', minimized ? 'display:none;' : 'display:block;');
-    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:6px;color:#38bdf8;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', '🛡️ เกาะติดทุก URL อัตโนมัติ (Search ↔ Watch/Radio ไม่หลุด)');
-
-    const shellBtn = mk('button', 'width:100%;background:rgba(16,185,129,0.18);color:#6ee7b7;border:1px solid #10b981;padding:5px 8px;border-radius:8px;margin-bottom:8px;font-size:11px;font-weight:800;cursor:pointer;text-align:center;', '🔒 ล็อกแผงเกาะติดถาวร 100% (เปลี่ยน URL แบบไหนก็ตามไปตลอด)');
-    shellBtn.onclick = () => {
-      activateMasterShellLock();
-      shellBtn.textContent = '✓ ล็อกแผงเกาะติดถาวรแล้ว (เปลี่ยน URL ตามไปตลอด 100%)';
-      shellBtn.style.background = '#065f46';
-    };
+    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:5px;color:#34d399;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', 'STANDBY (ไม่รันเอง — รอคุณกดปุ่ม "▶ สั่งการเริ่มทำงาน")');
+    spyTelemetryEl = mk('div', 'font-family:monospace;font-size:10px;margin-bottom:8px;color:#fbbf24;background:#020617;padding:4px 8px;border-radius:6px;border:1px solid #1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', '🎯 SPY LOCK: เลื่อนเมาส์เพื่อสแกนเป้าหมาย...');
 
     listBox = mk('div', 'max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
 
     const pickRow = mk('div', 'display:flex;gap:5px;margin-bottom:6px;');
-    const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ');
+    const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มล็อกเป้าหมาย (Spy Lock)');
     const bAdd = mk('button', 'background:#0284c7;color:#fff;border:none;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '+ เพิ่มขั้น');
-    const bExport = mk('button', 'background:#1e293b;color:#38bdf8;border:1px solid #38bdf8;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '📤 ส่งออก');
-    pickRow.append(bPick, bAdd, bExport);
+    const bEnterStep = mk('button', 'background:#0f766e;color:#fff;border:none;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '+ Enter');
+    pickRow.append(bPick, bAdd, bEnterStep);
 
     const btnRow = mk('div', 'display:flex;gap:6px;');
-    const bStart = mk('button', 'flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;border:none;padding:7px 12px;border-radius:9px;font-weight:800;cursor:pointer;font-size:12px;', '▶ เริ่มทำงาน (ตามไปทุกหน้า)');
-    const bStop = mk('button', 'background:#ef4444;color:#fff;border:none;padding:7px 12px;border-radius:9px;font-weight:700;cursor:pointer;font-size:12px;', '⏹ หยุด');
+    const bStart = mk('button', 'flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;border:none;padding:8px 12px;border-radius:9px;font-weight:900;cursor:pointer;font-size:12px;', '▶ สั่งการเริ่มทำงาน');
+    const bStop = mk('button', 'background:#ef4444;color:#fff;border:none;padding:8px 14px;border-radius:9px;font-weight:800;cursor:pointer;font-size:12px;', '⏹ หยุด');
     btnRow.append(bStart, bStop);
 
-    bodyWrap.append(statEl, shellBtn, listBox, pickRow, btnRow);
+    bodyWrap.append(statEl, spyTelemetryEl, listBox, pickRow, btnRow);
     hud.append(header, bodyWrap);
     document.documentElement.appendChild(hud);
 
     bMin.onclick = () => { minimized = !minimized; bodyWrap.style.display = minimized ? 'none' : 'block'; persistState(); };
-    bClose.onclick = () => { running = false; window.__AILAB_IMMORTAL_ACTIVE = false; persistState(); hud.remove(); cur.remove(); };
 
     let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
     header.onmousedown = (e) => {
@@ -1681,18 +1737,22 @@
     window.addEventListener('mouseup', () => { if (dragging) { dragging = false; persistState(); } });
 
     let pickingMode = false, hoverBox = null;
-    function getUniqueSelector(el) {
+    function getSpySelector(el) {
+      if (!el) return '';
       if (el.id) return '#' + CSS.escape(el.id);
       const aria = el.getAttribute('aria-label');
       if (aria) return '[aria-label="' + aria.replace(/"/g, '') + '"]';
-      const titleAttr = el.getAttribute('title');
-      if (titleAttr) return '[title="' + titleAttr.replace(/"/g, '') + '"]';
-      if (el.name) return el.tagName.toLowerCase() + '[name="' + el.name + '"]';
+      const ph = el.getAttribute('placeholder');
+      if (ph) return '[placeholder="' + ph.replace(/"/g, '') + '"]';
+      const name = el.getAttribute('name');
+      if (name) return el.tagName.toLowerCase() + '[name="' + name.replace(/"/g, '') + '"]';
+      const txt = (el.innerText || '').trim().slice(0, 28);
+      if (txt && (el.tagName === 'BUTTON' || el.tagName === 'A')) return txt;
       return '';
     }
     bPick.onclick = () => {
       pickingMode = !pickingMode;
-      bPick.textContent = pickingMode ? '🎯 คลิกปุ่มเป้าหมายบนเว็บ...' : '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
+      bPick.textContent = pickingMode ? '🎯 คลิกเป้าหมายบนหน้าเว็บ...' : '🎯 จิ้มล็อกเป้าหมาย (Spy Lock)';
       getTargetDoc().body.style.cursor = pickingMode ? 'crosshair' : '';
       if (!hoverBox) {
         hoverBox = mk('div', 'position:fixed;pointer-events:none;border:2.5px solid #f59e0b;background:rgba(245,158,11,0.18);z-index:2147483644;display:none;border-radius:6px;');
@@ -1700,22 +1760,30 @@
         document.documentElement.appendChild(hoverBox);
       }
     };
-    function onPickMove(ev) {
-      if (!pickingMode || !hoverBox) return;
+    function onSpyMove(ev) {
       const tDoc = getTargetDoc();
-      const t = tDoc.elementFromPoint(ev.clientX, ev.clientY);
-      if (!t || (hud && hud.contains(t))) { hoverBox.style.display = 'none'; return; }
+      const rawT = tDoc.elementFromPoint(ev.clientX, ev.clientY);
+      if (!rawT || (hud && hud.contains(rawT))) {
+        if (hoverBox) hoverBox.style.display = 'none';
+        return;
+      }
+      const t = rawT.closest('a[href], button, input, textarea, select, [role="button"]') || rawT;
+      const sel = getSpySelector(t);
+      if (spyTelemetryEl) {
+        spyTelemetryEl.textContent = '🎯 X:' + ev.clientX + ' Y:' + ev.clientY + ' | <' + t.tagName.toLowerCase() + '> ' + (sel || (t.innerText||'').trim().slice(0,20));
+      }
+      if (!pickingMode || !hoverBox) return;
       const r = t.getBoundingClientRect();
       hoverBox.style.display = 'block';
       hoverBox.style.left = r.left + 'px'; hoverBox.style.top = r.top + 'px';
       hoverBox.style.width = r.width + 'px'; hoverBox.style.height = r.height + 'px';
-      statEl.textContent = 'ชี้: X:' + ev.clientX + ' Y:' + ev.clientY + ' <' + t.tagName.toLowerCase() + '>';
     }
-    function onPickClick(ev) {
+    function onSpyClick(ev) {
       if (!pickingMode || (hud && hud.contains(ev.target))) return;
       ev.preventDefault(); ev.stopPropagation();
-      const t = ev.target;
-      const sel = getUniqueSelector(t);
+      const rawT = ev.target;
+      const t = rawT.closest('a[href], button, input, textarea, select, [role="button"]') || rawT;
+      const sel = getSpySelector(t);
       const isInput = ('value' in t && t.tagName !== 'BUTTON') || t.isContentEditable;
       QUEUE.push({
         type: isInput ? 'click_ type_xy' : 'click_xy',
@@ -1723,44 +1791,46 @@
         rx: Number((ev.clientX / Math.max(1, window.innerWidth)).toFixed(4)),
         ry: Number((ev.clientY / Math.max(1, window.innerHeight)).toFixed(4)),
         selector: sel,
-        value: isInput ? (VARS.msg || 'ข้อความ') : ('คลิก ' + (sel || t.tagName)),
-        note: 'จิ้มจากเว็บจริง', runOnce: false
+        value: isInput ? (VARS.msg || '') : (sel || 'คลิกเป้าหมาย'),
+        note: 'Spy Lock', runOnce: false
       });
       pickingMode = false; getTargetDoc().body.style.cursor = '';
       if (hoverBox) hoverBox.style.display = 'none';
-      bPick.textContent = '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
-      statEl.textContent = '✓ เพิ่มขั้น #' + QUEUE.length + ' (' + ev.clientX + ',' + ev.clientY + ') แล้ว';
+      bPick.textContent = '🎯 จิ้มล็อกเป้าหมาย (Spy Lock)';
+      statEl.textContent = '✓ ล็อกเป้าหมายขั้น #' + QUEUE.length + ' (' + ev.clientX + ',' + ev.clientY + ') เรียบร้อย';
       persistState();
       renderHudSteps();
     }
-    window.addEventListener('mousemove', onPickMove, true);
-    window.addEventListener('click', onPickClick, true);
+    window.addEventListener('mousemove', onSpyMove, true);
+    window.addEventListener('click', onSpyClick, true);
 
     bAdd.onclick = () => {
-      QUEUE.push({ type: 'click_selector', x: 400, y: 300, rx: 0.5, ry: 0.5, selector: 'Play', value: 'คลิกปุ่ม', note: 'ขั้นใหม่', runOnce: false });
-      persistState();
-      renderHudSteps();
-      listBox.scrollTop = listBox.scrollHeight;
+      QUEUE.push({ type: 'click_ type_xy', x: 500, y: 300, rx: 0.5, ry: 0.35, selector: '', value: '', note: 'ขั้นใหม่', runOnce: false });
+      persistState(); renderHudSteps(); listBox.scrollTop = listBox.scrollHeight;
     };
-    bExport.onclick = () => {
-      const jsonStr = JSON.stringify(QUEUE);
-      navigator.clipboard?.writeText(jsonStr).catch(() => {});
-      const ta = document.createElement('textarea'); ta.value = jsonStr; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
-      statEl.textContent = '📤 คัดลอกคิว ' + QUEUE.length + ' ขั้นตอนแล้ว!';
+    bEnterStep.onclick = () => {
+      QUEUE.push({ type: 'press_enter', x: 500, y: 300, rx: 0.5, ry: 0.35, selector: '', value: 'กด Enter', note: 'Enter', runOnce: false });
+      persistState(); renderHudSteps(); listBox.scrollTop = listBox.scrollHeight;
     };
 
     bStart.onclick = () => {
+      if (QUEUE.length === 0) {
+        statEl.textContent = '⚠️ กรุณาจิ้มล็อกเป้าหมายหรือเพิ่มขั้นตอนก่อนสั่งการ';
+        return;
+      }
       if (!location.hostname.includes('youtube.com') && !masterShellActive) {
         activateMasterShellLock();
       }
       running = true;
+      commandedByUser = true;
       persistState();
-      if (!loopActive) setTimeout(loop, 250);
+      if (!loopActive) setTimeout(loop, 150);
     };
     bStop.onclick = () => {
       running = false;
+      commandedByUser = false;
       persistState();
-      statEl.textContent = 'หยุดพัก (ขั้น #' + (idx+1) + ' รอบ #' + cycles + ')';
+      statEl.textContent = '⏹ หยุดตามคำสั่งแล้ว (ขั้น #' + (idx+1) + ' รอบ #' + cycles + ')';
       renderHudSteps();
     };
 
@@ -1781,9 +1851,13 @@
   function renderHudSteps() {
     if (!listBox) return;
     while (listBox.firstChild) listBox.removeChild(listBox.firstChild);
-    if (title) title.textContent = '🛡️ Immortal AutoMouse (' + QUEUE.length + ' ขั้น)';
+    if (title) title.textContent = '🕵️ Spy AutoMouse (' + QUEUE.length + ' ขั้น)';
+    if (QUEUE.length === 0) {
+      listBox.appendChild(mk('div', 'text-align:center;padding:14px;color:#64748b;border:1px dashed #334155;border-radius:8px;font-size:11px;', '0 ขั้นตอน — กด "🎯 จิ้มล็อกเป้าหมาย" หรือ "+ เพิ่มขั้น" แล้วกด "▶ สั่งการเริ่มทำงาน"'));
+      return;
+    }
     QUEUE.forEach((step, i) => {
-      const row = mk('div', 'background:' + (running && idx === i ? 'rgba(16,185,129,0.2)' : '#0f172a') + ';border:1px solid ' + (running && idx === i ? '#10b981' : '#334155') + ';border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;');
+      const row = mk('div', 'background:' + (running && idx === i ? 'rgba(16,185,129,0.22)' : '#0f172a') + ';border:1px solid ' + (running && idx === i ? '#10b981' : '#334155') + ';border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;');
       const topR = mk('div', 'display:flex;justify-content:space-between;align-items:center;gap:4px;');
       const numBadge = mk('span', 'background:#1e293b;color:#34d399;font-weight:800;font-family:monospace;font-size:10px;padding:2px 6px;border-radius:6px;', '#' + (i + 1));
       const typeSel = mk('select', 'flex:1;background:#020617;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;');
@@ -1795,13 +1869,11 @@
       const miniBtns = mk('div', 'display:flex;gap:2px;');
       const bUp = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '▲');
       const bDn = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '▼');
-      const bDup = mk('button', 'background:#1e293b;color:#38bdf8;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '⧉');
       const bDel = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '✕');
       bUp.onclick = () => { if (i > 0) { const t = QUEUE[i-1]; QUEUE[i-1] = QUEUE[i]; QUEUE[i] = t; persistState(); renderHudSteps(); } };
       bDn.onclick = () => { if (i < QUEUE.length - 1) { const t = QUEUE[i+1]; QUEUE[i+1] = QUEUE[i]; QUEUE[i] = t; persistState(); renderHudSteps(); } };
-      bDup.onclick = () => { QUEUE.splice(i + 1, 0, Object.assign({}, step)); persistState(); renderHudSteps(); };
       bDel.onclick = () => { QUEUE.splice(i, 1); if (idx >= QUEUE.length) idx = 0; persistState(); renderHudSteps(); };
-      miniBtns.append(bUp, bDn, bDup, bDel);
+      miniBtns.append(bUp, bDn, bDel);
       topR.append(numBadge, typeSel, miniBtns);
 
       const midR = mk('div', 'display:flex;gap:4px;align-items:center;');
@@ -1821,7 +1893,7 @@
       }
 
       const ival = mk('input', 'flex:1;min-width:60px;background:#020617;color:#6ee7b7;border:1px solid #334155;border-radius:6px;padding:2px 6px;font-size:10px;');
-      ival.value = step.value || ''; ival.placeholder = 'ข้อความ / วินาที...';
+      ival.value = step.value || ''; ival.placeholder = 'ข้อความที่พิมพ์ / ชื่อปุ่ม...';
       ival.oninput = () => { step.value = ival.value; persistState(); };
       midR.append(ival);
 
@@ -1905,7 +1977,7 @@
     loopActive = true;
     while (running && QUEUE.length > 0) {
       buildOrRestoreUI();
-      const stepDelay = VARS.speed >= 5 ? 60 : Math.max(120, Math.round(350 / VARS.speed));
+      const stepDelay = VARS.speed >= 5 ? 45 : Math.max(100, Math.round(320 / VARS.speed));
       renderHudSteps();
       try {
         const tDoc = getTargetDoc();
@@ -1923,44 +1995,39 @@
           } else if (step.type === 'scroll_page') {
             tWin.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
           } else if (step.type === 'press_enter') {
-            const t = lastEl || tDoc.activeElement || tDoc.body;
-            ['keydown','keypress','keyup'].forEach(k => t.dispatchEvent(new KeyboardEvent(k, { key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true })));
-            const f = t.closest && t.closest('form'); if (f) f.requestSubmit ? f.requestSubmit() : f.submit();
+            if (statEl) statEl.textContent = '🕵️ [SPY ENTER] กดปุ่ม Enter และติดตามเข้าหน้าใหม่...';
+            spyExecuteEnter(lastEl, tDoc);
+            await new Promise(r => setTimeout(r, 450));
           } else {
             let x = (VARS.lockRatio && typeof step.rx === 'number') ? Math.round(step.rx * tWin.innerWidth) : (step.x || 300);
             let y = (VARS.lockRatio && typeof step.ry === 'number') ? Math.round(step.ry * tWin.innerHeight) : (step.y || 300);
+            // Spy Dual-Lock: Check smart selector first; if not found or empty, hit-test exact coordinates
             let el = findSmart(step.selector || (step.type.includes('selector') ? step.value : ''));
-            if (el) { const r = el.getBoundingClientRect(); if (r.width > 0) { x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); } }
-            else { el = tDoc.elementFromPoint(x, y); if (el) el = el.closest('button,a,input,textarea,select,[role="button"],[contenteditable="true"]') || el; }
+            if (el) {
+              const r = el.getBoundingClientRect();
+              if (r.width > 0) { x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); }
+            } else {
+              el = tDoc.elementFromPoint(x, y);
+            }
             if (cur) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
-            if (statEl) statEl.textContent = 'รันขั้น #' + (executedIdx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
+            if (statEl) statEl.textContent = '🕵️ ขั้น #' + (executedIdx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
             await new Promise(r => setTimeout(r, stepDelay));
             if (el && (!hud || !hud.contains(el))) {
-              lastEl = el;
-              const linkAnc = el.closest && el.closest('a[href]');
-              if (linkAnc) {
-                linkAnc.removeAttribute('target');
-                // If clicking a YouTube watch/radio/results link via bot, route via YouTube SPA router so the page never hard-reloads!
-                if (location.hostname.includes('youtube.com')) {
-                  const u = new URL(linkAnc.href, location.origin);
-                  if (u.origin === location.origin && (u.pathname === '/watch' || u.pathname === '/results')) {
-                    routeYouTubeWithoutReload(u.href, linkAnc);
-                    await new Promise(r => setTimeout(r, stepDelay));
-                    continue;
-                  }
+              spyExecuteClick(el, x, y, tDoc, tWin);
+              if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
+              if (step.type.includes('type')) {
+                const inpTarget = ('value' in el && el.tagName !== 'BUTTON') ? el : (el.querySelector && el.querySelector('input,textarea')) || lastEl;
+                if (inpTarget && (('value' in inpTarget) || inpTarget.isContentEditable)) {
+                  lastEl = inpTarget;
+                  setVal(inpTarget, val);
                 }
               }
-              el.focus();
-              ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(ev => el.dispatchEvent(new MouseEvent(ev, { bubbles:true, clientX:x, clientY:y })));
-              if (typeof el.click === 'function') el.click();
-              if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
-              if (step.type.includes('type') && (('value' in el) || el.isContentEditable)) setVal(el, val);
             }
           }
         }
         await new Promise(r => setTimeout(r, stepDelay));
       } catch (e) {
-        await new Promise(r => setTimeout(r, 180));
+        await new Promise(r => setTimeout(r, 150));
       }
     }
     loopActive = false;
@@ -1968,28 +2035,30 @@
 
   buildOrRestoreUI();
   const obs = new MutationObserver(() => {
-    if (window.__AILAB_IMMORTAL_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
+    if (window.__AILAB_SPY_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
       buildOrRestoreUI();
     }
   });
   obs.observe(document.documentElement, { childList: true, subtree: true });
 
-  if (running) {
-    setTimeout(loop, 350);
+  // Only auto-continue if commandedByUser was already active right before a page transition
+  if (running && commandedByUser) {
+    setTimeout(loop, 300);
   }
+
   setInterval(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       buildOrRestoreUI();
-      if (statEl) statEl.textContent = '✓ เปลี่ยนหน้าเป็น ' + location.pathname + location.search.slice(0, 18) + ' (แผงตามมาแล้ว!)';
+      if (statEl) statEl.textContent = '🕵️ [SPY FOLLOW] ตามเข้าหน้า ' + location.pathname + location.search.slice(0, 18) + ' สำเร็จ!';
     }
-    if (window.__AILAB_IMMORTAL_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
-      buildOrRestoreUI();
-    }
-    if (running && !loopActive) {
+    const fsHost = document.fullscreenElement || document.documentElement;
+    if (hud && hud.parentElement !== fsHost) fsHost.appendChild(hud);
+    if (cur && cur.parentElement !== fsHost) fsHost.appendChild(cur);
+    if (running && commandedByUser && !loopActive) {
       loop();
     }
-  }, 350);
+  }, 300);
 })();`;
     }
 
@@ -2099,7 +2168,9 @@ if __name__ == "__main__":
         state.lastMouseY = e.clientY;
         const rx = ((e.clientX / Math.max(1, window.innerWidth)) * 100).toFixed(1);
         const ry = ((e.clientY / Math.max(1, window.innerHeight)) * 100).toFixed(1);
-        document.getElementById('live-mouse-xy').textContent = `X: ${e.clientX}, Y: ${e.clientY} (${rx}%, ${ry}%)`;
+        const hit = document.elementFromPoint(e.clientX, e.clientY);
+        const tagInfo = hit ? `<${hit.tagName.toLowerCase()}${hit.id ? '#' + hit.id : ''}>` : '';
+        document.getElementById('live-mouse-xy').textContent = `X: ${e.clientX}, Y: ${e.clientY} (${rx}%, ${ry}%) ${tagInfo}`;
         document.getElementById('hud-xy-readout').textContent = `X:${e.clientX} Y:${e.clientY}`;
       });
 
