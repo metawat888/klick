@@ -148,14 +148,17 @@
         </div>
       </div>
 
-      <!-- Dynamic AutoMouse Button (Automatically updates its code whenever the queue changes!) -->
+      <!-- Dynamic AutoMouse Button & Permanent Chrome Extension Installer -->
       <div class="flex flex-wrap items-center gap-2">
-        <a id="dynamic-automouse-btn" href="javascript:void(0)" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/30 hover:scale-105 transition flex items-center gap-1.5 cursor-grab active:cursor-grabbing" title="ลากปุ่มนี้ไปวางที่แถบบุ๊กมาร์ก โค้ดข้างในจะปรับตามคิวที่คุณสร้างอัตโนมัติ">
+        <button id="btn-open-chrome-ext-modal" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/30 hover:scale-105 transition flex items-center gap-1.5">
+          <span>🧩</span> ฝังใน Chrome ถาวร (แสดงแผงตลอดเวลาทุกเว็บ)
+        </button>
+        <a id="dynamic-automouse-btn" href="javascript:void(0)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/30 hover:scale-105 transition flex items-center gap-1.5 cursor-grab active:cursor-grabbing" title="ลากปุ่มนี้ไปวางที่แถบบุ๊กมาร์ก โค้ดข้างในจะปรับตามคิวที่คุณสร้างอัตโนมัติ">
           <span>⚡</span>
-          <span id="dynamic-btn-label">ปุ่ม AutoMouse (0 ขั้นตอน - ลากไปวางบุ๊กมาร์ก)</span>
+          <span id="dynamic-btn-label">ปุ่ม AutoMouse (0 ขั้นตอน)</span>
         </a>
-        <button id="btn-embed-hud" class="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 font-bold text-xs transition">
-          📌 ฝังแผงควบคุมลอย + คัดลอกโค้ดคิวนี้
+        <button id="btn-embed-hud" class="px-3 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-400/50 font-bold text-xs transition">
+          📌 คัดลอกโค้ด
         </button>
       </div>
     </div>
@@ -530,6 +533,63 @@
     </section>
 
   </main>
+
+  <!-- PERMANENT CHROME EXTENSION & ALWAYS-ON PIP WINDOW MODAL -->
+  <div id="chrome-ext-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-box rounded-2xl max-w-2xl w-full p-5 border-2 border-amber-400/60 shadow-2xl space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🧩</span>
+          <div>
+            <h3 class="text-sm sm:text-base font-extrabold text-amber-300">
+              ฝังแผงควบคุม AutoMouse ลงใน Google Chrome ถาวร (แสดงบนจอตลอดเวลา 100%)
+            </h3>
+            <p class="text-slate-400 text-[11px]">
+              เมื่อฝังเป็น Chrome Extension แล้ว แผงควบคุมจะเด้งขึ้นมาเองอัตโนมัติในทุกหน้าเว็บ ทุกการรีเฟรช และทุกครั้งที่เปลี่ยน URL (เช่น YouTube Search → Watch/Radio) โดยไม่ต้องกดบุ๊กมาร์กอีกเลย!
+            </p>
+          </div>
+        </div>
+        <button id="btn-close-chrome-modal" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold">✕ ปิด</button>
+      </div>
+
+      <!-- Option 1: Download 2 Chrome Extension Files directly from browser -->
+      <div class="p-3.5 rounded-xl bg-slate-900/95 border border-emerald-500/40 space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="font-bold text-emerald-300 text-xs">
+            วิธีที่ 1: ดาวน์โหลดไฟล์ส่วนขยาย Chrome (Manifest V3) ที่บรรจุคิวของคุณพร้อมใช้งาน
+          </span>
+          <div class="flex items-center gap-2">
+            <button id="btn-dl-manifest" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold transition">
+              1. โหลดไฟล์ manifest.json
+            </button>
+            <button id="btn-dl-content-js" class="px-3 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold transition">
+              2. โหลดไฟล์ content.js
+            </button>
+          </div>
+        </div>
+        <ol class="list-decimal list-inside text-slate-300 space-y-1 text-[11px] leading-relaxed bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+          <li>สร้างโฟลเดอร์ใหม่ในคอมพิวเตอร์ของคุณชื่อ <code class="text-amber-300 font-bold">AiLab_AutoMouse_Chrome</code> แล้วนำไฟล์ <strong>manifest.json</strong> และ <strong>content.js</strong> ที่กดโหลดด้านบนไปไว้ในโฟลเดอร์เดียวกัน</li>
+          <li>เปิดเบราว์เซอร์ Chrome แล้วพิมพ์ที่ช่อง URL ว่า <code class="text-cyan-300 font-bold">chrome://extensions</code> จากนั้นเปิดสวิตช์ <strong>Developer mode (โหมดนักพัฒนาซอฟต์แวร์)</strong> ที่มุมขวาบน</li>
+          <li>กดปุ่ม <strong>Load unpacked (โหลดส่วนขยายที่ยังไม่ได้แพ็ก)</strong> มุมซ้ายบน แล้วเลือกโฟลเดอร์ <code class="text-amber-300 font-bold">AiLab_AutoMouse_Chrome</code> — เสร็จทันที! กล่องแผงควบคุมจะแสดงบนหน้าจอ Chrome ตลอดเวลาในทุกเว็บ</li>
+        </ol>
+      </div>
+
+      <!-- Option 2: Always-On-Top Picture-in-Picture (PiP) / Floating Controller Window -->
+      <div class="p-3.5 rounded-xl bg-slate-900/95 border border-amber-500/40 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex-1 min-w-[220px]">
+          <div class="font-bold text-amber-300 text-xs mb-0.5">
+            📌 วิธีที่ 2: เปิดหน้าต่างแผงควบคุมลอยค้างบนจอตลอดเวลา (Always-On-Top PiP HUD)
+          </div>
+          <p class="text-[11px] text-slate-400">
+            สร้างหน้าต่างควบคุมขนาดกะทัดรัดที่ลอยค้างอยู่เหนือหน้าจอ Chrome ตลอดเวลา ไม่ว่าแท็บหลักจะเปลี่ยนหน้าเว็บไปที่ไหน หน้าต่างนี้จะไม่ถูกปิดไปด้วย
+          </p>
+        </div>
+        <button id="btn-launch-pip-hud" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold transition shrink-0">
+          🪟 เปิดแผงลอยค้างบนจอทันที
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- FLOATING EMBEDDED HUD PANEL (Synced with Dynamic Queue & Coordinate Finder) -->
   <div id="embedded-hud-panel" class="p-3.5 text-xs select-none">
@@ -1596,7 +1656,7 @@
     const bResetDefault = mk('button', 'background:#1e293b;color:#38bdf8;border:none;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:10px;', 'รีเซ็ตคิว');
     bResetDefault.onclick = () => { QUEUE.length = 0; DEFAULT_QUEUE.forEach(s => QUEUE.push(Object.assign({}, s))); idx = 0; cycles = 0; persistState(); renderHudSteps(); };
     const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
-    const bClose = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '✕');
+    const bClose = mk('button', 'background:#065f46;color:#a7f3d0;border:1px solid #10b981;border-radius:6px;padding:2px 6px;cursor:pointer;font-weight:800;font-size:9px;', '📌 แสดงตลอดเวลา');
     hdrBtns.append(speedSel, bResetDefault, bMin, bClose);
     header.append(title, hdrBtns);
 
@@ -1628,7 +1688,7 @@
     document.documentElement.appendChild(hud);
 
     bMin.onclick = () => { minimized = !minimized; bodyWrap.style.display = minimized ? 'none' : 'block'; persistState(); };
-    bClose.onclick = () => { running = false; window.__AILAB_IMMORTAL_ACTIVE = false; persistState(); hud.remove(); cur.remove(); };
+    bClose.onclick = () => { minimized = false; bodyWrap.style.display = 'block'; hud.style.zIndex = '2147483647'; statEl.textContent = '📌 ตรึงแผงควบคุมแสดงบนจอตลอดเวลาแล้ว!'; persistState(); };
 
     let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
     header.onmousedown = (e) => {
@@ -1954,10 +2014,21 @@
     if (window.__AILAB_IMMORTAL_ACTIVE && (!document.getElementById('ailab-q-hud') || !document.getElementById('ailab-q-cursor'))) {
       buildOrRestoreUI();
     }
+    // Keep HUD visible on screen at all times (even during YouTube Fullscreen!)
+    const fsHost = document.fullscreenElement || document.documentElement;
+    if (hud && hud.parentElement !== fsHost) {
+      fsHost.appendChild(hud);
+    }
+    if (cur && cur.parentElement !== fsHost) {
+      fsHost.appendChild(cur);
+    }
+    if (hud && hud.style.display === 'none') {
+      hud.style.display = 'block';
+    }
     if (running && !loopActive) {
       loop();
     }
-  }, 350);
+  }, 300);
 })();`;
     }
 
@@ -2540,6 +2611,84 @@ if __name__ == "__main__":
       });
 
       document.getElementById('btn-copy-script').addEventListener('click', copyCodeToClipboard);
+
+      // --- Permanent Chrome Extension (manifest.json + content.js) & Always-On PiP Window Handlers ---
+      const chromeModal = document.getElementById('chrome-ext-modal');
+      document.getElementById('btn-open-chrome-ext-modal')?.addEventListener('click', () => {
+        chromeModal.classList.remove('hidden');
+      });
+      document.getElementById('btn-close-chrome-modal')?.addEventListener('click', () => {
+        chromeModal.classList.add('hidden');
+      });
+
+      document.getElementById('btn-dl-manifest')?.addEventListener('click', () => {
+        const manifestObj = {
+          manifest_version: 3,
+          name: "AiLab Immortal AutoMouse Bot (Always-On HUD)",
+          version: "4.0",
+          description: "ฝังกล่องแผงควบคุมเมาส์บอทอัตโนมัติบนหน้าจอ Chrome ตลอดเวลาในทุกเว็บไซต์ (รวม YouTube Search/Watch/Radio)",
+          permissions: ["storage", "activeTab", "scripting"],
+          host_permissions: ["<all_urls>"],
+          content_scripts: [
+            {
+              matches: ["<all_urls>"],
+              js: ["content.js"],
+              run_at: "document_idle",
+              all_frames: false
+            }
+          ]
+        };
+        const blob = new Blob([JSON.stringify(manifestObj, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'manifest.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      document.getElementById('btn-dl-content-js')?.addEventListener('click', () => {
+        syncDynamicAutoMouseCode();
+        const contentScript = generateStandaloneQueueScript();
+        const blob = new Blob([contentScript], { type: 'application/javascript' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'content.js';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      document.getElementById('btn-launch-pip-hud')?.addEventListener('click', async () => {
+        syncDynamicAutoMouseCode();
+        copyCodeToClipboard();
+        // Use Document Picture-in-Picture API if supported by Chrome, otherwise fallback to compact Always-On-Top Popup Controller
+        try {
+          if ('documentPictureInPicture' in window) {
+            const pipWin = await window.documentPictureInPicture.requestWindow({ width: 390, height: 420 });
+            const wrap = pipWin.document.createElement('div');
+            wrap.style.cssText = 'background:#060b17;color:#ecfdf5;font-family:sans-serif;padding:12px;height:100vh;box-sizing:border-box;';
+            const h = pipWin.document.createElement('div');
+            h.style.cssText = 'font-weight:800;color:#34d399;margin-bottom:8px;font-size:14px;';
+            h.textContent = '📌 แผงควบคุม AutoMouse ลอยค้างบนจอ (Always-On-Top)';
+            const p = pipWin.document.createElement('p');
+            p.style.cssText = 'font-size:12px;color:#94a3b8;margin-bottom:10px;';
+            p.textContent = 'หน้าต่างนี้จะลอยอยู่บนจอ Chrome ตลอดเวลาแม้เปลี่ยนหน้าเว็บ กดปุ่มด้านล่างเพื่อคัดลอกโค้ดคิวล่าสุดหรือสั่งรันบอทได้ทันที';
+            const bRun = pipWin.document.createElement('button');
+            bRun.textContent = '▶ เริ่มรันคิว / คัดลอกโค้ดล่าสุด';
+            bRun.style.cssText = 'width:100%;background:#10b981;color:#020617;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;margin-bottom:8px;';
+            bRun.onclick = () => { startQueueLoop(); copyCodeToClipboard(); bRun.textContent = '✓ กำลังรัน + คัดลอกโค้ดแล้ว!'; };
+            wrap.append(h, p, bRun);
+            pipWin.document.body.style.margin = '0';
+            pipWin.document.body.appendChild(wrap);
+            chromeModal.classList.add('hidden');
+            return;
+          }
+        } catch (e) {}
+        const hud = document.getElementById('embedded-hud-panel');
+        document.getElementById('hud-body').classList.remove('hidden');
+        hud.style.zIndex = '2147483647';
+        chromeModal.classList.add('hidden');
+      });
+
 
       document.getElementById('btn-open-real-picker')?.addEventListener('click', () => {
         syncDynamicAutoMouseCode();
