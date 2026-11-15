@@ -166,6 +166,34 @@
 
     <!-- SECTION A: Mouse Coordinate Finder & Quick Step Creator -->
     <section class="glass-box rounded-2xl p-4 sm:p-5 border border-emerald-500/30">
+      <!-- Real Website Launcher & Live Coordinate Picker Bar -->
+      <div class="mb-3 p-3 rounded-xl bg-gradient-to-r from-cyan-950/80 via-slate-900 to-emerald-950/70 border border-cyan-500/35 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+          <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold shrink-0">🌐 จิ้มพิกัดจากเว็บจริง</span>
+          <input id="real-target-url" type="text" value="https://www.youtube.com/" placeholder="ใส่ URL เว็บจริง เช่น https://www.youtube.com/" class="flex-1 min-w-[180px] bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-300 mono focus:outline-none focus:border-cyan-400" />
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-open-real-picker" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-extrabold shadow-md transition flex items-center gap-1.5">
+            <span>🚀</span> เปิดเว็บจริง + คัดลอกตัวจิ้มพิกัดบนเว็บจริง
+          </button>
+          <button id="btn-toggle-import-box" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold transition">
+            📥 นำเข้าพิกัดที่จิ้มมาจากเว็บจริง
+          </button>
+        </div>
+      </div>
+
+      <!-- Inline Import JSON from Real Website Picker -->
+      <div id="import-real-coords-box" class="hidden mb-3 p-3 rounded-xl bg-slate-950 border border-amber-500/40 text-xs space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-amber-300">วางโค้ด JSON ที่กดคัดลอกมาจากแผงควบคุมบนเว็บจริง:</span>
+          <button id="btn-close-import-box" class="text-slate-400 hover:text-white">✕ ปิด</button>
+        </div>
+        <div class="flex gap-2">
+          <input id="input-import-json" type="text" placeholder='วางข้อมูลที่คัดลอกมาจากปุ่ม "📤 ส่งออกคิว" บนเว็บจริง...' class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-300 mono" />
+          <button id="btn-apply-import-json" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold">นำเข้าลงกล่องขั้นตอน</button>
+        </div>
+      </div>
+
       <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-slate-800">
         <div class="flex items-center gap-2.5">
           <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs mono">
@@ -406,7 +434,8 @@
             <select id="loop-speed" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 font-semibold">
               <option value="1">1x ปกติ</option>
               <option value="2" selected>2x เร็ว</option>
-              <option value="4">4x เทอร์โบ</option>
+              <option value="5">5x แรงพิเศษ</option>
+              <option value="10">10x เทอร์โบ (ไร้ดีเลย์)</option>
             </select>
           </div>
 
@@ -469,24 +498,32 @@
         </div>
       </div>
 
-      <!-- Right (5 cols): Auto-Updated Script Box (Matches exact queue!) -->
-      <div class="lg:col-span-5 glass-box rounded-2xl p-4 border border-slate-800 flex flex-col justify-between">
+      <!-- Right (5 cols): Universal Multi-Mode Script Box (Works on YouTube & ALL Strict-CSP Websites) -->
+      <div class="lg:col-span-5 glass-box rounded-2xl p-4 border border-emerald-500/30 flex flex-col justify-between">
         <div>
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
             <span class="text-xs font-bold text-emerald-300">
-              📋 โค้ด AutoMouse ที่ปรับตามคิวของคุณอัตโนมัติ
+              🌐 โค้ดรันได้ทุกเว็บ 100% (รวม YouTube / Google / เว็บป้องกันสูง)
             </span>
-            <button id="btn-copy-script" class="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
-              คัดลอกโค้ดไปวางเว็บจริง
-            </button>
+            <div class="flex flex-wrap items-center gap-1">
+              <button id="btn-copy-script" class="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-[11px] transition">
+                📋 คัดลอก JS (F12)
+              </button>
+              <button id="btn-copy-userscript" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-[11px] transition" title="ใช้กับส่วนขยาย Tampermonkey ทะลุบล็อก YouTube 100%">
+                ⚡ Tampermonkey
+              </button>
+              <button id="btn-download-py-queue" class="px-2.5 py-1 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-[11px] transition" title="ดาวน์โหลดบอท Python คุมเบราว์เซอร์จริงทุกเว็บ">
+                🐍 โหลด Python (.py)
+              </button>
+            </div>
           </div>
-          <p class="text-[11px] text-slate-400 mb-2">
-            ทุกครั้งที่คุณเพิ่ม/ลบขั้นตอน หรือเปลี่ยนพิกัด X,Y โค้ดด้านล่างและปุ่มลากวางด้านบนจะอัปเดตตามทันที นำไปวางใน Console (F12) ของเว็บจริงได้ทุกเว็บ
+          <p class="text-[11px] text-slate-400 mb-2 leading-snug">
+            <strong class="text-amber-300">ทิป YouTube / Google:</strong> เว็บใหญ่บล็อก Bookmarklet ให้ใช้ <strong>⚡ Tampermonkey</strong> หรือวางใน Console (F12) ซึ่งตัด <code>innerHTML</code> ออกทั้งหมดเพื่อผ่านระบบ Trusted Types แล้ว หรือใช้ <strong>🐍 Python (.py)</strong>
           </p>
-          <pre id="live-generated-code" class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-[10px] mono text-emerald-200 overflow-x-auto h-28"></pre>
+          <pre id="live-generated-code" class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-[10px] mono text-emerald-200 overflow-x-auto h-24"></pre>
         </div>
         <div id="copy-status-toast" class="hidden mt-1.5 text-[11px] text-emerald-400 font-bold">
-          ✓ คัดลอกโค้ดตามคิวปัจจุบันเรียบร้อยแล้ว!
+          ✓ คัดลอกโค้ดสำหรับรันบนทุกเว็บ (รวม YouTube) เรียบร้อยแล้ว!
         </div>
       </div>
 
@@ -518,6 +555,10 @@
       <div class="text-[11px] text-slate-300 flex items-center justify-between">
         <span>คิวทำงาน: <strong id="hud-queue-count" class="text-cyan-300">0</strong> ขั้นตอน</span>
         <span id="hud-active-step-name" class="text-emerald-300 mono truncate max-w-[170px]">พร้อมรัน...</span>
+      </div>
+      <div class="flex items-center gap-1.5 text-[11px]">
+        <input id="hud-quick-msg" type="text" placeholder="แก้ข้อความที่จะพิมพ์ได้ทันที..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-emerald-200 focus:outline-none focus:border-emerald-400" />
+        <button id="hud-btn-add-quick" class="px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold hover:bg-cyan-500 hover:text-slate-950 transition">+ เพิ่ม</button>
       </div>
 
       <div class="flex gap-1.5">
@@ -788,63 +829,120 @@
       return true;
     }
 
+    // Semantic Thai/English Button Synonyms for Smart Fallback
+    const SMART_SYNONYMS = {
+      'play': ['play', 'เล่น', 'เริ่ม', 'start', 'run', 'go', 'ส่ง'],
+      'เล่น': ['เล่น', 'play', 'start', 'เริ่ม'],
+      'login': ['login', 'log in', 'sign in', 'เข้าสู่ระบบ', 'ล็อกอิน', 'ลงชื่อเข้าใช้', 'submit'],
+      'เข้าสู่ระบบ': ['เข้าสู่ระบบ', 'login', 'sign in', 'ล็อกอิน', 'ตกลง'],
+      'ส่ง': ['ส่ง', 'send', 'submit', 'post', 'confirm', 'ตกลง', 'บันทึก'],
+      'บันทึก': ['บันทึก', 'save', 'submit', 'ตกลง', 'ยืนยัน'],
+      'ถัดไป': ['ถัดไป', 'next', 'continue', 'ต่อไป']
+    };
+
+    function collectAllInteractiveNodes(root, out = []) {
+      if (!root) return out;
+      const nodes = root.querySelectorAll('button, input, textarea, select, a, [role="button"], [role="textbox"], [contenteditable="true"], [onclick], label');
+      for (const el of nodes) {
+        if (!isBotInternalElement(el)) out.push(el);
+        if (el.shadowRoot) collectAllInteractiveNodes(el.shadowRoot, out);
+      }
+      // Also scan open shadow roots on custom elements
+      const allElems = root.querySelectorAll('*');
+      for (const el of allElems) {
+        if (el.shadowRoot && !isBotInternalElement(el)) {
+          collectAllInteractiveNodes(el.shadowRoot, out);
+        }
+      }
+      return out;
+    }
+
+    function isElementVisibleAndEnabled(el) {
+      if (!el || el.disabled || el.getAttribute('aria-hidden') === 'true') return false;
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+
     function findElementBySmartQuery(queryStr, preferInput = false) {
       const raw = String(queryStr || '').trim();
       if (!raw) return null;
 
-      // Support pipe-separated keywords/selectors
-      const terms = raw.split('|').map(t => t.trim()).filter(Boolean);
+      // Expand terms with pipe-split + smart synonyms
+      const baseTerms = raw.split('|').map(t => t.trim()).filter(Boolean);
+      const terms = [...baseTerms];
+      for (const bt of baseTerms) {
+        const syns = SMART_SYNONYMS[bt.toLowerCase()];
+        if (syns) syns.forEach(syn => { if (!terms.includes(syn)) terms.push(syn); });
+      }
 
       // 1. Direct CSS Selector / ID check first
-      for (const term of terms) {
+      for (const term of baseTerms) {
         if (term.startsWith('#') || term.startsWith('.') || term.startsWith('[') || term.includes('input') || term.includes('button')) {
           try {
             const direct = document.querySelector(term);
-            if (direct && !isBotInternalElement(direct)) return direct;
+            if (direct && !isBotInternalElement(direct) && isElementVisibleAndEnabled(direct)) return direct;
           } catch (e) {}
         }
-        // Also check if term matches an element ID directly without '#'
         const byId = document.getElementById(term);
-        if (byId && !isBotInternalElement(byId)) return byId;
+        if (byId && !isBotInternalElement(byId) && isElementVisibleAndEnabled(byId)) return byId;
       }
 
-      // 2. Gather candidate elements (prioritize Target Pad first, then whole page excluding bot configuration controls)
+      // 2. Scored Fuzzy Ranking across Target Pad & Page (Excluding Bot Config Controls)
       const targetPad = document.getElementById('target-pad-section');
-      const pool = [
-        ...(targetPad ? Array.from(targetPad.querySelectorAll('button, input, textarea, select, a, [role="button"], label')) : []),
-        ...Array.from(document.querySelectorAll('button, input, textarea, select, a, [role="button"]')).filter(el => !isBotInternalElement(el) && !el.closest('#control-config-section') && !el.closest('#queue-builder-section'))
-      ];
+      const rawPool = collectAllInteractiveNodes(document).filter(el => !el.closest('#control-config-section') && !el.closest('#queue-builder-section'));
 
-      for (const term of terms) {
-        const lowerTerm = term.toLowerCase();
-        for (const el of pool) {
-          if (preferInput && !('value' in el) && el.tagName !== 'TEXTAREA' && el.tagName !== 'INPUT') continue;
-          const text = (el.innerText || el.textContent || '').trim().toLowerCase();
-          const val = (el.value || '').trim().toLowerCase();
-          const ph = (el.getAttribute('placeholder') || '').trim().toLowerCase();
-          const aria = (el.getAttribute('aria-label') || '').trim().toLowerCase();
-          const title = (el.getAttribute('title') || '').trim().toLowerCase();
-          const idStr = (el.id || '').trim().toLowerCase();
-          const nameStr = (el.getAttribute('name') || '').trim().toLowerCase();
+      let bestEl = null;
+      let bestScore = -1;
 
-          if (
-            text.includes(lowerTerm) ||
-            val.includes(lowerTerm) ||
-            ph.includes(lowerTerm) ||
-            aria.includes(lowerTerm) ||
-            title.includes(lowerTerm) ||
-            idStr.includes(lowerTerm) ||
-            nameStr.includes(lowerTerm)
-          ) {
-            if (el.tagName === 'LABEL' && el.htmlFor) {
-              const linked = document.getElementById(el.htmlFor);
-              if (linked) return linked;
-            }
-            return el;
+      for (const el of rawPool) {
+        const visible = isElementVisibleAndEnabled(el);
+        if (!visible) continue;
+
+        const isInputLike = ('value' in el && el.tagName !== 'BUTTON') || el.tagName === 'TEXTAREA' || el.getAttribute('contenteditable') === 'true';
+        if (preferInput && !isInputLike && el.tagName !== 'LABEL') continue;
+
+        const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+        const val = (el.value || '').trim().toLowerCase();
+        const ph = (el.getAttribute('placeholder') || '').trim().toLowerCase();
+        const aria = (el.getAttribute('aria-label') || '').trim().toLowerCase();
+        const title = (el.getAttribute('title') || '').trim().toLowerCase();
+        const idStr = (el.id || '').trim().toLowerCase();
+        const nameStr = (el.getAttribute('name') || '').trim().toLowerCase();
+        const haystacks = [text, val, ph, aria, title, idStr, nameStr].filter(Boolean);
+
+        let score = 0;
+        for (let ti = 0; ti < terms.length; ti++) {
+          const lt = terms[ti].toLowerCase();
+          const isPrimaryTerm = ti < baseTerms.length;
+          const weight = isPrimaryTerm ? 1.0 : 0.65;
+
+          for (const h of haystacks) {
+            if (h === lt) score = Math.max(score, 120 * weight);
+            else if (h.startsWith(lt) || h.endsWith(lt)) score = Math.max(score, 85 * weight);
+            else if (h.includes(lt)) score = Math.max(score, 55 * weight);
+          }
+        }
+
+        if (score > 0) {
+          // Bonus for targetPad, interactive tags, and visible size
+          if (targetPad && targetPad.contains(el)) score += 35;
+          if (!preferInput && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button' || el.type === 'submit')) score += 25;
+          if (preferInput && isInputLike) score += 25;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestEl = el;
           }
         }
       }
-      return null;
+
+      if (bestEl && bestEl.tagName === 'LABEL' && bestEl.htmlFor) {
+        const linked = document.getElementById(bestEl.htmlFor);
+        if (linked) return linked;
+      }
+      return bestEl;
     }
 
     function resolveScreenCoordsForStep(step) {
@@ -895,8 +993,9 @@
       }
 
       const speed = parseFloat(document.getElementById('loop-speed').value) || 2;
-      const jitter = document.getElementById('chk-human-jitter')?.checked ? (Math.random() * 90 - 25) : 0;
-      const moveWait = Math.max(110, Math.round((400 / speed) + jitter));
+      const isHyper = speed >= 5;
+      const jitter = (!isHyper && document.getElementById('chk-human-jitter')?.checked) ? (Math.random() * 70 - 20) : 0;
+      const moveWait = isHyper ? Math.max(35, Math.round(240 / speed)) : Math.max(100, Math.round((380 / speed) + jitter));
 
       document.getElementById('hud-active-step-name').textContent = `#${index + 1}: ${step.note || step.value || step.selector}`;
 
@@ -1007,12 +1106,16 @@
             lastInteractedElement = inputTarget;
             inputTarget.focus();
             setNativeValue(inputTarget, '');
-            const charWait = Math.max(8, Math.round(25 / speed));
-            let cur = '';
-            for (let i = 0; i < resolvedText.length; i++) {
-              cur += resolvedText[i];
-              setNativeValue(inputTarget, cur);
-              await new Promise(r => setTimeout(r, charWait));
+            if (isHyper) {
+              setNativeValue(inputTarget, resolvedText);
+            } else {
+              const charWait = Math.max(6, Math.round(22 / speed));
+              let cur = '';
+              for (let i = 0; i < resolvedText.length; i++) {
+                cur += resolvedText[i];
+                setNativeValue(inputTarget, cur);
+                await new Promise(r => setTimeout(r, charWait));
+              }
             }
             document.getElementById('target-last-action').textContent = `⌨️ พิมพ์ข้อความ "${resolvedText}" ลงใน #${inputTarget.id || inputTarget.tagName}`;
           }
@@ -1022,22 +1125,29 @@
 
     async function runContinuousQueue() {
       while (state.running) {
-        if (state.queue.length === 0) {
-          stopQueueLoop();
-          break;
-        }
-        renderQueueCards();
-        const step = state.queue[state.currentIndex];
-        await executeStepItem(step, state.currentIndex);
+        try {
+          if (state.queue.length === 0) {
+            stopQueueLoop();
+            break;
+          }
+          renderQueueCards();
+          const step = state.queue[state.currentIndex];
+          await executeStepItem(step, state.currentIndex);
 
-        if (!state.running) break;
+          if (!state.running) break;
 
-        state.currentIndex++;
-        if (state.currentIndex >= state.queue.length) {
-          state.cycles++;
-          document.getElementById('stat-cycles').textContent = state.cycles;
-          document.getElementById('hud-loop-badge').textContent = `รอบ #${state.cycles}`;
-          state.currentIndex = 0;
+          state.currentIndex++;
+          if (state.currentIndex >= state.queue.length) {
+            state.cycles++;
+            document.getElementById('stat-cycles').textContent = state.cycles;
+            document.getElementById('hud-loop-badge').textContent = `รอบ #${state.cycles}`;
+            state.currentIndex = 0;
+          }
+        } catch (err) {
+          // Crash-proof self-healing: log error and continue to next step seamlessly
+          document.getElementById('hud-active-step-name').textContent = 'กำลังกู้คืนขั้นตอนอัตโนมัติ...';
+          state.currentIndex = (state.currentIndex + 1) % Math.max(1, state.queue.length);
+          await new Promise(r => setTimeout(r, 120));
         }
       }
     }
@@ -1240,7 +1350,7 @@
       });
     }
 
-    // Standalone Script with Full Ratio Lock, Smart Button Text Search, and Real Click/Enter Dispatch
+    // Universal Cross-Site Editable Floating AutoMouse Panel (Zero innerHTML -> 100% Trusted Types Safe on YouTube/Google, Full Live Queue Editor)
     function generateStandaloneQueueScript() {
       const uid = document.getElementById('quick-id')?.value.trim() || '';
       const pwd = document.getElementById('quick-pass')?.value.trim() || '';
@@ -1248,6 +1358,7 @@
       const listRaw = document.getElementById('smart-rotating-list')?.value || '';
       const lines = listRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       const lockAspect = Boolean(document.getElementById('chk-lock-aspect')?.checked);
+      const speedVal = parseFloat(document.getElementById('loop-speed')?.value) || 2;
 
       const serializedQueue = JSON.stringify(state.queue.filter(s => s.enabled !== false).map(s => ({
         type: s.type,
@@ -1263,89 +1374,410 @@
 
       return `(function(){
   const QUEUE = ${serializedQueue};
-  const VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect} };
-  let running = false, idx = 0, cycles = 0, lastEl = null;
+  const VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
+  let running = false, idx = 0, cycles = 0, lastEl = null, minimized = false;
+
+  // Floating Bot Cursor (Pure DOM, Zero innerHTML)
   let cur = document.getElementById('ailab-q-cursor');
   if (!cur) {
     cur = document.createElement('div');
     cur.id = 'ailab-q-cursor';
-    cur.style.cssText = 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:all 0.28s ease;filter:drop-shadow(0 0 10px #10b981);';
-    cur.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24"><path d="M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z" fill="#10b981" stroke="#fff" stroke-width="2"/></svg>';
-    document.body.appendChild(cur);
+    cur.style.cssText = 'position:fixed;top:100px;left:100px;z-index:2147483647;pointer-events:none;transition:all 0.24s ease;filter:drop-shadow(0 0 10px #10b981);';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '32');
+    svg.setAttribute('height', '32');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M4 2L20 10.5L12.5 13L16 20.5L13 22L9.5 14.5L4 19V2Z');
+    path.setAttribute('fill', '#10b981');
+    path.setAttribute('stroke', '#ffffff');
+    path.setAttribute('stroke-width', '2');
+    svg.appendChild(path);
+    cur.appendChild(svg);
+    document.documentElement.appendChild(cur);
   }
+
   let hud = document.getElementById('ailab-q-hud');
-  if (!hud) {
-    hud = document.createElement('div');
-    hud.id = 'ailab-q-hud';
-    hud.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:#060b17;color:#ecfdf5;border:2px solid #10b981;border-radius:14px;padding:10px 14px;font-family:sans-serif;font-size:12px;box-shadow:0 12px 30px rgba(0,0,0,0.85);';
-    hud.innerHTML = '<div style="font-weight:800;color:#34d399;margin-bottom:6px;">🖱️ Smart AutoMouse (' + QUEUE.length + ' ขั้นตอน)</div><div id="aq-stat" style="font-family:monospace;font-size:11px;margin-bottom:8px;">ตั้งค่าพร้อมแล้ว กดเริ่มทำงาน</div><div style="display:flex;gap:6px;"><button id="aq-start" style="background:#10b981;color:#020617;border:none;padding:5px 12px;border-radius:8px;font-weight:800;cursor:pointer;">▶ เริ่มทำงาน</button><button id="aq-stop" style="background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:8px;font-weight:700;cursor:pointer;">⏹ หยุด</button></div>';
-    document.body.appendChild(hud);
-    document.getElementById('aq-start').onclick = () => { if (!running) { running = true; loop(); } };
-    document.getElementById('aq-stop').onclick = () => { running = false; document.getElementById('aq-stat').textContent = 'หยุดพัก (รอบ #' + cycles + ')'; };
+  if (hud) hud.remove();
+  hud = document.createElement('div');
+  hud.id = 'ailab-q-hud';
+  hud.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483646;background:rgba(6,11,23,0.97);color:#ecfdf5;border:2px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 20px 50px rgba(0,0,0,0.9);width:370px;max-width:95vw;';
+
+  function mk(tag, css, txt) {
+    const el = document.createElement(tag);
+    if (css) el.style.cssText = css;
+    if (txt !== undefined) el.textContent = txt;
+    return el;
   }
+
+  // Draggable Header
+  const header = mk('div', 'display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid #1e293b;cursor:move;user-select:none;');
+  const title = mk('div', 'font-weight:800;color:#34d399;font-size:13px;', '🖱️ AutoMouse Studio (' + QUEUE.length + ' ขั้น)');
+  const hdrBtns = mk('div', 'display:flex;gap:4px;align-items:center;');
+  const speedSel = mk('select', 'background:#0f172a;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-weight:700;');
+  [['1','1x'],['2','2x'],['5','5x'],['10','10x']].forEach(([v,lbl]) => {
+    const o = mk('option', '', lbl); o.value = v; if (Number(v) === VARS.speed) o.selected = true; speedSel.appendChild(o);
+  });
+  speedSel.onchange = () => { VARS.speed = parseFloat(speedSel.value) || 2; };
+  const bMin = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '_');
+  const bClose = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-weight:700;', '✕');
+  hdrBtns.append(speedSel, bMin, bClose);
+  header.append(title, hdrBtns);
+
+  const bodyWrap = mk('div', '');
+  const statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:8px;color:#38bdf8;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #1e293b;', 'พร้อมแก้ไขและสั่งงานบน ' + location.hostname);
+
+  // Live Editable Step List Container (Unlimited Steps)
+  const listBox = mk('div', 'max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
+
+  const ACTION_TYPES = [
+    ['click_xy', '🖱️ คลิกพิกัด X,Y'],
+    ['dblclick_xy', '🖱️🖱️ 2xคลิก X,Y'],
+    ['click_ type_xy', '⌨️ คลิก X,Y+พิมพ์'],
+    ['click_selector', '🔎 คลิกตามชื่อ/CSS'],
+    ['type_selector', '📝 พิมพ์ตามชื่อ/CSS'],
+    ['press_enter', '↵ กด Enter'],
+    ['scroll_page', '📜 เลื่อนจอ (px)'],
+    ['wait', '⏱️ รอ (วินาที)']
+  ];
+
+  function renderHudSteps() {
+    while (listBox.firstChild) listBox.removeChild(listBox.firstChild);
+    title.textContent = '🖱️ AutoMouse Studio (' + QUEUE.length + ' ขั้น)';
+    QUEUE.forEach((step, i) => {
+      const row = mk('div', 'background:' + (running && idx === i ? 'rgba(16,185,129,0.18)' : '#0f172a') + ';border:1px solid ' + (running && idx === i ? '#10b981' : '#334155') + ';border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;');
+
+      // Top row: # + type select + move/dup/del buttons
+      const topR = mk('div', 'display:flex;justify-content:space-between;align-items:center;gap:4px;');
+      const numBadge = mk('span', 'background:#1e293b;color:#34d399;font-weight:800;font-family:monospace;font-size:10px;padding:2px 6px;border-radius:6px;', '#' + (i + 1));
+      const typeSel = mk('select', 'flex:1;background:#020617;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;');
+      ACTION_TYPES.forEach(([val, lbl]) => {
+        const o = mk('option', '', lbl); o.value = val; if (step.type === val) o.selected = true; typeSel.appendChild(o);
+      });
+      typeSel.onchange = () => { step.type = typeSel.value; renderHudSteps(); };
+
+      const miniBtns = mk('div', 'display:flex;gap:2px;');
+      const bUp = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '▲');
+      const bDn = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '▼');
+      const bDup = mk('button', 'background:#1e293b;color:#38bdf8;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '⧉');
+      const bDel = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '✕');
+      bUp.onclick = () => { if (i > 0) { const t = QUEUE[i-1]; QUEUE[i-1] = QUEUE[i]; QUEUE[i] = t; renderHudSteps(); } };
+      bDn.onclick = () => { if (i < QUEUE.length - 1) { const t = QUEUE[i+1]; QUEUE[i+1] = QUEUE[i]; QUEUE[i] = t; renderHudSteps(); } };
+      bDup.onclick = () => { QUEUE.splice(i + 1, 0, Object.assign({}, step)); renderHudSteps(); };
+      bDel.onclick = () => { QUEUE.splice(i, 1); if (idx >= QUEUE.length) idx = 0; renderHudSteps(); };
+      miniBtns.append(bUp, bDn, bDup, bDel);
+      topR.append(numBadge, typeSel, miniBtns);
+
+      // Middle row: X,Y or Selector input + Value input
+      const midR = mk('div', 'display:flex;gap:4px;align-items:center;');
+      if (step.type.includes('xy')) {
+        const ix = mk('input', 'width:52px;background:#020617;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-family:monospace;');
+        ix.type = 'number'; ix.value = step.x || 0; ix.title = 'X';
+        ix.oninput = () => { step.x = parseInt(ix.value, 10) || 0; step.rx = Number((step.x / Math.max(1, window.innerWidth)).toFixed(4)); };
+        const iy = mk('input', 'width:52px;background:#020617;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-family:monospace;');
+        iy.type = 'number'; iy.value = step.y || 0; iy.title = 'Y';
+        iy.oninput = () => { step.y = parseInt(iy.value, 10) || 0; step.ry = Number((step.y / Math.max(1, window.innerHeight)).toFixed(4)); };
+        midR.append(ix, iy);
+      } else if (step.type.includes('selector')) {
+        const isel = mk('input', 'width:110px;background:#020617;color:#38bdf8;border:1px solid #334155;border-radius:6px;padding:2px 5px;font-size:10px;font-family:monospace;');
+        isel.value = step.selector || ''; isel.placeholder = 'ชื่อปุ่ม / #id';
+        isel.oninput = () => { step.selector = isel.value; };
+        midR.append(isel);
+      }
+
+      const ival = mk('input', 'flex:1;min-width:60px;background:#020617;color:#6ee7b7;border:1px solid #334155;border-radius:6px;padding:2px 6px;font-size:10px;');
+      ival.value = step.value || ''; ival.placeholder = 'ข้อความ / วินาที...';
+      ival.oninput = () => { step.value = ival.value; };
+      midR.append(ival);
+
+      // Bottom row: Run Once toggle
+      const botR = mk('label', 'display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8;cursor:pointer;');
+      const chkOnce = mk('input', ''); chkOnce.type = 'checkbox'; chkOnce.checked = Boolean(step.runOnce);
+      chkOnce.onchange = () => { step.runOnce = chkOnce.checked; };
+      botR.append(chkOnce, mk('span', '', 'ทำเฉพาะรอบแรก (เช่น Login)'));
+
+      row.append(topR, midR, botR);
+      listBox.appendChild(row);
+    });
+  }
+
+  // Action Buttons: Pick from Real Site, Add Empty Step, Export Queue
+  const pickRow = mk('div', 'display:flex;gap:5px;margin-bottom:6px;');
+  const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ');
+  const bAdd = mk('button', 'background:#0284c7;color:#fff;border:none;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '+ เพิ่มขั้น');
+  const bExport = mk('button', 'background:#1e293b;color:#38bdf8;border:1px solid #38bdf8;padding:6px 8px;border-radius:8px;font-weight:700;cursor:pointer;font-size:11px;', '📤 ส่งออก');
+  pickRow.append(bPick, bAdd, bExport);
+
+  const btnRow = mk('div', 'display:flex;gap:6px;');
+  const bStart = mk('button', 'flex:1;background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;border:none;padding:7px 12px;border-radius:9px;font-weight:800;cursor:pointer;font-size:12px;', '▶ เริ่มทำงาน');
+  const bStop = mk('button', 'background:#ef4444;color:#fff;border:none;padding:7px 12px;border-radius:9px;font-weight:700;cursor:pointer;font-size:12px;', '⏹ หยุด');
+  btnRow.append(bStart, bStop);
+
+  bodyWrap.append(statEl, listBox, pickRow, btnRow);
+  hud.append(header, bodyWrap);
+  document.documentElement.appendChild(hud);
+  renderHudSteps();
+
+  bMin.onclick = () => { minimized = !minimized; bodyWrap.style.display = minimized ? 'none' : 'block'; };
+  bClose.onclick = () => { running = false; hud.remove(); cur.remove(); };
+
+  // Draggable Floating Panel
+  let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
+  header.onmousedown = (e) => {
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+    dragging = true;
+    const r = hud.getBoundingClientRect();
+    hud.style.right = 'auto'; hud.style.bottom = 'auto';
+    hud.style.left = r.left + 'px'; hud.style.top = r.top + 'px';
+    sx = e.clientX; sy = e.clientY; il = r.left; it = r.top;
+  };
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    hud.style.left = Math.max(4, il + (e.clientX - sx)) + 'px';
+    hud.style.top = Math.max(4, it + (e.clientY - sy)) + 'px';
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+
+  // Live Real-Site Element & Coordinate Picker
+  let pickingMode = false, hoverBox = null;
+  function getUniqueSelector(el) {
+    if (el.id) return '#' + CSS.escape(el.id);
+    const aria = el.getAttribute('aria-label');
+    if (aria) return '[aria-label="' + aria.replace(/"/g, '') + '"]';
+    if (el.name) return el.tagName.toLowerCase() + '[name="' + el.name + '"]';
+    return '';
+  }
+  bPick.onclick = () => {
+    pickingMode = !pickingMode;
+    bPick.textContent = pickingMode ? '🎯 คลิกปุ่มเป้าหมายบนเว็บ...' : '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
+    document.body.style.cursor = pickingMode ? 'crosshair' : '';
+    if (!hoverBox) {
+      hoverBox = mk('div', 'position:fixed;pointer-events:none;border:2.5px solid #f59e0b;background:rgba(245,158,11,0.18);z-index:2147483644;display:none;border-radius:6px;');
+      document.documentElement.appendChild(hoverBox);
+    }
+  };
+  window.addEventListener('mousemove', (ev) => {
+    if (!pickingMode || !hoverBox) return;
+    const t = document.elementFromPoint(ev.clientX, ev.clientY);
+    if (!t || hud.contains(t)) { hoverBox.style.display = 'none'; return; }
+    const r = t.getBoundingClientRect();
+    hoverBox.style.display = 'block';
+    hoverBox.style.left = r.left + 'px'; hoverBox.style.top = r.top + 'px';
+    hoverBox.style.width = r.width + 'px'; hoverBox.style.height = r.height + 'px';
+    statEl.textContent = 'ชี้: X:' + ev.clientX + ' Y:' + ev.clientY + ' <' + t.tagName.toLowerCase() + '>';
+  }, true);
+  window.addEventListener('click', (ev) => {
+    if (!pickingMode || hud.contains(ev.target)) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const t = ev.target;
+    const sel = getUniqueSelector(t);
+    const isInput = ('value' in t && t.tagName !== 'BUTTON') || t.isContentEditable;
+    QUEUE.push({
+      type: isInput ? 'click_ type_xy' : 'click_xy',
+      x: ev.clientX, y: ev.clientY,
+      rx: Number((ev.clientX / Math.max(1, window.innerWidth)).toFixed(4)),
+      ry: Number((ev.clientY / Math.max(1, window.innerHeight)).toFixed(4)),
+      selector: sel,
+      value: isInput ? (VARS.msg || 'ข้อความ') : ('คลิก ' + (sel || t.tagName)),
+      note: 'จิ้มจากเว็บจริง', runOnce: false
+    });
+    pickingMode = false; document.body.style.cursor = '';
+    if (hoverBox) hoverBox.style.display = 'none';
+    bPick.textContent = '🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บ';
+    statEl.textContent = '✓ เพิ่มขั้น #' + QUEUE.length + ' (' + ev.clientX + ',' + ev.clientY + ') แก้ไขข้อความในรายการได้ทันที';
+    renderHudSteps();
+  }, true);
+
+  bAdd.onclick = () => {
+    QUEUE.push({ type: 'click_selector', x: 400, y: 300, rx: 0.5, ry: 0.5, selector: 'Play', value: 'คลิกปุ่ม', note: 'ขั้นใหม่', runOnce: false });
+    renderHudSteps();
+    listBox.scrollTop = listBox.scrollHeight;
+  };
+  bExport.onclick = () => {
+    const jsonStr = JSON.stringify(QUEUE);
+    navigator.clipboard?.writeText(jsonStr).catch(() => {});
+    const ta = document.createElement('textarea'); ta.value = jsonStr; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    statEl.textContent = '📤 คัดลอกคิว ' + QUEUE.length + ' ขั้นตอนแล้ว! นำไปวางใน Studio ได้เลย';
+  };
+
   function resolveVal(raw) {
     const lv = VARS.list.length ? VARS.list[cycles % VARS.list.length] : '';
     return String(raw || '').replace(/\{\{USER_ID\}\}/g, VARS.uid).replace(/\{\{PASSWORD\}\}/g, VARS.pwd).replace(/\{\{MESSAGE\}\}/g, VARS.msg).replace(/\{\{CYCLE\}\}/g, String(cycles + 1)).replace(/\{\{LIST\}\}/g, lv);
   }
+
   function setVal(el, v) {
+    if (el.isContentEditable) {
+      el.focus(); el.textContent = v;
+      el.dispatchEvent(new InputEvent('input', { bubbles: true, data: v, inputType: 'insertText' }));
+      return;
+    }
     const s = Object.getOwnPropertyDescriptor(el, 'value')?.set;
-    if (s) s.call(el, v); else el.value = v;
+    const p = Object.getPrototypeOf(el);
+    const ps = p ? Object.getOwnPropertyDescriptor(p, 'value')?.set : null;
+    if (s && ps && s !== ps) ps.call(el, v);
+    else if (s) s.call(el, v);
+    else el.value = v;
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
+
+  function isVisible(el) {
+    if (!el || el.disabled || hud.contains(el)) return false;
+    const st = window.getComputedStyle(el);
+    if (st.display === 'none' || st.visibility === 'hidden' || st.opacity === '0') return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+
+  function collectNodes(root, arr = []) {
+    if (!root) return arr;
+    const list = root.querySelectorAll('button, a, input, textarea, select, [role="button"], [contenteditable="true"], yt-button-shape button');
+    for (const el of list) { if (isVisible(el)) arr.push(el); }
+    for (const el of root.querySelectorAll('*')) { if (el.shadowRoot) collectNodes(el.shadowRoot, arr); }
+    return arr;
+  }
+
   function findSmart(qStr) {
     if (!qStr) return null;
     const terms = qStr.split('|').map(t => t.trim()).filter(Boolean);
     for (const t of terms) {
-      try { const d = document.querySelector(t); if (d && !hud.contains(d)) return d; } catch(e){}
-      const byId = document.getElementById(t); if (byId && !hud.contains(byId)) return byId;
+      try { const d = document.querySelector(t); if (d && isVisible(d)) return d; } catch(e){}
+      const byId = document.getElementById(t); if (byId && isVisible(byId)) return byId;
     }
-    const pool = Array.from(document.querySelectorAll('button, a, input, textarea, select, [role="button"]')).filter(el => !hud.contains(el));
-    for (const t of terms) {
-      const lt = t.toLowerCase();
-      const found = pool.find(el => ((el.innerText||el.value||el.placeholder||el.getAttribute('aria-label')||el.id||'').toLowerCase().includes(lt)));
-      if (found) return found;
-    }
-    return null;
-  }
-  async function loop() {
-    while (running && QUEUE.length > 0) {
-      const step = QUEUE[idx];
-      if (!(step.runOnce && cycles > 0)) {
-        const val = resolveVal(step.value);
-        if (step.type === 'wait') {
-          await new Promise(r => setTimeout(r, (parseFloat(val) || 1) * 1000));
-        } else if (step.type === 'scroll_page') {
-          window.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
-        } else if (step.type === 'press_enter') {
-          const t = lastEl || document.activeElement || document.body;
-          ['keydown','keypress','keyup'].forEach(k => t.dispatchEvent(new KeyboardEvent(k, { key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true })));
-          const f = t.closest && t.closest('form'); if (f) f.requestSubmit ? f.requestSubmit() : f.submit();
-        } else {
-          let x = (VARS.lockRatio && typeof step.rx === 'number') ? Math.round(step.rx * window.innerWidth) : (step.x || 300);
-          let y = (VARS.lockRatio && typeof step.ry === 'number') ? Math.round(step.ry * window.innerHeight) : (step.y || 300);
-          let el = findSmart(step.selector || (step.type.includes('selector') ? step.value : ''));
-          if (el) { const r = el.getBoundingClientRect(); if (r.width > 0) { x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); } }
-          else { el = document.elementFromPoint(x, y); if (el) el = el.closest('button,a,input,textarea,select,[role="button"]') || el; }
-          cur.style.left = x + 'px'; cur.style.top = y + 'px';
-          document.getElementById('aq-stat').textContent = 'ขั้น #' + (idx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
-          await new Promise(r => setTimeout(r, 340));
-          if (el && !hud.contains(el)) {
-            lastEl = el;
-            el.focus();
-            ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(ev => el.dispatchEvent(new MouseEvent(ev, { bubbles:true, clientX:x, clientY:y })));
-            if (typeof el.click === 'function') el.click();
-            if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
-            if (step.type.includes('type') && ('value' in el)) setVal(el, val);
-          }
+    const pool = collectNodes(document);
+    let best = null, bestSc = -1;
+    for (const el of pool) {
+      const fields = [el.innerText, el.value, el.placeholder, el.getAttribute('aria-label'), el.title, el.id, el.name].map(x => (x||'').trim().toLowerCase()).filter(Boolean);
+      let sc = 0;
+      for (const t of terms) {
+        const lt = t.toLowerCase();
+        for (const f of fields) {
+          if (f === lt) sc = Math.max(sc, 100);
+          else if (f.startsWith(lt)) sc = Math.max(sc, 70);
+          else if (f.includes(lt)) sc = Math.max(sc, 40);
         }
       }
-      idx++;
-      if (idx >= QUEUE.length) { idx = 0; cycles++; }
-      await new Promise(r => setTimeout(r, 380));
+      if (sc > 0 && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button')) sc += 20;
+      if (sc > bestSc) { bestSc = sc; best = el; }
+    }
+    return best;
+  }
+
+  bStart.onclick = () => { if (!running) { running = true; loop(); } };
+  bStop.onclick = () => { running = false; statEl.textContent = 'หยุดพัก (รอบ #' + cycles + ')'; renderHudSteps(); };
+
+  async function loop() {
+    while (running && QUEUE.length > 0) {
+      const stepDelay = VARS.speed >= 5 ? 55 : Math.max(110, Math.round(340 / VARS.speed));
+      renderHudSteps();
+      try {
+        const step = QUEUE[idx];
+        if (!(step.runOnce && cycles > 0)) {
+          const val = resolveVal(step.value);
+          if (step.type === 'wait') {
+            await new Promise(r => setTimeout(r, (parseFloat(val) || 1) * 1000));
+          } else if (step.type === 'scroll_page') {
+            window.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
+          } else if (step.type === 'press_enter') {
+            const t = lastEl || document.activeElement || document.body;
+            ['keydown','keypress','keyup'].forEach(k => t.dispatchEvent(new KeyboardEvent(k, { key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true })));
+            const f = t.closest && t.closest('form'); if (f) f.requestSubmit ? f.requestSubmit() : f.submit();
+          } else {
+            let x = (VARS.lockRatio && typeof step.rx === 'number') ? Math.round(step.rx * window.innerWidth) : (step.x || 300);
+            let y = (VARS.lockRatio && typeof step.ry === 'number') ? Math.round(step.ry * window.innerHeight) : (step.y || 300);
+            let el = findSmart(step.selector || (step.type.includes('selector') ? step.value : ''));
+            if (el) { const r = el.getBoundingClientRect(); if (r.width > 0) { x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); } }
+            else { el = document.elementFromPoint(x, y); if (el) el = el.closest('button,a,input,textarea,select,[role="button"],[contenteditable="true"]') || el; }
+            cur.style.left = x + 'px'; cur.style.top = y + 'px';
+            statEl.textContent = 'รันขั้น #' + (idx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
+            await new Promise(r => setTimeout(r, stepDelay));
+            if (el && !hud.contains(el)) {
+              lastEl = el;
+              el.focus();
+              ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(ev => el.dispatchEvent(new MouseEvent(ev, { bubbles:true, clientX:x, clientY:y })));
+              if (typeof el.click === 'function') el.click();
+              if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
+              if (step.type.includes('type') && (('value' in el) || el.isContentEditable)) setVal(el, val);
+            }
+          }
+        }
+        idx++;
+        if (idx >= QUEUE.length) { idx = 0; cycles++; }
+        await new Promise(r => setTimeout(r, stepDelay));
+      } catch (e) {
+        idx = (idx + 1) % Math.max(1, QUEUE.length);
+        await new Promise(r => setTimeout(r, 150));
+      }
     }
   }
 })();`;
+    }
+
+    function generateTampermonkeyScript() {
+      return `// ==UserScript==
+// @name         AiLab Smart AutoMouse Bot (All Websites + YouTube)
+// @namespace    https://ailabv2.vercel.app/
+// @version      3.0
+// @description  บอทเมาส์อัตโนมัติไม่จำกัดขั้นตอน ใช้งานได้ทุกเว็บ (YouTube / Google / Facebook / SGS)
+// @match        *://*/*
+// @grant        none
+// ==/UserScript==
+
+` + generateStandaloneQueueScript();
+    }
+
+    function generatePythonPlaywrightScript() {
+      const serializedQueue = JSON.stringify(state.queue.filter(s => s.enabled !== false), null, 2);
+      return `# === AiLab Universal Python Bot (ทำงานได้ทุกเว็บ 100% รวมถึง YouTube โดยไม่ติดข้อจำกัดเบราว์เซอร์) ===
+# ติดตั้ง: pip install playwright && playwright install chromium
+# รัน: python ailab_universal_bot.py
+
+import time
+from playwright.sync_api import sync_playwright
+
+TARGET_URL = "https://www.youtube.com/"
+QUEUE = ${serializedQueue}
+
+def run_bot():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
+        page.goto(TARGET_URL)
+        cycles = 0
+        while True:
+            for step in QUEUE:
+                if step.get("runOnce") and cycles > 0:
+                    continue
+                stype = step.get("type", "")
+                val = step.get("value", "")
+                sel = step.get("selector", "")
+                try:
+                    if stype == "wait":
+                        time.sleep(float(val or 1))
+                    elif stype == "scroll_page":
+                        page.mouse.wheel(0, int(val or 350))
+                    elif stype == "press_enter":
+                        page.keyboard.press("Enter")
+                    elif "selector" in stype and sel:
+                        loc = page.locator(f"button:has-text('{sel}'), [aria-label*='{sel}' i], input[placeholder*='{sel}' i]").first
+                        loc.click()
+                        if "type" in stype:
+                            loc.fill(val)
+                    else:
+                        vp = page.viewport_size or {"width": 1280, "height": 720}
+                        x = int(step.get("rx", 0.5) * vp["width"])
+                        y = int(step.get("ry", 0.5) * vp["height"])
+                        page.mouse.move(x, y)
+                        page.mouse.click(x, y)
+                        if "type" in stype:
+                            page.keyboard.type(val, delay=20)
+                except Exception as e:
+                    print("Skip step:", e)
+                time.sleep(0.25)
+            cycles += 1
+
+if __name__ == "__main__":
+    run_bot()`;
     }
 
     function syncDynamicAutoMouseCode() {
@@ -1814,6 +2246,35 @@
       document.getElementById('btn-stop-loop').addEventListener('click', stopQueueLoop);
       document.getElementById('hud-btn-start').addEventListener('click', startQueueLoop);
       document.getElementById('hud-btn-stop').addEventListener('click', stopQueueLoop);
+      const hudQuickMsg = document.getElementById('hud-quick-msg');
+      if (hudQuickMsg) {
+        hudQuickMsg.value = document.getElementById('quick-text').value;
+        hudQuickMsg.addEventListener('input', () => {
+          document.getElementById('quick-text').value = hudQuickMsg.value;
+          syncDynamicAutoMouseCode();
+          saveQueueToStorage();
+        });
+      }
+      document.getElementById('hud-btn-add-quick')?.addEventListener('click', () => {
+        const val = document.getElementById('hud-quick-msg')?.value.trim() || document.getElementById('input-value').value.trim() || 'คลิกเมาส์';
+        const x = parseInt(document.getElementById('input-x').value, 10) || 400;
+        const y = parseInt(document.getElementById('input-y').value, 10) || 300;
+        state.queue.push({
+          id: Date.now() + Math.random(),
+          type: 'click_ type_xy',
+          x, y,
+          rx: Number((x / Math.max(1, window.innerWidth)).toFixed(4)),
+          ry: Number((y / Math.max(1, window.innerHeight)).toFixed(4)),
+          selector: '',
+          value: val,
+          note: `เพิ่มจาก HUD (${x}, ${y})`,
+          runOnce: false,
+          enabled: true
+        });
+        renderQueueCards();
+        syncDynamicAutoMouseCode();
+        saveQueueToStorage();
+      });
       document.getElementById('hud-btn-next').addEventListener('click', () => {
         if (state.queue.length === 0) return;
         executeStepItem(state.queue[state.currentIndex], state.currentIndex);
@@ -1831,6 +2292,74 @@
       });
 
       document.getElementById('btn-copy-script').addEventListener('click', copyCodeToClipboard);
+
+      document.getElementById('btn-open-real-picker')?.addEventListener('click', () => {
+        syncDynamicAutoMouseCode();
+        copyCodeToClipboard();
+        const url = document.getElementById('real-target-url').value.trim() || 'https://www.youtube.com/';
+        window.open(url, '_blank');
+        const toast = document.getElementById('copy-status-toast');
+        toast.textContent = '🚀 เปิดเว็บจริงแล้ว! กด F12 > Console แล้ววางโค้ด (Ctrl+V) จากนั้นกดปุ่ม "🎯 จิ้มเลือกปุ่ม/พิกัดบนเว็บนี้" ได้เลย';
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 5000);
+      });
+
+      document.getElementById('btn-toggle-import-box')?.addEventListener('click', () => {
+        document.getElementById('import-real-coords-box').classList.toggle('hidden');
+      });
+      document.getElementById('btn-close-import-box')?.addEventListener('click', () => {
+        document.getElementById('import-real-coords-box').classList.add('hidden');
+      });
+      document.getElementById('btn-apply-import-json')?.addEventListener('click', () => {
+        try {
+          const raw = document.getElementById('input-import-json').value.trim();
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr) && arr.length > 0) {
+            state.queue = arr.map((item, idx) => ({
+              id: Date.now() + idx,
+              type: item.type || 'click_xy',
+              x: Number(item.x) || 300,
+              y: Number(item.y) || 300,
+              rx: typeof item.rx === 'number' ? item.rx : 0.5,
+              ry: typeof item.ry === 'number' ? item.ry : 0.5,
+              selector: item.selector || '',
+              value: item.value || '',
+              note: item.note || 'นำเข้าจากเว็บจริง',
+              runOnce: Boolean(item.runOnce),
+              enabled: true
+            }));
+            renderQueueCards();
+            syncDynamicAutoMouseCode();
+            saveQueueToStorage();
+            document.getElementById('import-real-coords-box').classList.add('hidden');
+            document.getElementById('target-last-action').textContent = `✓ นำเข้า ${state.queue.length} ขั้นตอนที่จิ้มมาจากเว็บจริงเรียบร้อยแล้ว!`;
+          }
+        } catch (err) {
+          document.getElementById('target-last-action').textContent = '⚠️ รูปแบบข้อมูล JSON ไม่ถูกต้อง กรุณากดปุ่ม "📤 ส่งออกคิว" จากแผงบนเว็บจริง';
+        }
+      });
+      document.getElementById('btn-copy-userscript')?.addEventListener('click', () => {
+        const tm = generateTampermonkeyScript();
+        const ta = document.createElement('textarea');
+        ta.value = tm;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        const toast = document.getElementById('copy-status-toast');
+        toast.textContent = '✓ คัดลอกสคริปต์ Tampermonkey (ใช้ได้บน YouTube & ทุกเว็บ) เรียบร้อยแล้ว!';
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+      });
+      document.getElementById('btn-download-py-queue')?.addEventListener('click', () => {
+        const py = generatePythonPlaywrightScript();
+        const blob = new Blob([py], { type: 'text/x-python' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'ailab_universal_bot.py';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
       document.getElementById('hud-minimize').addEventListener('click', () => {
         document.getElementById('hud-body').classList.toggle('hidden');
       });
