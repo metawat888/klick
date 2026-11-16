@@ -817,8 +817,52 @@
         }
       ];
       state.currentIndex = 0;
+      window.addEventListener('ailab-hud-queue-updated', (ev) => {
+        if (ev.detail && Array.isArray(ev.detail.queue)) {
+          state.queue = ev.detail.queue.map((s, idx) => ({
+            id: s.id || (Date.now() + idx),
+            type: s.type || 'click_xy',
+            x: Number(s.x) || 0,
+            y: Number(s.y) || 0,
+            rx: typeof s.rx === 'number' ? s.rx : Number(((Number(s.x) || 0) / Math.max(1, window.innerWidth)).toFixed(4)),
+            ry: typeof s.ry === 'number' ? s.ry : Number(((Number(s.y) || 0) / Math.max(1, window.innerHeight)).toFixed(4)),
+            selector: s.selector || '',
+            value: s.value || '',
+            note: s.note || `พิกัด (${s.x || 0}, ${s.y || 0})`,
+            runOnce: Boolean(s.runOnce),
+            enabled: true
+          }));
+          renderQueueCards();
+          syncDynamicAutoMouseCode(true);
+          saveQueueToStorage();
+        }
+      });
+
       renderQueueCards();
-      syncDynamicAutoMouseCode();
+      syncDynamicAutoMouseCode(true);
+
+      // Pop up the full AutoMouse screen (#ailab-q-hud + #embedded-hud-panel) automatically on EVERY Chrome load / Refresh!
+      function autoPopUpAutoMouseOnChromeRefresh() {
+        try {
+          const embHud = document.getElementById('embedded-hud-panel');
+          const embBody = document.getElementById('hud-body');
+          if (embHud && embBody) {
+            embHud.classList.remove('hidden');
+            embBody.classList.remove('hidden');
+            embHud.style.transition = 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)';
+            embHud.style.transform = 'scale(1.06)';
+            setTimeout(() => { embHud.style.transform = 'scale(1)'; }, 220);
+          }
+          // Also mount & pop up the full Spy AutoMouse HUD (#ailab-q-hud) on screen immediately!
+          const scriptCode = generateStandaloneQueueScript();
+          const fn = new Function(scriptCode);
+          fn();
+        } catch (err) {}
+      }
+      autoPopUpAutoMouseOnChromeRefresh();
+      window.addEventListener('pageshow', () => {
+        autoPopUpAutoMouseOnChromeRefresh();
+      });
       saveQueueToStorage();
     }
 
@@ -858,6 +902,9 @@
       if (!el) return true;
       if (
         el.closest('#embedded-hud-panel') ||
+        el.closest('#ailab-q-hud') ||
+        el.closest('#ailab-q-cursor') ||
+        el.closest('#ailab-hover-box') ||
         el.closest('#bot-cursor') ||
         el.closest('header') ||
         el.closest('#control-config-section') ||
@@ -1554,12 +1601,38 @@
         runOnce: Boolean(s.runOnce)
       })));
 
-      return `(function(){
+      return `(function ailabSpyMain(injectedWin){
+  const window = injectedWin || globalThis;
+  const document = window.document;
+  const location = window.location;
+  const history = window.history;
+  const localStorage = window.localStorage;
+  const sessionStorage = window.sessionStorage;
+  const navigator = window.navigator;
+  const MutationObserver = window.MutationObserver;
+  const MouseEvent = window.MouseEvent;
+  const PointerEvent = window.PointerEvent || window.MouseEvent;
+  const KeyboardEvent = window.KeyboardEvent;
+  const InputEvent = window.InputEvent || window.Event;
+  const CustomEvent = window.CustomEvent;
+  const PopStateEvent = window.PopStateEvent || window.Event;
+  const Event = window.Event;
+  const DOMParser = window.DOMParser;
+  const CSS = window.CSS || { escape: (s) => String(s).replace(/([^\\w-])/g, \x27\\\\$1\x27) };
+  const fetch = window.fetch ? window.fetch.bind(window) : globalThis.fetch;
+  const setTimeout = window.setTimeout.bind(window);
+  const clearTimeout = window.clearTimeout.bind(window);
+  const setInterval = window.setInterval.bind(window);
+  const clearInterval = window.clearInterval.bind(window);
+
+  window.__AILAB_UNLOADING__ = false;
   if (window.__AILAB_SPY_ACTIVE && document.getElementById('ailab-q-hud')) {
     const existingHud = document.getElementById('ailab-q-hud');
     existingHud.style.setProperty('display', 'block', 'important');
     existingHud.style.setProperty('visibility', 'visible', 'important');
     existingHud.style.setProperty('opacity', '1', 'important');
+    existingHud.style.transform = 'scale(1.06)';
+    setTimeout(() => { existingHud.style.transform = 'scale(1)'; }, 220);
     return;
   }
   window.__AILAB_SPY_ACTIVE = true;
@@ -1567,6 +1640,7 @@
   const STORAGE_KEY = '__AILAB_SPY_BOT_STATE_V14__';
   const DEFAULT_QUEUE = ${serializedQueue};
   const DEFAULT_VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
+  const IS_STUDIO_HOST = Boolean(document.getElementById('dynamic-automouse-btn'));
 
   let saved = null;
   try { saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e){}
@@ -1580,17 +1654,133 @@
   let commandedByUser = isRecentCommandedRun;
   let idx = (saved && typeof saved.idx === 'number') ? (saved.idx % Math.max(1, QUEUE.length)) : 0;
   let cycles = (saved && typeof saved.cycles === 'number') ? saved.cycles : 0;
-  let hudPos = (saved && saved.hudPos) ? saved.hudPos : null;
+  let hudPos = (saved && saved.hudPos) ? saved.hudPos : (IS_STUDIO_HOST ? { left: '20px', top: '82px' } : { left: '28px', top: '76px' });
   let masterShellActive = false;
   let masterIframe = null;
   let lastEl = null, lastInputEl = null, loopActive = false, lastUrl = location.href;
+  let guardBadgeBtn = null;
 
-  function persistState() {
+  function persistState(skipStudioDispatch) {
     try {
       const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, commandedByUser, idx, cycles, hudPos, ts: Date.now() });
       sessionStorage.setItem(STORAGE_KEY, payload);
       localStorage.setItem(STORAGE_KEY, payload);
+      if (!skipStudioDispatch && IS_STUDIO_HOST) {
+        window.dispatchEvent(new CustomEvent('ailab-hud-queue-updated', { detail: { queue: QUEUE, running, idx, cycles } }));
+      }
     } catch(e){}
+  }
+
+  // Listen for Studio queue updates when running on the Studio host page
+  if (IS_STUDIO_HOST) {
+    window.addEventListener('ailab-studio-queue-updated', (ev) => {
+      if (ev.detail && Array.isArray(ev.detail.queue)) {
+        QUEUE.length = 0;
+        ev.detail.queue.forEach(s => QUEUE.push(s));
+        if (idx >= QUEUE.length) idx = 0;
+        persistState(true);
+        if (typeof renderHudSteps === 'function') renderHudSteps();
+      }
+    });
+  }
+
+  // --- CHROME NATIVE REFRESH AUTO-POPUP GUARD (เฝ้าหน้าเว็บเพื่อให้กด Refresh ของ Chrome กี่ครั้งก็เด้งจอ AutoMouse ขึ้นมาเอง 100%) ---
+  const SELF_SOURCE_CODE = '(' + ailabSpyMain.toString() + ')(window);';
+  try {
+    localStorage.setItem('__AILAB_SPY_SELF_SRC__', SELF_SOURCE_CODE);
+    sessionStorage.setItem('__AILAB_SPY_SELF_SRC__', SELF_SOURCE_CODE);
+  } catch(e){}
+
+  function ensureRefreshGuardWindow(focusGuard) {
+    if (IS_STUDIO_HOST && !focusGuard) return false;
+    try {
+      if (window.__AILAB_GUARD_WIN_REF && !window.__AILAB_GUARD_WIN_REF.closed) {
+        if (guardBadgeBtn) {
+          guardBadgeBtn.textContent = '🛡️ ล็อกเด้งทุก Refresh แล้ว';
+          guardBadgeBtn.style.background = '#065f46';
+          guardBadgeBtn.style.color = '#a7f3d0';
+        }
+        if (focusGuard) window.__AILAB_GUARD_WIN_REF.focus();
+        return true;
+      }
+      const gw = window.open('about:blank', '__AILAB_CHROME_REFRESH_GUARD__', 'width=380,height=430,left=16,top=64,resizable=yes,scrollbars=yes');
+      if (!gw) return false;
+      window.__AILAB_GUARD_WIN_REF = gw;
+      gw.__AILAB_BOOT_FN__ = ailabSpyMain;
+      gw.__AILAB_SAVED_SRC__ = SELF_SOURCE_CODE;
+
+      if (!gw.__AILAB_GUARD_INITIALIZED__) {
+        gw.__AILAB_GUARD_INITIALIZED__ = true;
+        const gdoc = gw.document;
+        gdoc.open();
+        gdoc.write('<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>🛡️ AutoMouse Chrome Refresh Guard (เด้งจอทุกการ Refresh)</title>' +
+          '<style>body{margin:0;padding:12px;background:#040812;color:#ecfdf5;font-family:sans-serif;font-size:12px;} .box{background:#0f172a;border:2px solid #10b981;border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,0.8);margin-bottom:10px;} button{border:none;border-radius:8px;padding:8px 10px;font-weight:800;cursor:pointer;font-size:11px;width:100%;margin-top:6px;}</style></head><body>' +
+          '<div class="box"><div style="font-weight:900;color:#34d399;font-size:13px;margin-bottom:6px;">🛡️ ระบบเด้งจอ AutoMouse ทุกการ Refresh ของ Chrome</div>' +
+          '<div id="g-stat" style="background:#020617;border:1px solid #10b981;padding:7px;border-radius:8px;color:#6ee7b7;font-family:monospace;font-size:11px;margin-bottom:8px;">🟢 กำลังเฝ้าแท็บ Chrome: กดปุ่ม Refresh (🔄) บนเบราว์เซอร์เมื่อไหร่ จอ AutoMouse จะเด้งขึ้นมาเองทันที 100%!</div>' +
+          '<div style="font-size:11px;color:#94a3b8;line-height:1.45;">หน้าต่างเล็กนี้ทำหน้าที่เฝ้าแท็บเว็บหลักไว้ (ย่อลงหรือวางไว้ด้านข้างได้เลย) เมื่อคุณกดปุ่ม Refresh ของ Chrome จอ AutoMouse ในแท็บหลักจะถูกปลุกให้เด้งขึ้นมาเองทุกครั้งโดยไม่ต้องกด Bookmark ซ้ำ</div>' +
+          '<button id="g-btn-pop" style="background:linear-gradient(90deg,#10b981,#06b6d4);color:#020617;">📌 บังคับเด้งจอ AutoMouse บนแท็บเว็บทันที</button>' +
+          '<button id="g-btn-ref" style="background:#059669;color:#fff;">🔄 สั่ง Refresh แท็บเว็บหลัก + เด้งจอทำงานต่อ</button>' +
+          '</div></body></html>');
+        gdoc.close();
+
+        const reinjectIntoOpener = () => {
+          try {
+            const op = gw.opener;
+            if (!op || op.closed) return;
+            if (op.__AILAB_UNLOADING__) return;
+            const odoc = op.document;
+            if (!odoc || !odoc.documentElement || !odoc.body) return;
+            if (odoc.readyState === 'loading') return;
+            if (!odoc.getElementById('ailab-q-hud')) {
+              op.__AILAB_SPY_ACTIVE = false;
+              op.__AILAB_GUARD_WIN_REF = gw;
+              op.__AILAB_POPUP_FROM_REFRESH__ = true;
+              if (typeof gw.__AILAB_BOOT_FN__ === 'function') {
+                gw.__AILAB_BOOT_FN__(op);
+              } else if (gw.__AILAB_SAVED_SRC__) {
+                const s = odoc.createElement('script');
+                s.textContent = gw.__AILAB_SAVED_SRC__;
+                (odoc.head || odoc.documentElement).appendChild(s);
+                s.remove();
+              }
+              const gst = gdoc.getElementById('g-stat');
+              if (gst) gst.textContent = '🔄 ตรวจพบการกด Refresh บน Chrome -> เด้งจอ AutoMouse กลับขึ้นมาสำเร็จแล้ว! (' + new Date().toLocaleTimeString() + ')';
+            }
+          } catch (err) {}
+        };
+
+        // Un-throttled Web Worker timer (runs every 80ms even when guard window is in background!)
+        try {
+          const blob = new gw.Blob(['setInterval(()=>postMessage(1), 80);'], { type: 'application/javascript' });
+          const worker = new gw.Worker(gw.URL.createObjectURL(blob));
+          worker.onmessage = reinjectIntoOpener;
+        } catch (we) {}
+        gw.setInterval(reinjectIntoOpener, 100);
+
+        const bPop = gdoc.getElementById('g-btn-pop');
+        if (bPop) bPop.onclick = () => { reinjectIntoOpener(); try { gw.opener.focus(); } catch(e){} };
+        const bRef = gdoc.getElementById('g-btn-ref');
+        if (bRef) bRef.onclick = () => {
+          try {
+            if (gw.opener && !gw.opener.closed) {
+              gw.opener.location.reload();
+            }
+          } catch(e){}
+        };
+      }
+
+      if (guardBadgeBtn) {
+        guardBadgeBtn.textContent = '🛡️ ล็อกเด้งทุก Refresh แล้ว';
+        guardBadgeBtn.style.background = '#065f46';
+        guardBadgeBtn.style.color = '#a7f3d0';
+      }
+      if (!focusGuard) {
+        try { window.focus(); } catch(e){}
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function getTargetDoc() {
@@ -1706,10 +1896,22 @@
     }
   }, true);
 
-  // Also save state right before any browser-level beforeunload so if the user clicks the browser's native Reload button with Tampermonkey/Extension or Studio, it pops up and resumes immediately!
+  // Also save state right before any browser-level beforeunload so when the user clicks Chrome's native Reload button, it pops up and resumes immediately!
   window.addEventListener('beforeunload', () => {
+    window.__AILAB_UNLOADING__ = true;
+    try { sessionStorage.setItem('__AILAB_CHROME_REFRESH_FLAG__', String(Date.now())); } catch(e){}
     persistState();
   });
+
+  // Automatically arm the Chrome Refresh Guard on initial run and on first user click inside the page/HUD
+  setTimeout(() => { ensureRefreshGuardWindow(false); }, 50);
+  const armGuardOnce = () => {
+    if (!IS_STUDIO_HOST && (!window.__AILAB_GUARD_WIN_REF || window.__AILAB_GUARD_WIN_REF.closed)) {
+      ensureRefreshGuardWindow(false);
+    }
+  };
+  window.addEventListener('pointerdown', armGuardOnce, { capture: true, passive: true });
+  window.addEventListener('keydown', armGuardOnce, { capture: true, passive: true });
 
   // UNIVERSAL BULLETPROOF TYPING ENGINE (universalTypeIntoPage)
   // Ref: ailab-master-shell-iframe
@@ -1924,10 +2126,17 @@
     lockHudOnScreen();
   }
 
+  function isIgnoredStudioChrome(node) {
+    if (!node) return true;
+    if ((hud && hud.contains(node)) || node.id === 'ailab-hover-box' || node.id === 'ailab-q-cursor') return true;
+    if (IS_STUDIO_HOST && node.closest && (node.closest('#embedded-hud-panel') || node.closest('#control-config-section') || node.closest('#queue-builder-section') || node.closest('header'))) return true;
+    return false;
+  }
+
   function resolveDeepTargetAtPoint(tDoc, x, y) {
     const stack = (typeof tDoc.elementsFromPoint === 'function') ? tDoc.elementsFromPoint(x, y) : [tDoc.elementFromPoint(x, y)];
     for (const node of stack) {
-      if (!node || (hud && hud.contains(node)) || node.id === 'ailab-hover-box' || node.id === 'ailab-q-cursor') continue;
+      if (isIgnoredStudioChrome(node)) continue;
       const btnOrLink = node.closest && node.closest('button, a[href], [role="button"], [data-testid*="send" i], [data-testid*="submit" i], [contenteditable="true"], input, textarea, select');
       if (btnOrLink && (!hud || !hud.contains(btnOrLink))) return btnOrLink;
     }
@@ -2043,9 +2252,15 @@
       const o = mk('option', '', lbl); o.value = v; if (Number(v) === VARS.speed) o.selected = true; speedSel.appendChild(o);
     });
     speedSel.onchange = () => { VARS.speed = parseFloat(speedSel.value) || 2; persistState(); };
+    guardBadgeBtn = mk('button', 'background:#065f46;color:#a7f3d0;border:1px solid #10b981;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:9px;font-weight:800;', IS_STUDIO_HOST ? '🛡️ เด้งทุก Refresh' : '🛡️ ล็อก Refresh');
+    guardBadgeBtn.title = 'ล็อกให้ทุกการกด Refresh ของ Chrome เด้งแผง AutoMouse ขึ้นมาเองอัตโนมัติ 100%';
+    guardBadgeBtn.onclick = () => {
+      const ok = ensureRefreshGuardWindow(true);
+      if (statEl) statEl.textContent = ok ? '🛡️ เปิดโหมดเฝ้าการ Refresh Chrome แล้ว! กด Refresh บนเบราว์เซอร์เมื่อไหร่แผงจะเด้งขึ้นทันที' : '✓ ระบบเด้งจอ AutoMouse ทุกการ Refresh ของ Chrome พร้อมทำงานแล้ว!';
+    };
     const bClean = mk('button', 'background:#be123c;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🧹 Clean');
     bClean.onclick = () => { running = false; commandedByUser = false; QUEUE.length = 0; idx = 0; cycles = 0; persistState(); renderHudSteps(); statEl.textContent = '🧹 ล้างคิวทั้งหมดแล้ว (0 ขั้นตอน)'; };
-    hdrBtns.append(bNavBack, bNavRefresh, speedSel, bClean);
+    hdrBtns.append(bNavBack, bNavRefresh, guardBadgeBtn, speedSel, bClean);
     header.append(title, hdrBtns);
 
     bodyWrap = mk('div', 'display:block;');
@@ -2066,9 +2281,25 @@
     const bStop = mk('button', 'background:#ef4444;color:#fff;border:none;padding:8px 14px;border-radius:9px;font-weight:800;cursor:pointer;font-size:12px;', '⏹ หยุด');
     btnRow.append(bStart, bStop);
 
+    const wasRefreshed = Boolean(window.__AILAB_POPUP_FROM_REFRESH__ || sessionStorage.getItem('__AILAB_CHROME_REFRESH_FLAG__') || (window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation')[0] && window.performance.getEntriesByType('navigation')[0].type === 'reload'));
+    try { sessionStorage.removeItem('__AILAB_CHROME_REFRESH_FLAG__'); } catch(e){}
+    if (wasRefreshed) {
+      statEl.textContent = running
+        ? '🔄 รีเฟรช Chrome แล้ว — เด้งจอ AutoMouse ขึ้นมาทำงานต่ออัตโนมัติทันที!'
+        : '🔄 รีเฟรช Chrome แล้ว — เด้งจอ AutoMouse ขึ้นมาพร้อมรับคำสั่งทันที!';
+    }
+
     bodyWrap.append(statEl, spyTelemetryEl, listBox, pickRow, btnRow);
     hud.append(header, bodyWrap);
+    hud.style.transition = 'transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.26s ease';
+    hud.style.transform = 'scale(0.88) translateY(12px)';
     document.documentElement.appendChild(hud);
+    setTimeout(() => {
+      if (hud) {
+        hud.style.transform = 'scale(1.04) translateY(0)';
+        setTimeout(() => { if (hud) hud.style.transform = 'scale(1) translateY(0)'; }, 160);
+      }
+    }, 20);
 
     let dragging = false, sx = 0, sy = 0, il = 0, it = 0;
     header.onmousedown = (e) => {
@@ -2496,7 +2727,7 @@
       loop();
     }
   }, 200);
-})();`;
+})(window);`;
     }
 
     function generateTampermonkeyScript() {
@@ -2566,12 +2797,15 @@ if __name__ == "__main__":
     run_bot()`;
     }
 
-    function syncDynamicAutoMouseCode() {
+    function syncDynamicAutoMouseCode(fromHudEvent) {
       const code = generateStandaloneQueueScript();
       document.getElementById('live-generated-code').textContent = code;
       const btn = document.getElementById('dynamic-automouse-btn');
       btn.setAttribute('href', 'javascript:' + encodeURIComponent(code));
       document.getElementById('dynamic-btn-label').textContent = `ปุ่ม AutoMouse (${state.queue.length} ขั้นตอน - ลากไปวางบุ๊กมาร์ก)`;
+      if (!fromHudEvent) {
+        window.dispatchEvent(new CustomEvent('ailab-studio-queue-updated', { detail: { queue: state.queue } }));
+      }
     }
 
     function copyCodeToClipboard() {
