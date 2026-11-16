@@ -1769,9 +1769,36 @@
     }
   }, true);
 
-  // Bot Enter Execution (Never unloads page; keeps AutoMouse box 100% in place!)
+  // Force-Trigger React / Modern Web Button Click (Works on ChatGPT Blue Send Button, SVG buttons, and React Fiber handlers!)
+  function forceTriggerButton(btn, x, y, tWin) {
+    if (!btn) return false;
+    if (btn.disabled) btn.disabled = false;
+    btn.removeAttribute('disabled');
+    const r = btn.getBoundingClientRect();
+    const cx = x || Math.round(r.left + r.width / 2);
+    const cy = y || Math.round(r.top + r.height / 2);
+    const evOpts = { bubbles: true, cancelable: true, composed: true, view: tWin || window, clientX: cx, clientY: cy, button: 0, buttons: 1 };
+    btn.dispatchEvent(new PointerEvent('pointerover', evOpts));
+    btn.dispatchEvent(new MouseEvent('mouseover', evOpts));
+    btn.dispatchEvent(new PointerEvent('pointerdown', evOpts));
+    btn.dispatchEvent(new MouseEvent('mousedown', evOpts));
+    btn.dispatchEvent(new PointerEvent('pointerup', evOpts));
+    btn.dispatchEvent(new MouseEvent('mouseup', evOpts));
+    btn.dispatchEvent(new MouseEvent('click', evOpts));
+    if (typeof btn.click === 'function') btn.click();
+    // Also check React internal onClick prop if attached to fiber
+    try {
+      const reactKey = Object.keys(btn).find(k => k.startsWith('__reactProps$') || k.startsWith('__reactEventHandlers$'));
+      if (reactKey && btn[reactKey] && typeof btn[reactKey].onClick === 'function') {
+        btn[reactKey].onClick({ preventDefault(){}, stopPropagation(){}, target: btn, currentTarget: btn });
+      }
+    } catch (e) {}
+    return true;
+  }
+
+  // Bot Enter Execution (Works on ChatGPT #prompt-textarea, YouTube Search, and all forms without unloading AutoMouse!)
   function spyExecuteEnter(targetEl, tDoc) {
-    const el = targetEl || lastEl || tDoc.activeElement || tDoc.body;
+    const el = targetEl || lastEl || tDoc.querySelector('#prompt-textarea, [contenteditable="true"], textarea, input[type="text"], input[type="search"]') || tDoc.activeElement || tDoc.body;
     if (!el) return;
     el.focus();
 
@@ -1785,6 +1812,16 @@
       }
     }
 
+    // 1. Look for dedicated Send / Submit button first (e.g. ChatGPT blue up-arrow button [data-testid="send-button"])
+    const sendBtn = tDoc.querySelector('[data-testid="send-button"], [data-testid*="send-button" i], button[aria-label*="Send" i], button[aria-label*="ส่ง" i], form button[type="submit"]');
+    if (sendBtn && (!hud || !hud.contains(sendBtn))) {
+      forceTriggerButton(sendBtn, 0, 0, getTargetWin());
+      if (statEl) statEl.textContent = '🔒 คลิกปุ่มส่งข้อความ (ปุ่มสีฟ้า) สำเร็จ!';
+      lockHudOnScreen();
+      return;
+    }
+
+    // 2. Dispatch full Enter keyboard sequence
     const keyOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, charCode: 13, bubbles: true, cancelable: true, composed: true };
     el.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
     el.dispatchEvent(new KeyboardEvent('keypress', keyOpts));
@@ -1792,30 +1829,21 @@
 
     const form = el.closest && el.closest('form');
     if (form) {
-      form.setAttribute('target', '_self');
-      if (!masterShellActive && form.action) {
-        try {
-          const dest = new URL(form.action, location.href);
-          if (dest.origin === location.origin && (!form.method || form.method.toLowerCase() === 'get')) {
-            const qs = new URLSearchParams(new FormData(form)).toString();
-            inPlaceFetchNavigate(dest.origin + dest.pathname + (qs ? '?' + qs : ''));
-            return;
-          }
-        } catch(e){}
-      }
-      const subBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-      if (subBtn) subBtn.click();
+      const subBtn = form.querySelector('button[type="submit"], input[type="submit"], button:last-of-type');
+      if (subBtn && (!hud || !hud.contains(subBtn))) forceTriggerButton(subBtn, 0, 0, getTargetWin());
       else if (typeof form.requestSubmit === 'function') form.requestSubmit();
     }
     lockHudOnScreen();
   }
 
-  // Bot Click Execution (Never unloads page; keeps AutoMouse box 100% in place!)
+  // Bot Click Execution (Pierces SVG icons/paths to click the real <button> and handles links seamlessly!)
   function spyExecuteClick(rawEl, x, y, tDoc, tWin) {
-    if (!rawEl) return;
-    let el = rawEl.closest('a[href], button, input, textarea, select, [role="button"], [onclick]') || rawEl;
-    if (!el.href && (rawEl.closest('ytd-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer'))) {
-      const card = rawEl.closest('ytd-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer');
+    let el = resolveDeepTargetAtPoint(tDoc, x, y) || rawEl;
+    if (!el) return;
+    el = (el.closest && el.closest('button, a[href], [role="button"], [data-testid], input, textarea, select, [contenteditable="true"], [onclick]')) || el;
+
+    if (!el.href && (el.closest && el.closest('ytd-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer'))) {
+      const card = el.closest('ytd-video-renderer, ytd-rich-item-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer');
       const cardLink = card && card.querySelector('a#thumbnail[href], a#video-title[href], a#video-title-link[href], a[href*="/watch"]');
       if (cardLink) el = cardLink;
     }
@@ -1834,14 +1862,7 @@
       }
     }
 
-    el.focus();
-    const evOpts = { bubbles: true, cancelable: true, composed: true, view: tWin, clientX: x, clientY: y, button: 0, buttons: 1 };
-    el.dispatchEvent(new PointerEvent('pointerdown', evOpts));
-    el.dispatchEvent(new MouseEvent('mousedown', evOpts));
-    el.dispatchEvent(new PointerEvent('pointerup', evOpts));
-    el.dispatchEvent(new MouseEvent('mouseup', evOpts));
-    el.dispatchEvent(new MouseEvent('click', evOpts));
-    if (typeof el.click === 'function') el.click();
+    forceTriggerButton(el, x, y, tWin);
     lockHudOnScreen();
   }
 
@@ -1997,14 +2018,30 @@
     window.addEventListener('mouseup', () => { if (dragging) { dragging = false; persistState(); } });
 
     let pickingMode = false, hoverBox = null;
+    function resolveDeepTargetAtPoint(tDoc, x, y) {
+      const stack = (typeof tDoc.elementsFromPoint === 'function') ? tDoc.elementsFromPoint(x, y) : [tDoc.elementFromPoint(x, y)];
+      for (const node of stack) {
+        if (!node || (hud && hud.contains(node)) || node.id === 'ailab-hover-box' || node.id === 'ailab-q-cursor') continue;
+        const btnOrLink = node.closest && node.closest('button, a[href], [role="button"], [data-testid*="send" i], [data-testid*="submit" i], [contenteditable="true"], input, textarea, select');
+        if (btnOrLink && (!hud || !hud.contains(btnOrLink))) return btnOrLink;
+      }
+      for (const node of stack) {
+        if (!node || (hud && hud.contains(node)) || node.id === 'ailab-hover-box' || node.id === 'ailab-q-cursor') continue;
+        return node;
+      }
+      return null;
+    }
+
     function getSpySelector(el) {
       if (!el) return '';
       if (el.id) return '#' + CSS.escape(el.id);
-      const aria = el.getAttribute('aria-label');
+      const testId = el.getAttribute && el.getAttribute('data-testid');
+      if (testId) return '[data-testid="' + testId.replace(/"/g, '') + '"]';
+      const aria = el.getAttribute && el.getAttribute('aria-label');
       if (aria) return '[aria-label="' + aria.replace(/"/g, '') + '"]';
-      const ph = el.getAttribute('placeholder');
+      const ph = el.getAttribute && el.getAttribute('placeholder');
       if (ph) return '[placeholder="' + ph.replace(/"/g, '') + '"]';
-      const name = el.getAttribute('name');
+      const name = el.getAttribute && el.getAttribute('name');
       if (name) return el.tagName.toLowerCase() + '[name="' + name.replace(/"/g, '') + '"]';
       const txt = (el.innerText || '').trim().slice(0, 28);
       if (txt && (el.tagName === 'BUTTON' || el.tagName === 'A')) return txt;
@@ -2022,15 +2059,14 @@
     };
     function onSpyMove(ev) {
       const tDoc = getTargetDoc();
-      const rawT = tDoc.elementFromPoint(ev.clientX, ev.clientY);
-      if (!rawT || (hud && hud.contains(rawT))) {
+      const t = resolveDeepTargetAtPoint(tDoc, ev.clientX, ev.clientY);
+      if (!t || (hud && hud.contains(t))) {
         if (hoverBox) hoverBox.style.display = 'none';
         return;
       }
-      const t = rawT.closest('a[href], button, input, textarea, select, [role="button"]') || rawT;
       const sel = getSpySelector(t);
       if (spyTelemetryEl) {
-        spyTelemetryEl.textContent = '🎯 X:' + ev.clientX + ' Y:' + ev.clientY + ' | <' + t.tagName.toLowerCase() + '> ' + (sel || (t.innerText||'').trim().slice(0,20));
+        spyTelemetryEl.textContent = '🎯 X:' + ev.clientX + ' Y:' + ev.clientY + ' | <' + (t.tagName||'').toLowerCase() + '> ' + (sel || (t.innerText||'').trim().slice(0,20));
       }
       if (!pickingMode || !hoverBox) return;
       const r = t.getBoundingClientRect();
@@ -2038,14 +2074,17 @@
       hoverBox.style.left = r.left + 'px'; hoverBox.style.top = r.top + 'px';
       hoverBox.style.width = r.width + 'px'; hoverBox.style.height = r.height + 'px';
     }
-    function onSpyClick(ev) {
+    // Intercept pointerdown AND mousedown AND click in capture phase so picking a blue SVG button or disabled button ALWAYS locks the target cleanly!
+    function onSpyPickTrigger(ev) {
       if (!pickingMode || (hud && hud.contains(ev.target))) return;
-      ev.preventDefault(); ev.stopPropagation();
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      if (ev.type !== 'pointerdown' && ev.type !== 'mousedown') return;
       const tDoc = getTargetDoc();
-      const rawT = tDoc.elementFromPoint(ev.clientX, ev.clientY) || ev.target;
-      const t = rawT.closest('a[href], button, input, textarea, select, [role="button"], ytd-thumbnail, ytd-video-renderer') || rawT;
+      const t = resolveDeepTargetAtPoint(tDoc, ev.clientX, ev.clientY) || ev.target;
       const sel = getSpySelector(t);
-      const isInput = ('value' in t && t.tagName !== 'BUTTON') || t.isContentEditable;
+      const isInput = ('value' in t && t.tagName !== 'BUTTON') || t.isContentEditable || (t.getAttribute && t.getAttribute('contenteditable') === 'true');
       let snapX = ev.clientX, snapY = ev.clientY;
       if (t && t.getBoundingClientRect) {
         const r = t.getBoundingClientRect();
@@ -2055,23 +2094,28 @@
         }
       }
       QUEUE.push({
-        type: isInput ? 'click_ type_xy' : (sel ? 'click_selector' : 'click_xy'),
+        type: isInput ? 'click_ type_xy' : 'click_xy',
         x: snapX, y: snapY,
         rx: Number((snapX / Math.max(1, window.innerWidth)).toFixed(4)),
         ry: Number((snapY / Math.max(1, window.innerHeight)).toFixed(4)),
         selector: sel,
-        value: isInput ? (VARS.msg || '') : (sel || 'คลิกเป้าหมาย'),
+        value: isInput ? (VARS.msg || '') : (sel || 'คลิกปุ่ม'),
         note: 'Spy Lock', runOnce: false
       });
       pickingMode = false; getTargetDoc().body.style.cursor = '';
       if (hoverBox) hoverBox.style.display = 'none';
       bPick.textContent = '🎯 จิ้มล็อกเป้าแม่นยำ';
-      statEl.textContent = '✓ ล็อกเป้าขั้น #' + QUEUE.length + ' (' + snapX + ',' + snapY + ') แล้ว';
+      statEl.textContent = '✓ ล็อกเป้าขั้น #' + QUEUE.length + ' ที่ (' + snapX + ',' + snapY + ') ' + (sel || '') + ' สำเร็จ!';
       persistState();
       renderHudSteps();
     }
     window.addEventListener('mousemove', onSpyMove, true);
-    window.addEventListener('click', onSpyClick, true);
+    window.addEventListener('pointerdown', onSpyPickTrigger, true);
+    window.addEventListener('click', (ev) => {
+      if (pickingMode && (!hud || !hud.contains(ev.target))) {
+        ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      }
+    }, true);
 
     bAdd.onclick = () => {
       QUEUE.push({ type: 'click_ type_xy', x: 500, y: 300, rx: 0.5, ry: 0.35, selector: '', value: '', note: 'ขั้นใหม่', runOnce: false });
@@ -2190,19 +2234,43 @@
   }
 
   function setVal(el, v) {
-    if (el.isContentEditable) {
-      el.focus(); el.textContent = v;
-      el.dispatchEvent(new InputEvent('input', { bubbles: true, data: v, inputType: 'insertText' }));
+    if (!el) return;
+    // Climb or descend to actual contenteditable / input if user clicked wrapper div or <p> inside ProseMirror (e.g. ChatGPT #prompt-textarea)
+    const ce = el.isContentEditable ? (el.closest('[contenteditable="true"]') || el) : (el.querySelector && el.querySelector('[contenteditable="true"]'));
+    if (ce) {
+      lastEl = ce;
+      ce.focus();
+      try {
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(ce);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ce.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: v }));
+        const ok = document.execCommand('insertText', false, v);
+        if (!ok || !(ce.innerText || '').trim()) {
+          const pNode = ce.querySelector('p') || ce;
+          pNode.textContent = v;
+        }
+      } catch (e) {
+        ce.textContent = v;
+      }
+      ce.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: v }));
+      ce.dispatchEvent(new Event('change', { bubbles: true }));
       return;
     }
-    const s = Object.getOwnPropertyDescriptor(el, 'value')?.set;
-    const p = Object.getPrototypeOf(el);
+    const inp = ('value' in el && el.tagName !== 'BUTTON') ? el : (el.querySelector && el.querySelector('input, textarea'));
+    const target = inp || el;
+    lastEl = target;
+    target.focus();
+    const s = Object.getOwnPropertyDescriptor(target, 'value')?.set;
+    const p = Object.getPrototypeOf(target);
     const ps = p ? Object.getOwnPropertyDescriptor(p, 'value')?.set : null;
-    if (s && ps && s !== ps) ps.call(el, v);
-    else if (s) s.call(el, v);
-    else el.value = v;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
+    if (s && ps && s !== ps) ps.call(target, v);
+    else if (s) s.call(target, v);
+    else target.value = v;
+    target.dispatchEvent(new InputEvent('input', { bubbles: true, data: v, inputType: 'insertText' }));
+    target.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   function isVisible(el) {
@@ -2315,16 +2383,17 @@
             if (statEl) statEl.textContent = '🔒 ขั้น #' + (executedIdx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
             await new Promise(r => setTimeout(r, stepDelay));
             if (el && (!hud || !hud.contains(el))) {
-              if (step.type.includes('type')) {
-                const inpTarget = ('value' in el && el.tagName !== 'BUTTON') ? el : (el.querySelector && el.querySelector('input,textarea')) || lastEl;
-                if (inpTarget && (('value' in inpTarget) || inpTarget.isContentEditable)) {
-                  lastEl = inpTarget;
-                  inpTarget.focus();
-                  setVal(inpTarget, val);
-                }
-              }
               spyExecuteClick(el, x, y, tDoc, tWin);
               if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
+              if (step.type.includes('type')) {
+                const ceOrInp = (el.isContentEditable || (el.getAttribute && el.getAttribute('contenteditable') === 'true'))
+                  ? el
+                  : ((el.closest && el.closest('[contenteditable="true"]')) || (el.querySelector && el.querySelector('[contenteditable="true"], input, textarea')) || (('value' in el && el.tagName !== 'BUTTON') ? el : lastEl));
+                if (ceOrInp) {
+                  setVal(ceOrInp, val);
+                  await new Promise(r => setTimeout(r, 80));
+                }
+              }
             }
             lockHudOnScreen();
           }
