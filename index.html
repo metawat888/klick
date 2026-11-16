@@ -713,6 +713,9 @@
       try {
         localStorage.setItem('ailab_unlimited_queue_v3', JSON.stringify({
           queue: state.queue,
+          running: state.running,
+          currentIndex: state.currentIndex,
+          cycles: state.cycles,
           quickId: document.getElementById('quick-id').value,
           quickPass: document.getElementById('quick-pass').value,
           quickText: document.getElementById('quick-text').value,
@@ -1326,6 +1329,7 @@
     function startQueueLoop() {
       if (state.running) return;
       state.running = true;
+      saveQueueToStorage();
       document.getElementById('btn-start-loop').disabled = true;
       document.getElementById('btn-start-loop').classList.add('opacity-50');
       document.getElementById('btn-stop-loop').disabled = false;
@@ -1336,6 +1340,7 @@
 
     function stopQueueLoop() {
       state.running = false;
+      saveQueueToStorage();
       document.getElementById('btn-start-loop').disabled = false;
       document.getElementById('btn-start-loop').classList.remove('opacity-50');
       document.getElementById('btn-stop-loop').disabled = true;
@@ -1566,7 +1571,8 @@
   let saved = null;
   try { saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e){}
 
-  const isRecentCommandedRun = Boolean(saved && saved.commandedByUser && saved.running && (Date.now() - (saved.ts || 0) < 25000));
+  // Preserve running state across any page refresh for up to 24 hours until the user explicitly clicks Stop!
+  const isRecentCommandedRun = Boolean(saved && saved.commandedByUser && saved.running && (Date.now() - (saved.ts || 0) < 86400000));
 
   const QUEUE = (saved && Array.isArray(saved.queue) && saved.queue.length > 0) ? saved.queue : DEFAULT_QUEUE;
   const VARS = (saved && saved.vars) ? Object.assign({}, DEFAULT_VARS, saved.vars) : DEFAULT_VARS;
@@ -1629,31 +1635,81 @@
     } catch (e) { return false; }
   }
 
-  async function inPlaceFetchNavigate(targetUrl) {
+  async function inPlaceFetchNavigate(targetUrl, isRefreshAction) {
     try {
-      const u = new URL(targetUrl, location.href);
+      const u = new URL(targetUrl || location.href, location.href);
       if (u.origin !== location.origin) return false;
-      if (location.hostname.includes('youtube.com')) return inPlaceYouTubeNavigate(u.href);
-      if (masterShellActive && masterIframe) {
-        masterIframe.src = u.href;
+      persistState();
+      if (location.hostname.includes('youtube.com')) {
+        const ok = inPlaceYouTubeNavigate(u.href);
         lockHudOnScreen();
+        if (hud) {
+          hud.style.transform = 'scale(1.05)';
+          setTimeout(() => { if (hud) hud.style.transform = 'scale(1)'; }, 200);
+        }
+        if (running && commandedByUser && !loopActive) setTimeout(loop, 200);
+        return ok;
+      }
+      if (masterShellActive && masterIframe) {
+        if (isRefreshAction && masterIframe.contentWindow) {
+          masterIframe.contentWindow.location.reload();
+        } else {
+          masterIframe.src = u.href;
+        }
+        lockHudOnScreen();
+        if (hud) {
+          hud.style.transform = 'scale(1.05)';
+          setTimeout(() => { if (hud) hud.style.transform = 'scale(1)'; }, 200);
+        }
+        if (running && commandedByUser && !loopActive) setTimeout(loop, 250);
         return true;
       }
-      const res = await fetch(u.href);
+      const fetchUrl = isRefreshAction ? (u.href + (u.search ? '&' : '?') + '_ailab_refresh=' + Date.now()) : u.href;
+      const res = await fetch(fetchUrl, { cache: 'no-store' });
       const html = await res.text();
       const parsed = new DOMParser().parseFromString(html, 'text/html');
-      history.pushState({}, parsed.title || document.title, u.href);
+      history.replaceState({}, parsed.title || document.title, u.href);
       if (parsed.title) document.title = parsed.title;
       Array.from(document.body.children).forEach(ch => {
         if (ch.id !== 'ailab-q-hud' && ch.id !== 'ailab-q-cursor' && ch.id !== 'ailab-hover-box') ch.remove();
       });
       Array.from(parsed.body.children).forEach(ch => {
-        document.body.appendChild(document.importNode(ch, true));
+        if (ch.id !== 'ailab-q-hud' && ch.id !== 'ailab-q-cursor' && ch.id !== 'ailab-hover-box') {
+          document.body.appendChild(document.importNode(ch, true));
+        }
       });
+      // Re-execute page inline scripts safely if needed and pop up AutoMouse HUD immediately
       lockHudOnScreen();
+      if (hud) {
+        hud.style.transform = 'scale(1.05)';
+        setTimeout(() => { if (hud) hud.style.transform = 'scale(1)'; }, 200);
+      }
+      if (running && commandedByUser && !loopActive) {
+        setTimeout(loop, 200);
+      }
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      lockHudOnScreen();
+      if (running && commandedByUser && !loopActive) setTimeout(loop, 250);
+      return false;
+    }
   }
+
+  // Intercept F5 and Ctrl+R / Cmd+R so refreshing the page reloads the web content while keeping AutoMouse popped up and running!
+  window.addEventListener('keydown', (ev) => {
+    if (ev.key === 'F5' || ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'r')) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      if (statEl) statEl.textContent = '🔄 กำลัง Refresh หน้าเว็บและเด้งแผงทำงานต่ออัตโนมัติ...';
+      inPlaceFetchNavigate(location.href, true);
+    }
+  }, true);
+
+  // Also save state right before any browser-level beforeunload so if the user clicks the browser's native Reload button with Tampermonkey/Extension or Studio, it pops up and resumes immediately!
+  window.addEventListener('beforeunload', () => {
+    persistState();
+  });
 
   // UNIVERSAL BULLETPROOF TYPING ENGINE (universalTypeIntoPage)
   // Ref: ailab-master-shell-iframe
@@ -1964,11 +2020,23 @@
       lockHudOnScreen();
       if (statEl) statEl.textContent = '⬅️ ย้อนกลับแล้ว (กล่อง AutoMouse อยู่ครบ!)';
     };
-    const bNavRefresh = mk('button', 'background:#059669;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🔄 Refresh');
-    bNavRefresh.onclick = () => {
-      idx = 0; persistState(); renderHudSteps();
-      inPlaceFetchNavigate(location.href);
-      if (statEl) statEl.textContent = '🔄 รีเฟรชและตั้งคิวกลับไปเริ่มขั้น #1 แล้ว!';
+    const bNavRefresh = mk('button', 'background:#059669;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🔄 Refresh & รันต่อ');
+    bNavRefresh.title = 'รีเฟรชหน้าเว็บ เด้งแผง AutoMouse ขึ้นมา และรันคิวต่อทันที';
+    bNavRefresh.onclick = async () => {
+      idx = 0;
+      if (QUEUE.length > 0) {
+        running = true;
+        commandedByUser = true;
+      }
+      persistState();
+      updateActiveStepHighlight();
+      if (statEl) statEl.textContent = '🔄 กำลัง Refresh หน้าเว็บ และเด้งแผงขึ้นมาทำงานต่อ...';
+      await inPlaceFetchNavigate(location.href, true);
+      lockHudOnScreen();
+      if (statEl) statEl.textContent = '✓ Refresh สำเร็จ! แผง AutoMouse เด้งขึ้นมาทำงานต่อตามปกติแล้ว';
+      if (running && commandedByUser && !loopActive) {
+        setTimeout(loop, 180);
+      }
     };
     const speedSel = mk('select', 'background:#0f172a;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-weight:700;');
     [['1','1x'],['2','2x เร็ว'],['5','5x แรง'],['10','10x สายฟ้า']].forEach(([v,lbl]) => {
@@ -2323,8 +2391,10 @@
       return;
     }
     if (step.type === 'refresh_page') {
-      if (statEl) statEl.textContent = '🔄 รีเฟรชหน้าเว็บ...';
-      await inPlaceFetchNavigate(location.href);
+      if (statEl) statEl.textContent = '🔄 รีเฟรชหน้าเว็บและเด้งแผงทำงานต่อปกติ...';
+      persistState();
+      await inPlaceFetchNavigate(location.href, true);
+      lockHudOnScreen();
       await new Promise(r => setTimeout(r, 500));
       return;
     }
@@ -2525,8 +2595,26 @@ if __name__ == "__main__":
       if (sections[1]) sections[1].id = 'queue-builder-section';
       if (sections[2]) sections[2].id = 'target-pad-section';
 
-      // Start clean with 0 pre-made steps ("ไม่ทำขั้นตอนไว้") so user builds their own steps from scratch
-      state.queue = [];
+      // Restore user's own saved queue across refresh (never pre-fill fake steps if empty), and if it was running before refresh, pop up HUD & continue automatically!
+      try {
+        const rawSaved = localStorage.getItem('ailab_unlimited_queue_v3');
+        if (rawSaved) {
+          const parsedSaved = JSON.parse(rawSaved);
+          if (Array.isArray(parsedSaved.queue) && parsedSaved.queue.length > 0) {
+            state.queue = parsedSaved.queue;
+            state.currentIndex = (typeof parsedSaved.currentIndex === 'number') ? (parsedSaved.currentIndex % state.queue.length) : 0;
+            state.cycles = parsedSaved.cycles || 0;
+            if (parsedSaved.running) {
+              setTimeout(() => {
+                const hud = document.getElementById('embedded-hud-panel');
+                const hudBody = document.getElementById('hud-body');
+                if (hud && hudBody) { hud.classList.remove('hidden'); hudBody.classList.remove('hidden'); }
+                startQueueLoop();
+              }, 250);
+            }
+          }
+        }
+      } catch (e) {}
       renderQueueCards();
       syncDynamicAutoMouseCode();
 
@@ -3726,7 +3814,18 @@ if __name__ == "__main__":
         state.currentIndex = 0;
         renderQueueCards();
         drawPrecisionSimulator();
-        document.getElementById('target-last-action').textContent = '🔄 รีเฟรชสถานะและตั้งคิวกลับไปเริ่มที่ขั้นตอน #1 พร้อมรันแล้ว';
+        const hud = document.getElementById('embedded-hud-panel');
+        const hudBody = document.getElementById('hud-body');
+        if (hud && hudBody) {
+          hud.classList.remove('hidden');
+          hudBody.classList.remove('hidden');
+          hud.style.transform = 'scale(1.06)';
+          setTimeout(() => { hud.style.transform = 'scale(1)'; }, 200);
+        }
+        if (state.queue.length > 0 && !state.running) {
+          startQueueLoop();
+        }
+        document.getElementById('target-last-action').textContent = '🔄 Refresh สำเร็จ! แผง AutoMouse เด้งขึ้นมาทำงานต่อตามปกติแล้ว';
       });
       document.getElementById('hud-btn-add-back-step')?.addEventListener('click', () => {
         state.queue.push({
