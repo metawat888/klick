@@ -1270,27 +1270,27 @@
         triggerClickVisual(targetX, targetY, `⌨️ พิมพ์: "${resolvedText}"`);
         state.clicks++;
         document.getElementById('stat-clicks').textContent = state.clicks;
-        if (targetEl) {
-          deepClickElement(targetEl, targetX, targetY);
-          const inputTarget = ('value' in targetEl) ? targetEl : (targetEl.querySelector('input, textarea') || document.getElementById('test-box-msg'));
-          if (inputTarget && ('value' in inputTarget) && !isBotInternalElement(inputTarget)) {
-            lastInteractedElement = inputTarget;
-            inputTarget.focus();
-            setNativeValue(inputTarget, '');
-            if (isHyper) {
-              setNativeValue(inputTarget, resolvedText);
-            } else {
-              const charWait = Math.max(6, Math.round(22 / speed));
-              let cur = '';
-              for (let i = 0; i < resolvedText.length; i++) {
-                cur += resolvedText[i];
-                setNativeValue(inputTarget, cur);
-                await new Promise(r => setTimeout(r, charWait));
-              }
+        const fallbackBox = document.getElementById('test-box-msg');
+        let inputTarget = (targetEl && ('value' in targetEl) && targetEl.tagName !== 'BUTTON')
+          ? targetEl
+          : ((targetEl && targetEl.querySelector && targetEl.querySelector('input, textarea')) || fallbackBox);
+        if (inputTarget && ('value' in inputTarget)) {
+          lastInteractedElement = inputTarget;
+          inputTarget.focus();
+          setNativeValue(inputTarget, '');
+          if (isHyper) {
+            setNativeValue(inputTarget, resolvedText);
+          } else {
+            const charWait = Math.max(6, Math.round(22 / speed));
+            let cur = '';
+            for (let i = 0; i < resolvedText.length; i++) {
+              cur += resolvedText[i];
+              setNativeValue(inputTarget, cur);
+              await new Promise(r => setTimeout(r, charWait));
             }
           }
         }
-        document.getElementById('target-last-action').textContent = `📡 ส่งคำสั่งพิมพ์ "${resolvedText}" ที่พิกัด (${targetX}, ${targetY}) ไปยังเว็บ [${configuredUrl}] แล้ว`;
+        document.getElementById('target-last-action').textContent = `⌨️ พิมพ์ข้อความ "${resolvedText}" ลงในช่องเป้าหมายสำเร็จ!`;
       }
     }
 
@@ -1527,7 +1527,7 @@
       });
     }
 
-    // IRONCLAD NEVER-DISAPPEAR AUTOMOUSE ENGINE (When clicking or pressing Enter on any step, intercepts hard page unloads & swaps/routes in-place so the AutoMouse box NEVER disappears, hides, or escapes!)
+    // OVERHAULED ROCK-SOLID AUTOMOUSE ENGINE (Fixes all typing & input bugs: 1. Never steals focus while editing HUD inputs; 2. Universal Input/Textarea/ProseMirror/ContentEditable finder & typer; 3. Auto-detects typing whenever text is entered; 4. Single-step ▶ Test button on every row!)
     function generateStandaloneQueueScript() {
       const uid = document.getElementById('quick-id')?.value.trim() || '';
       const pwd = document.getElementById('quick-pass')?.value.trim() || '';
@@ -1559,7 +1559,7 @@
   }
   window.__AILAB_SPY_ACTIVE = true;
 
-  const STORAGE_KEY = '__AILAB_SPY_BOT_STATE_V12__';
+  const STORAGE_KEY = '__AILAB_SPY_BOT_STATE_V14__';
   const DEFAULT_QUEUE = ${serializedQueue};
   const DEFAULT_VARS = { uid: ${JSON.stringify(uid)}, pwd: ${JSON.stringify(pwd)}, msg: ${JSON.stringify(msg)}, list: ${JSON.stringify(lines)}, lockRatio: ${lockAspect}, speed: ${speedVal} };
 
@@ -1574,15 +1574,14 @@
   let commandedByUser = isRecentCommandedRun;
   let idx = (saved && typeof saved.idx === 'number') ? (saved.idx % Math.max(1, QUEUE.length)) : 0;
   let cycles = (saved && typeof saved.cycles === 'number') ? saved.cycles : 0;
-  let minimized = false;
   let hudPos = (saved && saved.hudPos) ? saved.hudPos : null;
   let masterShellActive = false;
   let masterIframe = null;
-  let lastEl = null, loopActive = false, lastUrl = location.href;
+  let lastEl = null, lastInputEl = null, loopActive = false, lastUrl = location.href;
 
   function persistState() {
     try {
-      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, commandedByUser, idx, cycles, minimized: false, hudPos, ts: Date.now() });
+      const payload = JSON.stringify({ queue: QUEUE, vars: VARS, running, commandedByUser, idx, cycles, hudPos, ts: Date.now() });
       sessionStorage.setItem(STORAGE_KEY, payload);
       localStorage.setItem(STORAGE_KEY, payload);
     } catch(e){}
@@ -1597,15 +1596,7 @@
     return window;
   }
 
-  // =========================================================================
-  // IRONCLAD ANTI-ESCAPE / ANTI-UNLOAD NAVIGATION ENGINE
-  // Why did the AutoMouse box disappear before when clicking a link or pressing Enter?
-  // Because calling native form.submit(), clicking a search submit button, or clicking an a[href] caused the browser to perform a FULL DOCUMENT UNLOAD (wiping all injected JS & DOM elements)!
-  // Solution:
-  // 1. On YouTube: NEVER allow form.submit() or hard a[href] navigation! Always intercept and dispatch yt-navigate on ytd-app + history.pushState so YouTube transitions to the search results or video player 100% inside the same JS context while the AutoMouse box stays rock-solid on screen!
-  // 2. On all other websites: Automatically engage the Full-Screen Master Shell Iframe (activateMasterShellLock) OR In-Place Fetch-Swap (inPlaceFetchNavigate) so clicking links or pressing Enter loads the next page without ever unloading the top-level AutoMouse box!
-  // =========================================================================
-
+  // --- IN-PLACE NAVIGATION (Keeps AutoMouse box on screen across clicks & Enter) ---
   function inPlaceYouTubeNavigate(targetUrl) {
     try {
       const u = new URL(targetUrl, location.origin);
@@ -1642,9 +1633,7 @@
     try {
       const u = new URL(targetUrl, location.href);
       if (u.origin !== location.origin) return false;
-      if (location.hostname.includes('youtube.com')) {
-        return inPlaceYouTubeNavigate(u.href);
-      }
+      if (location.hostname.includes('youtube.com')) return inPlaceYouTubeNavigate(u.href);
       if (masterShellActive && masterIframe) {
         masterIframe.src = u.href;
         lockHudOnScreen();
@@ -1663,113 +1652,160 @@
       });
       lockHudOnScreen();
       return true;
-    } catch (e) {
-      return false;
-    }
+    } catch (e) { return false; }
   }
 
-  // Global Capture-Phase Interceptors so neither manual clicks, bot clicks, nor Enter submits can EVER cause a hard page unload!
-  window.addEventListener('submit', (ev) => {
-    const form = ev.target;
-    if (!form) return;
-    form.setAttribute('target', '_self');
-    if (location.hostname.includes('youtube.com')) {
-      const inp = form.querySelector('input[name="search_query"], input#search, .ytSearchboxComponentInput');
-      if (inp && inp.value.trim()) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        ev.stopImmediatePropagation();
-        inPlaceYouTubeNavigate('https://www.youtube.com/results?search_query=' + encodeURIComponent(inp.value.trim()));
-        if (statEl) statEl.textContent = '🔒 ค้นหา "' + inp.value.trim() + '" สำเร็จ (ตรึงกล่อง AutoMouse ไม่ให้หาย!)';
-      }
-      return;
+  // UNIVERSAL BULLETPROOF TYPING ENGINE (universalTypeIntoPage)
+  // Ref: ailab-master-shell-iframe
+  function isEditableNode(n) {
+    if (!n || (hud && hud.contains(n))) return false;
+    const tag = (n.tagName || '').toUpperCase();
+    if (tag === 'TEXTAREA') return !n.disabled && !n.readOnly;
+    if (tag === 'INPUT') {
+      const t = (n.type || 'text').toLowerCase();
+      return !['button', 'submit', 'reset', 'checkbox', 'radio', 'file', 'image', 'hidden'].includes(t) && !n.disabled && !n.readOnly;
     }
-    if (!masterShellActive && form.action) {
+    if (n.isContentEditable || (n.getAttribute && n.getAttribute('contenteditable') === 'true') || (n.getAttribute && n.getAttribute('role') === 'textbox')) {
+      return true;
+    }
+    return false;
+  }
+
+  function findEditableTarget(tDoc, x, y, selectorHint) {
+    // 1. If selectorHint matches an editable element or container of an editable element
+    if (selectorHint) {
+      const cand = findSmart(selectorHint);
+      if (cand) {
+        if (isEditableNode(cand)) return cand;
+        const inner = cand.querySelector && cand.querySelector('input:not([type="hidden"]), textarea, [contenteditable="true"], [role="textbox"]');
+        if (inner && isEditableNode(inner)) return inner;
+      }
+    }
+
+    // 2. Scan all elements at (x, y)
+    const stack = (typeof tDoc.elementsFromPoint === 'function') ? tDoc.elementsFromPoint(x, y) : [tDoc.elementFromPoint(x, y)];
+    for (const node of stack) {
+      if (!node || (hud && hud.contains(node)) || node.id === 'ailab-q-cursor' || node.id === 'ailab-hover-box') continue;
+      if (isEditableNode(node)) return node;
+      if (node.closest) {
+        const anc = node.closest('input, textarea, [contenteditable="true"], [role="textbox"]');
+        if (anc && isEditableNode(anc)) return anc;
+      }
+      if (node.querySelector) {
+        const desc = node.querySelector('input:not([type="hidden"]), textarea, [contenteditable="true"], [role="textbox"]');
+        if (desc && isEditableNode(desc)) return desc;
+      }
+      if (node.tagName === 'LABEL' && node.htmlFor) {
+        const byFor = tDoc.getElementById(node.htmlFor);
+        if (byFor && isEditableNode(byFor)) return byFor;
+      }
+      // Also check parent container (e.g. clicking inside ChatGPT prompt pill or YouTube search box wrapper)
+      let p = node.parentElement;
+      for (let depth = 0; depth < 4 && p; depth++, p = p.parentElement) {
+        if (hud && hud.contains(p)) break;
+        const nearInp = p.querySelector && p.querySelector('#prompt-textarea, input#search, input[name="search_query"], textarea, input:not([type="hidden"]):not([type="submit"]):not([type="button"]), [contenteditable="true"]');
+        if (nearInp && isEditableNode(nearInp)) return nearInp;
+      }
+    }
+
+    // 3. Fallback: If lastInputEl is still visible, or find primary visible search/chat box on page
+    if (lastInputEl && isVisible(lastInputEl) && isEditableNode(lastInputEl)) return lastInputEl;
+    const primary = tDoc.querySelector('#prompt-textarea, input#search, input[name="search_query"], textarea, [contenteditable="true"], input[type="search"], input[type="text"], input[type="email"], input[type="password"]');
+    if (primary && isEditableNode(primary)) return primary;
+    return null;
+  }
+
+  async function universalTypeIntoPage(targetNode, textToType, tDoc, tWin) {
+    const str = String(textToType || '');
+    if (!targetNode || !str) return false;
+
+    lastEl = targetNode;
+    lastInputEl = targetNode;
+
+    // Blur any HUD input first so focus transfers cleanly to the webpage input!
+    if (document.activeElement && hud && hud.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+
+    targetNode.focus();
+    const r = targetNode.getBoundingClientRect();
+    const cx = Math.round(r.left + r.width / 2);
+    const cy = Math.round(r.top + r.height / 2);
+    targetNode.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: cx, clientY: cy }));
+    targetNode.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: cx, clientY: cy }));
+    targetNode.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: cx, clientY: cy }));
+    targetNode.focus();
+
+    // Case A: ContentEditable / ProseMirror / Lexical (e.g. ChatGPT #prompt-textarea)
+    const ce = (targetNode.isContentEditable || (targetNode.getAttribute && targetNode.getAttribute('contenteditable') === 'true'))
+      ? (targetNode.closest('[contenteditable="true"]') || targetNode)
+      : (targetNode.querySelector && targetNode.querySelector('[contenteditable="true"]'));
+
+    if (ce) {
+      lastEl = ce;
+      lastInputEl = ce;
+      ce.focus();
       try {
-        const dest = new URL(form.action, location.href);
-        if (dest.origin === location.origin && (!form.method || form.method.toLowerCase() === 'get')) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          const qs = new URLSearchParams(new FormData(form)).toString();
-          inPlaceFetchNavigate(dest.origin + dest.pathname + (qs ? '?' + qs : ''));
+        const sel = tWin.getSelection();
+        const range = tDoc.createRange();
+        range.selectNodeContents(ce);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ce.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertReplacementText', data: str }));
+        const execOk = tDoc.execCommand && tDoc.execCommand('insertText', false, str);
+        if (!execOk || !(ce.innerText || '').trim()) {
+          const pTag = ce.querySelector('p') || ce;
+          pTag.textContent = str;
         }
-      } catch(e){}
+      } catch (e) {
+        const pTag = ce.querySelector('p') || ce;
+        pTag.textContent = str;
+      }
+      ce.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: str }));
+      ce.dispatchEvent(new Event('change', { bubbles: true }));
+      ce.dispatchEvent(new KeyboardEvent('keyup', { key: str.slice(-1) || 'a', bubbles: true }));
+      return true;
     }
-  }, true);
 
-  window.addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Enter') return;
-    if (hud && hud.contains(ev.target)) return;
-    if (location.hostname.includes('youtube.com')) {
-      const t = ev.target;
-      if (t && (t.id === 'search' || t.name === 'search_query' || (t.className && String(t.className).includes('Searchbox')))) {
-        const q = (t.value || '').trim();
-        if (q) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          ev.stopImmediatePropagation();
-          inPlaceYouTubeNavigate('https://www.youtube.com/results?search_query=' + encodeURIComponent(q));
-          if (statEl) statEl.textContent = '🔒 กด Enter ค้นหา "' + q + '" แล้ว (กล่อง AutoMouse อยู่ครบไม่หาย!)';
-        }
+    // Case B: Standard <input> or <textarea> (React / Vue / Angular / Vanilla)
+    const setValueUsingNativeSetter = (el, val) => {
+      const desc = Object.getOwnPropertyDescriptor(el, 'value');
+      const proto = Object.getPrototypeOf(el);
+      const protoDesc = proto ? Object.getOwnPropertyDescriptor(proto, 'value') : null;
+      if (protoDesc && protoDesc.set && desc && desc.set !== protoDesc.set) {
+        protoDesc.set.call(el, val);
+      } else if (protoDesc && protoDesc.set) {
+        protoDesc.set.call(el, val);
+      } else if (desc && desc.set) {
+        desc.set.call(el, val);
+      } else {
+        el.value = val;
+      }
+      if (el._valueTracker && typeof el._valueTracker.setValue === 'function') {
+        el._valueTracker.setValue('');
+      }
+      el.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: val }));
+      el.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: val }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    if (VARS.speed >= 5) {
+      setValueUsingNativeSetter(targetNode, str);
+    } else {
+      setValueUsingNativeSetter(targetNode, '');
+      const delayMs = Math.max(8, Math.round(24 / VARS.speed));
+      let curStr = '';
+      for (let i = 0; i < str.length; i++) {
+        curStr += str[i];
+        setValueUsingNativeSetter(targetNode, curStr);
+        targetNode.dispatchEvent(new KeyboardEvent('keydown', { key: str[i], bubbles: true }));
+        targetNode.dispatchEvent(new KeyboardEvent('keyup', { key: str[i], bubbles: true }));
+        await new Promise(r => setTimeout(r, delayMs));
       }
     }
-  }, true);
+    return true;
+  }
 
-  window.addEventListener('click', (ev) => {
-    if (hud && hud.contains(ev.target)) return;
-    const path = (typeof ev.composedPath === 'function') ? ev.composedPath() : [ev.target];
-
-    // Check if user or bot clicked the YouTube Search magnifying glass button
-    if (location.hostname.includes('youtube.com')) {
-      for (const n of path) {
-        if (n && n.tagName === 'BUTTON' && (n.id === 'search-icon-legacy' || (n.className && String(n.className).includes('SearchButton')))) {
-          const inp = document.querySelector('input#search, input[name="search_query"], .ytSearchboxComponentInput');
-          if (inp && inp.value.trim()) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            ev.stopImmediatePropagation();
-            inPlaceYouTubeNavigate('https://www.youtube.com/results?search_query=' + encodeURIComponent(inp.value.trim()));
-            if (statEl) statEl.textContent = '🔒 คลิกค้นหา "' + inp.value.trim() + '" แล้ว (กล่อง AutoMouse ไม่หาย!)';
-            return;
-          }
-        }
-      }
-    }
-
-    let link = null;
-    for (const n of path) {
-      if (n && n.tagName === 'A' && n.href) { link = n; break; }
-    }
-    if (!link && ev.target && ev.target.closest) link = ev.target.closest('a[href]');
-    if (!link || !link.href) return;
-    const rawHref = link.getAttribute('href') || '';
-    if (rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
-    link.removeAttribute('target');
-
-    if (location.hostname.includes('youtube.com')) {
-      const u = new URL(link.href, location.origin);
-      if (u.origin === location.origin && (u.pathname === '/watch' || u.pathname === '/results' || u.pathname.startsWith('/@') || u.pathname.startsWith('/channel'))) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        inPlaceYouTubeNavigate(u.href);
-        if (statEl) statEl.textContent = '🔒 เปลี่ยนเข้าหน้า ' + u.pathname + ' (ตรึงกล่อง AutoMouse อยู่กับที่ 100%!)';
-      }
-      return;
-    }
-
-    if (!masterShellActive) {
-      try {
-        const u = new URL(link.href, location.href);
-        if (u.origin === location.origin) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          inPlaceFetchNavigate(u.href);
-        }
-      } catch(e){}
-    }
-  }, true);
-
-  // Force-Trigger React / Modern Web Button Click (Works on ChatGPT Blue Send Button, SVG buttons, and React Fiber handlers!)
   function forceTriggerButton(btn, x, y, tWin) {
     if (!btn) return false;
     if (btn.disabled) btn.disabled = false;
@@ -1786,7 +1822,6 @@
     btn.dispatchEvent(new MouseEvent('mouseup', evOpts));
     btn.dispatchEvent(new MouseEvent('click', evOpts));
     if (typeof btn.click === 'function') btn.click();
-    // Also check React internal onClick prop if attached to fiber
     try {
       const reactKey = Object.keys(btn).find(k => k.startsWith('__reactProps$') || k.startsWith('__reactEventHandlers$'));
       if (reactKey && btn[reactKey] && typeof btn[reactKey].onClick === 'function') {
@@ -1796,9 +1831,8 @@
     return true;
   }
 
-  // Bot Enter Execution (Works on ChatGPT #prompt-textarea, YouTube Search, and all forms without unloading AutoMouse!)
   function spyExecuteEnter(targetEl, tDoc) {
-    const el = targetEl || lastEl || tDoc.querySelector('#prompt-textarea, [contenteditable="true"], textarea, input[type="text"], input[type="search"]') || tDoc.activeElement || tDoc.body;
+    const el = lastInputEl || targetEl || lastEl || tDoc.querySelector('#prompt-textarea, [contenteditable="true"], textarea, input[type="text"], input[type="search"]') || tDoc.activeElement || tDoc.body;
     if (!el) return;
     el.focus();
 
@@ -1807,21 +1841,19 @@
       const qVal = ((el && el.value) || (ytSearchInput && ytSearchInput.value) || '').trim();
       if (qVal) {
         inPlaceYouTubeNavigate('https://www.youtube.com/results?search_query=' + encodeURIComponent(qVal));
-        if (statEl) statEl.textContent = '🔒 กด Enter ค้นหา "' + qVal + '" สำเร็จ (กล่อง AutoMouse ไม่หาย!)';
+        if (statEl) statEl.textContent = '🔒 กด Enter ค้นหา "' + qVal + '" สำเร็จ!';
         return;
       }
     }
 
-    // 1. Look for dedicated Send / Submit button first (e.g. ChatGPT blue up-arrow button [data-testid="send-button"])
     const sendBtn = tDoc.querySelector('[data-testid="send-button"], [data-testid*="send-button" i], button[aria-label*="Send" i], button[aria-label*="ส่ง" i], form button[type="submit"]');
     if (sendBtn && (!hud || !hud.contains(sendBtn))) {
       forceTriggerButton(sendBtn, 0, 0, getTargetWin());
-      if (statEl) statEl.textContent = '🔒 คลิกปุ่มส่งข้อความ (ปุ่มสีฟ้า) สำเร็จ!';
+      if (statEl) statEl.textContent = '🔒 กดส่งข้อมูล (Enter / ปุ่มส่ง) สำเร็จ!';
       lockHudOnScreen();
       return;
     }
 
-    // 2. Dispatch full Enter keyboard sequence
     const keyOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, charCode: 13, bubbles: true, cancelable: true, composed: true };
     el.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
     el.dispatchEvent(new KeyboardEvent('keypress', keyOpts));
@@ -1836,7 +1868,20 @@
     lockHudOnScreen();
   }
 
-  // Bot Click Execution (Pierces SVG icons/paths to click the real <button> and handles links seamlessly!)
+  function resolveDeepTargetAtPoint(tDoc, x, y) {
+    const stack = (typeof tDoc.elementsFromPoint === 'function') ? tDoc.elementsFromPoint(x, y) : [tDoc.elementFromPoint(x, y)];
+    for (const node of stack) {
+      if (!node || (hud && hud.contains(node)) || node.id === 'ailab-hover-box' || node.id === 'ailab-q-cursor') continue;
+      const btnOrLink = node.closest && node.closest('button, a[href], [role="button"], [data-testid*="send" i], [data-testid*="submit" i], [contenteditable="true"], input, textarea, select');
+      if (btnOrLink && (!hud || !hud.contains(btnOrLink))) return btnOrLink;
+    }
+    for (const node of stack) {
+      if (!node || (hud && hud.contains(node)) || node.id === 'ailab-hover-box' || node.id === 'ailab-q-cursor') continue;
+      return node;
+    }
+    return null;
+  }
+
   function spyExecuteClick(rawEl, x, y, tDoc, tWin) {
     let el = resolveDeepTargetAtPoint(tDoc, x, y) || rawEl;
     if (!el) return;
@@ -1856,50 +1901,10 @@
         inPlaceYouTubeNavigate(linkAnc.href);
         return;
       }
-      if (!masterShellActive) {
-        inPlaceFetchNavigate(linkAnc.href);
-        return;
-      }
     }
 
     forceTriggerButton(el, x, y, tWin);
     lockHudOnScreen();
-  }
-
-  function activateMasterShellLock() {
-    if (masterShellActive) return;
-    if (location.hostname.includes('youtube.com')) return;
-    try {
-      const currentUrl = location.href;
-      masterShellActive = true;
-      Array.from(document.body.children).forEach(ch => {
-        if (ch.id !== 'ailab-q-hud' && ch.id !== 'ailab-q-cursor' && ch.id !== 'ailab-hover-box') {
-          ch.style.display = 'none';
-        }
-      });
-      document.body.style.margin = '0';
-      document.body.style.padding = '0';
-      document.body.style.overflow = 'hidden';
-
-      masterIframe = document.createElement('iframe');
-      masterIframe.id = 'ailab-master-shell-iframe';
-      masterIframe.src = currentUrl;
-      masterIframe.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;border:none;z-index:2147483640;background:#fff;';
-      document.body.appendChild(masterIframe);
-
-      masterIframe.addEventListener('load', () => {
-        try {
-          const innerWin = masterIframe.contentWindow;
-          const innerDoc = masterIframe.contentDocument;
-          if (innerWin && innerDoc) {
-            history.replaceState({}, innerDoc.title || document.title, innerWin.location.href);
-            if (innerDoc.title) document.title = innerDoc.title;
-            innerDoc.querySelectorAll('a[target="_blank"]').forEach(a => a.setAttribute('target', '_self'));
-            lockHudOnScreen();
-          }
-        } catch (err) {}
-      });
-    } catch (e) {}
   }
 
   function mk(tag, css, txt) {
@@ -1914,17 +1919,15 @@
   function lockHudOnScreen() {
     buildOrRestoreUI();
     const fsHost = document.fullscreenElement || document.documentElement;
+    // IMPORTANT: Never call appendChild(hud) if hud is ALREADY inside fsHost! Calling appendChild on an attached node blurs the active input box inside the HUD!
     if (hud) {
       if (hud.parentElement !== fsHost) fsHost.appendChild(hud);
-      hud.style.setProperty('display', 'block', 'important');
-      hud.style.setProperty('visibility', 'visible', 'important');
-      hud.style.setProperty('opacity', '1', 'important');
-      hud.style.setProperty('z-index', '2147483646', 'important');
+      if (hud.style.display !== 'block') hud.style.setProperty('display', 'block', 'important');
+      if (hud.style.visibility !== 'visible') hud.style.setProperty('visibility', 'visible', 'important');
+      if (hud.style.opacity !== '1') hud.style.setProperty('opacity', '1', 'important');
     }
     if (cur) {
       if (cur.parentElement !== fsHost) fsHost.appendChild(cur);
-      cur.style.setProperty('display', 'block', 'important');
-      cur.style.setProperty('z-index', '2147483647', 'important');
     }
   }
 
@@ -1945,7 +1948,7 @@
     hud = document.getElementById('ailab-q-hud');
     if (hud) return;
 
-    hud = mk('div', 'position:fixed !important;bottom:18px;right:18px;z-index:2147483646 !important;background:rgba(5,9,20,0.98);color:#ecfdf5;border:2.5px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 0 35px rgba(16,185,129,0.45),0 22px 55px rgba(0,0,0,0.95);width:395px;max-width:95vw;display:block !important;visibility:visible !important;opacity:1 !important;');
+    hud = mk('div', 'position:fixed !important;bottom:18px;right:18px;z-index:2147483646 !important;background:rgba(5,9,20,0.98);color:#ecfdf5;border:2.5px solid #10b981;border-radius:16px;padding:12px;font-family:sans-serif;font-size:12px;box-shadow:0 0 35px rgba(16,185,129,0.45),0 22px 55px rgba(0,0,0,0.95);width:405px;max-width:95vw;display:block !important;visibility:visible !important;opacity:1 !important;');
     hud.id = 'ailab-q-hud';
     if (hudPos && hudPos.left && hudPos.top) {
       hud.style.right = 'auto'; hud.style.bottom = 'auto';
@@ -1959,7 +1962,7 @@
     bNavBack.onclick = () => {
       try { getTargetWin().history.back(); } catch(e){ history.back(); }
       lockHudOnScreen();
-      if (statEl) statEl.textContent = '⬅️ ย้อนกลับแล้ว (กล่อง AutoMouse อยู่ครบไม่หาย!)';
+      if (statEl) statEl.textContent = '⬅️ ย้อนกลับแล้ว (กล่อง AutoMouse อยู่ครบ!)';
     };
     const bNavRefresh = mk('button', 'background:#059669;color:#fff;border:none;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:800;', '🔄 Refresh');
     bNavRefresh.onclick = () => {
@@ -1978,10 +1981,10 @@
     header.append(title, hdrBtns);
 
     bodyWrap = mk('div', 'display:block;');
-    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:5px;color:#34d399;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #10b981;', '🔒 ตรึงกล่อง AutoMouse ถาวรแล้ว (คลิกหรือกด Enter กล่องจะไม่หาย 100%)');
-    spyTelemetryEl = mk('div', 'font-family:monospace;font-size:10px;margin-bottom:8px;color:#fbbf24;background:#020617;padding:4px 8px;border-radius:6px;border:1px solid #1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', '🎯 SPY LOCK: เลื่อนเมาส์เพื่อสแกนปุ่มเป้าหมาย...');
+    statEl = mk('div', 'font-family:monospace;font-size:11px;margin-bottom:5px;color:#34d399;background:#0f172a;padding:5px 8px;border-radius:8px;border:1px solid #10b981;', 'พร้อมทำงาน: พิมพ์ข้อความในแต่ละขั้น หรือกด ▶ ทดสอบทีละขั้นได้ทันที');
+    spyTelemetryEl = mk('div', 'font-family:monospace;font-size:10px;margin-bottom:8px;color:#fbbf24;background:#020617;padding:4px 8px;border-radius:6px;border:1px solid #1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', '🎯 SPY LOCK: เลื่อนเมาส์เพื่อสแกนปุ่ม/ช่องพิมพ์...');
 
-    listBox = mk('div', 'max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
+    listBox = mk('div', 'max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;padding-right:2px;');
 
     const pickRow = mk('div', 'display:flex;gap:5px;margin-bottom:6px;');
     const bPick = mk('button', 'flex:1;background:#f59e0b;color:#020617;border:none;padding:6px 8px;border-radius:8px;font-weight:800;cursor:pointer;font-size:11px;', '🎯 จิ้มล็อกเป้าแม่นยำ');
@@ -2018,20 +2021,6 @@
     window.addEventListener('mouseup', () => { if (dragging) { dragging = false; persistState(); } });
 
     let pickingMode = false, hoverBox = null;
-    function resolveDeepTargetAtPoint(tDoc, x, y) {
-      const stack = (typeof tDoc.elementsFromPoint === 'function') ? tDoc.elementsFromPoint(x, y) : [tDoc.elementFromPoint(x, y)];
-      for (const node of stack) {
-        if (!node || (hud && hud.contains(node)) || node.id === 'ailab-hover-box' || node.id === 'ailab-q-cursor') continue;
-        const btnOrLink = node.closest && node.closest('button, a[href], [role="button"], [data-testid*="send" i], [data-testid*="submit" i], [contenteditable="true"], input, textarea, select');
-        if (btnOrLink && (!hud || !hud.contains(btnOrLink))) return btnOrLink;
-      }
-      for (const node of stack) {
-        if (!node || (hud && hud.contains(node)) || node.id === 'ailab-hover-box' || node.id === 'ailab-q-cursor') continue;
-        return node;
-      }
-      return null;
-    }
-
     function getSpySelector(el) {
       if (!el) return '';
       if (el.id) return '#' + CSS.escape(el.id);
@@ -2049,7 +2038,7 @@
     }
     bPick.onclick = () => {
       pickingMode = !pickingMode;
-      bPick.textContent = pickingMode ? '🎯 คลิกเป้าหมายบนหน้าเว็บ...' : '🎯 จิ้มล็อกเป้าแม่นยำ';
+      bPick.textContent = pickingMode ? '🎯 คลิกปุ่มหรือช่องพิมพ์บนหน้าเว็บ...' : '🎯 จิ้มล็อกเป้าแม่นยำ';
       getTargetDoc().body.style.cursor = pickingMode ? 'crosshair' : '';
       if (!hoverBox) {
         hoverBox = mk('div', 'position:fixed;pointer-events:none;border:2.5px solid #f59e0b;background:rgba(245,158,11,0.18);z-index:2147483644;display:none;border-radius:6px;');
@@ -2074,7 +2063,6 @@
       hoverBox.style.left = r.left + 'px'; hoverBox.style.top = r.top + 'px';
       hoverBox.style.width = r.width + 'px'; hoverBox.style.height = r.height + 'px';
     }
-    // Intercept pointerdown AND mousedown AND click in capture phase so picking a blue SVG button or disabled button ALWAYS locks the target cleanly!
     function onSpyPickTrigger(ev) {
       if (!pickingMode || (hud && hud.contains(ev.target))) return;
       ev.preventDefault();
@@ -2082,9 +2070,13 @@
       ev.stopImmediatePropagation();
       if (ev.type !== 'pointerdown' && ev.type !== 'mousedown') return;
       const tDoc = getTargetDoc();
-      const t = resolveDeepTargetAtPoint(tDoc, ev.clientX, ev.clientY) || ev.target;
+      // Check if there is an editable input at this coordinate first!
+      const editCandidate = findEditableTarget(tDoc, ev.clientX, ev.clientY, '');
+      const rawCandidate = resolveDeepTargetAtPoint(tDoc, ev.clientX, ev.clientY) || ev.target;
+      const isBtn = rawCandidate && (rawCandidate.tagName === 'BUTTON' || rawCandidate.tagName === 'A' || (rawCandidate.getAttribute && rawCandidate.getAttribute('role') === 'button'));
+      const t = (!isBtn && editCandidate) ? editCandidate : rawCandidate;
       const sel = getSpySelector(t);
-      const isInput = ('value' in t && t.tagName !== 'BUTTON') || t.isContentEditable || (t.getAttribute && t.getAttribute('contenteditable') === 'true');
+      const isInput = isEditableNode(t);
       let snapX = ev.clientX, snapY = ev.clientY;
       if (t && t.getBoundingClientRect) {
         const r = t.getBoundingClientRect();
@@ -2099,13 +2091,13 @@
         rx: Number((snapX / Math.max(1, window.innerWidth)).toFixed(4)),
         ry: Number((snapY / Math.max(1, window.innerHeight)).toFixed(4)),
         selector: sel,
-        value: isInput ? (VARS.msg || '') : (sel || 'คลิกปุ่ม'),
+        value: isInput ? (VARS.msg || '') : '',
         note: 'Spy Lock', runOnce: false
       });
       pickingMode = false; getTargetDoc().body.style.cursor = '';
       if (hoverBox) hoverBox.style.display = 'none';
       bPick.textContent = '🎯 จิ้มล็อกเป้าแม่นยำ';
-      statEl.textContent = '✓ ล็อกเป้าขั้น #' + QUEUE.length + ' ที่ (' + snapX + ',' + snapY + ') ' + (sel || '') + ' สำเร็จ!';
+      statEl.textContent = '✓ ล็อกเป้าขั้น #' + QUEUE.length + (isInput ? ' [ช่องพิมพ์ข้อความ]' : ' [ปุ่มคลิก]') + ' สำเร็จ! ใส่ข้อความในช่องสีเขียวได้เลย';
       persistState();
       renderHudSteps();
     }
@@ -2135,39 +2127,47 @@
         statEl.textContent = '⚠️ กรุณาจิ้มล็อกเป้าหมายหรือเพิ่มขั้นตอนก่อนสั่งการ';
         return;
       }
-      if (!location.hostname.includes('youtube.com') && !masterShellActive) {
-        activateMasterShellLock();
-      }
       running = true;
       commandedByUser = true;
       persistState();
       lockHudOnScreen();
-      if (!loopActive) setTimeout(loop, 120);
+      if (!loopActive) setTimeout(loop, 100);
     };
     bStop.onclick = () => {
       running = false;
       commandedByUser = false;
       persistState();
       lockHudOnScreen();
+      updateActiveStepHighlight();
       statEl.textContent = '⏹ หยุดตามคำสั่งแล้ว (ขั้น #' + (idx+1) + ' รอบ #' + cycles + ')';
-      renderHudSteps();
     };
 
     renderHudSteps();
   }
 
   const ACTION_TYPES = [
+    ['click_ type_xy', '⌨️ คลิก X,Y + พิมพ์ข้อความ'],
     ['click_xy', '🖱️ คลิกพิกัด X,Y'],
     ['dblclick_xy', '🖱️🖱️ 2xคลิก X,Y'],
-    ['click_ type_xy', '⌨️ คลิก X,Y+พิมพ์'],
     ['click_selector', '🔎 คลิกตามชื่อ/CSS'],
     ['type_selector', '📝 พิมพ์ตามชื่อ/CSS'],
-    ['press_enter', '↵ กด Enter'],
+    ['press_enter', '↵ กด Enter / ส่งข้อความ'],
     ['go_back', '⬅️ ย้อนกลับ (Back)'],
     ['refresh_page', '🔄 รีเฟรช (Refresh)'],
     ['scroll_page', '📜 เลื่อนจอ (px)'],
     ['wait', '⏱️ รอ (วินาที)']
   ];
+
+  // Lightweight highlight updater so running the loop NEVER destroys or blurs input boxes inside the HUD!
+  function updateActiveStepHighlight() {
+    if (!listBox) return;
+    Array.from(listBox.children).forEach((row, i) => {
+      if (!row || !row.style) return;
+      const isCur = running && idx === i;
+      row.style.background = isCur ? 'rgba(16,185,129,0.22)' : '#0f172a';
+      row.style.borderColor = isCur ? '#10b981' : '#334155';
+    });
+  }
 
   function renderHudSteps() {
     if (!listBox) return;
@@ -2188,34 +2188,46 @@
       typeSel.onchange = () => { step.type = typeSel.value; persistState(); renderHudSteps(); };
 
       const miniBtns = mk('div', 'display:flex;gap:2px;');
+      const bTestStep = mk('button', 'background:#065f46;color:#a7f3d0;border:1px solid #10b981;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:9px;font-weight:800;', '▶ ทดสอบ');
+      bTestStep.title = 'ทดสอบรันขั้นตอนนี้ทันที';
+      bTestStep.onclick = () => { executeOneStepInHud(step, i); };
       const bUp = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '▲');
       const bDn = mk('button', 'background:#1e293b;color:#cbd5e1;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '▼');
       const bDel = mk('button', 'background:#7f1d1d;color:#fecaca;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px;', '✕');
       bUp.onclick = () => { if (i > 0) { const t = QUEUE[i-1]; QUEUE[i-1] = QUEUE[i]; QUEUE[i] = t; persistState(); renderHudSteps(); } };
       bDn.onclick = () => { if (i < QUEUE.length - 1) { const t = QUEUE[i+1]; QUEUE[i+1] = QUEUE[i]; QUEUE[i] = t; persistState(); renderHudSteps(); } };
       bDel.onclick = () => { QUEUE.splice(i, 1); if (idx >= QUEUE.length) idx = 0; persistState(); renderHudSteps(); };
-      miniBtns.append(bUp, bDn, bDel);
+      miniBtns.append(bTestStep, bUp, bDn, bDel);
       topR.append(numBadge, typeSel, miniBtns);
 
       const midR = mk('div', 'display:flex;gap:4px;align-items:center;');
       if (step.type.includes('xy')) {
-        const ix = mk('input', 'width:52px;background:#020617;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-family:monospace;');
+        const ix = mk('input', 'width:52px;background:#020617;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:3px 4px;font-size:10px;font-family:monospace;');
         ix.type = 'number'; ix.value = step.x || 0;
         ix.oninput = () => { step.x = parseInt(ix.value, 10) || 0; step.rx = Number((step.x / Math.max(1, window.innerWidth)).toFixed(4)); persistState(); };
-        const iy = mk('input', 'width:52px;background:#020617;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:2px 4px;font-size:10px;font-family:monospace;');
+        const iy = mk('input', 'width:52px;background:#020617;color:#fbbf24;border:1px solid #334155;border-radius:6px;padding:3px 4px;font-size:10px;font-family:monospace;');
         iy.type = 'number'; iy.value = step.y || 0;
         iy.oninput = () => { step.y = parseInt(iy.value, 10) || 0; step.ry = Number((step.y / Math.max(1, window.innerHeight)).toFixed(4)); persistState(); };
         midR.append(ix, iy);
       } else if (step.type.includes('selector')) {
-        const isel = mk('input', 'width:110px;background:#020617;color:#38bdf8;border:1px solid #334155;border-radius:6px;padding:2px 5px;font-size:10px;font-family:monospace;');
+        const isel = mk('input', 'width:110px;background:#020617;color:#38bdf8;border:1px solid #334155;border-radius:6px;padding:3px 5px;font-size:10px;font-family:monospace;');
         isel.value = step.selector || ''; isel.placeholder = 'ชื่อปุ่ม / #id';
         isel.oninput = () => { step.selector = isel.value; persistState(); };
         midR.append(isel);
       }
 
-      const ival = mk('input', 'flex:1;min-width:60px;background:#020617;color:#6ee7b7;border:1px solid #334155;border-radius:6px;padding:2px 6px;font-size:10px;');
-      ival.value = step.value || ''; ival.placeholder = 'ข้อความที่พิมพ์ / ชื่อปุ่ม...';
-      ival.oninput = () => { step.value = ival.value; persistState(); };
+      const ival = mk('input', 'flex:1;min-width:60px;background:#020617;color:#6ee7b7;border:1px solid #10b981;border-radius:6px;padding:3px 6px;font-size:11px;font-weight:700;');
+      ival.value = step.value || '';
+      ival.placeholder = step.type.includes('type') ? 'พิมพ์ข้อความที่ต้องการให้บอทพิมพ์ที่นี่...' : 'ใส่ข้อความที่จะพิมพ์ (ถ้าใส่จะพิมพ์ให้อัตโนมัติ)...';
+      ival.oninput = () => {
+        step.value = ival.value;
+        // Smart Auto-Upgrade: If the user types text into a 'click_xy' step (and it's not the default label), automatically treat it as click + type!
+        if (step.type === 'click_xy' && ival.value.trim() && ival.value !== 'คลิกปุ่ม' && ival.value !== 'คลิกเป้าหมาย') {
+          step.type = 'click_ type_xy';
+          typeSel.value = 'click_ type_xy';
+        }
+        persistState();
+      };
       midR.append(ival);
 
       const botR = mk('label', 'display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8;cursor:pointer;');
@@ -2231,46 +2243,6 @@
   function resolveVal(raw) {
     const lv = VARS.list.length ? VARS.list[cycles % VARS.list.length] : '';
     return String(raw || '').replace(/\{\{USER_ID\}\}/g, VARS.uid).replace(/\{\{PASSWORD\}\}/g, VARS.pwd).replace(/\{\{MESSAGE\}\}/g, VARS.msg).replace(/\{\{CYCLE\}\}/g, String(cycles + 1)).replace(/\{\{LIST\}\}/g, lv);
-  }
-
-  function setVal(el, v) {
-    if (!el) return;
-    // Climb or descend to actual contenteditable / input if user clicked wrapper div or <p> inside ProseMirror (e.g. ChatGPT #prompt-textarea)
-    const ce = el.isContentEditable ? (el.closest('[contenteditable="true"]') || el) : (el.querySelector && el.querySelector('[contenteditable="true"]'));
-    if (ce) {
-      lastEl = ce;
-      ce.focus();
-      try {
-        const sel = window.getSelection();
-        const range = document.createRange();
-        range.selectNodeContents(ce);
-        sel.removeAllRanges();
-        sel.addRange(range);
-        ce.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: v }));
-        const ok = document.execCommand('insertText', false, v);
-        if (!ok || !(ce.innerText || '').trim()) {
-          const pNode = ce.querySelector('p') || ce;
-          pNode.textContent = v;
-        }
-      } catch (e) {
-        ce.textContent = v;
-      }
-      ce.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: v }));
-      ce.dispatchEvent(new Event('change', { bubbles: true }));
-      return;
-    }
-    const inp = ('value' in el && el.tagName !== 'BUTTON') ? el : (el.querySelector && el.querySelector('input, textarea'));
-    const target = inp || el;
-    lastEl = target;
-    target.focus();
-    const s = Object.getOwnPropertyDescriptor(target, 'value')?.set;
-    const p = Object.getPrototypeOf(target);
-    const ps = p ? Object.getOwnPropertyDescriptor(p, 'value')?.set : null;
-    if (s && ps && s !== ps) ps.call(target, v);
-    else if (s) s.call(target, v);
-    else target.value = v;
-    target.dispatchEvent(new InputEvent('input', { bubbles: true, data: v, inputType: 'insertText' }));
-    target.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   function isVisible(el) {
@@ -2332,16 +2304,89 @@
     return best;
   }
 
+  async function executeOneStepInHud(step, stepIdx) {
+    if (!step) return;
+    const tDoc = getTargetDoc();
+    const tWin = getTargetWin();
+    const stepDelay = VARS.speed >= 5 ? 45 : Math.max(100, Math.round(300 / VARS.speed));
+    const val = resolveVal(step.value);
+
+    if (step.type === 'wait') {
+      if (statEl) statEl.textContent = '⏱️ รอเวลา ' + (val || 1) + ' วินาที...';
+      await new Promise(r => setTimeout(r, (parseFloat(val) || 1) * 1000));
+      return;
+    }
+    if (step.type === 'go_back') {
+      if (statEl) statEl.textContent = '⬅️ ย้อนกลับหน้าก่อนหน้า...';
+      try { tWin.history.back(); } catch(e){ history.back(); }
+      await new Promise(r => setTimeout(r, 450));
+      return;
+    }
+    if (step.type === 'refresh_page') {
+      if (statEl) statEl.textContent = '🔄 รีเฟรชหน้าเว็บ...';
+      await inPlaceFetchNavigate(location.href);
+      await new Promise(r => setTimeout(r, 500));
+      return;
+    }
+    if (step.type === 'scroll_page') {
+      tWin.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
+      return;
+    }
+    if (step.type === 'press_enter') {
+      if (statEl) statEl.textContent = '↵ กดปุ่ม Enter / ส่งข้อความ...';
+      spyExecuteEnter(lastInputEl || lastEl, tDoc);
+      await new Promise(r => setTimeout(r, 380));
+      return;
+    }
+
+    let x = (VARS.lockRatio && typeof step.rx === 'number') ? Math.round(step.rx * tWin.innerWidth) : (step.x || 300);
+    let y = (VARS.lockRatio && typeof step.ry === 'number') ? Math.round(step.ry * tWin.innerHeight) : (step.y || 300);
+
+    // Check if this step should type text into an input box
+    const wantsToType = step.type.includes('type') || (val && val !== 'คลิกปุ่ม' && val !== 'คลิกเป้าหมาย' && val !== 'คลิกเมาส์');
+
+    if (wantsToType) {
+      const editTarget = findEditableTarget(tDoc, x, y, step.selector);
+      if (editTarget) {
+        const er = editTarget.getBoundingClientRect();
+        if (er.width > 0 && er.height > 0) {
+          x = Math.round(er.left + er.width / 2);
+          y = Math.round(er.top + er.height / 2);
+        }
+        if (cur) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
+        if (statEl) statEl.textContent = '⌨️ ขั้น #' + (stepIdx + 1) + ': กำลังพิมพ์ "' + val + '" ที่ (' + x + ',' + y + ')';
+        await new Promise(r => setTimeout(r, stepDelay));
+        await universalTypeIntoPage(editTarget, val, tDoc, tWin);
+        if (statEl) statEl.textContent = '✓ พิมพ์ "' + val + '" สำเร็จ!';
+        return;
+      }
+    }
+
+    // Standard Click / Double-Click execution
+    let el = findSmart(step.selector || (step.type.includes('selector') ? val : ''));
+    if (el) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0) { x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); }
+    } else {
+      el = resolveDeepTargetAtPoint(tDoc, x, y);
+    }
+    if (cur) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
+    if (statEl) statEl.textContent = '🖱️ ขั้น #' + (stepIdx + 1) + ': คลิกที่ (' + x + ',' + y + ') รอบ #' + cycles;
+    await new Promise(r => setTimeout(r, stepDelay));
+    if (el && (!hud || !hud.contains(el))) {
+      spyExecuteClick(el, x, y, tDoc, tWin);
+      if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
+    }
+  }
+
   async function loop() {
     if (loopActive) return;
     loopActive = true;
     while (running && QUEUE.length > 0) {
       lockHudOnScreen();
-      const stepDelay = VARS.speed >= 5 ? 45 : Math.max(100, Math.round(320 / VARS.speed));
-      renderHudSteps();
+      updateActiveStepHighlight();
+      const stepDelay = VARS.speed >= 5 ? 45 : Math.max(100, Math.round(300 / VARS.speed));
       try {
-        const tDoc = getTargetDoc();
-        const tWin = getTargetWin();
         const step = QUEUE[idx];
         const executedIdx = idx;
         idx++;
@@ -2349,58 +2394,10 @@
         persistState();
 
         if (!(step.runOnce && cycles > 0)) {
-          const val = resolveVal(step.value);
-          if (step.type === 'wait') {
-            await new Promise(r => setTimeout(r, (parseFloat(val) || 1) * 1000));
-          } else if (step.type === 'go_back') {
-            if (statEl) statEl.textContent = '⬅️ ย้อนกลับหน้าก่อนหน้า (กล่อง AutoMouse ไม่หาย!)';
-            try { tWin.history.back(); } catch(e){ history.back(); }
-            lockHudOnScreen();
-            await new Promise(r => setTimeout(r, 500));
-          } else if (step.type === 'refresh_page') {
-            if (statEl) statEl.textContent = '🔄 รีเฟรชหน้าเว็บ (กล่อง AutoMouse ไม่หาย!)';
-            await inPlaceFetchNavigate(location.href);
-            lockHudOnScreen();
-            await new Promise(r => setTimeout(r, 550));
-          } else if (step.type === 'scroll_page') {
-            tWin.scrollBy({ top: parseInt(val, 10) || 350, behavior: 'smooth' });
-          } else if (step.type === 'press_enter') {
-            if (statEl) statEl.textContent = '🔒 กดปุ่ม Enter ตามกล่อง (ตรึง AutoMouse อยู่กับที่!)';
-            spyExecuteEnter(lastEl, tDoc);
-            lockHudOnScreen();
-            await new Promise(r => setTimeout(r, 400));
-          } else {
-            let x = (VARS.lockRatio && typeof step.rx === 'number') ? Math.round(step.rx * tWin.innerWidth) : (step.x || 300);
-            let y = (VARS.lockRatio && typeof step.ry === 'number') ? Math.round(step.ry * tWin.innerHeight) : (step.y || 300);
-            let el = findSmart(step.selector || (step.type.includes('selector') ? step.value : ''));
-            if (el) {
-              const r = el.getBoundingClientRect();
-              if (r.width > 0) { x = Math.round(r.left + r.width/2); y = Math.round(r.top + r.height/2); }
-            } else {
-              el = tDoc.elementFromPoint(x, y);
-            }
-            if (cur) { cur.style.left = x + 'px'; cur.style.top = y + 'px'; }
-            if (statEl) statEl.textContent = '🔒 ขั้น #' + (executedIdx+1) + '/' + QUEUE.length + ' (' + x + ',' + y + ') รอบ #' + cycles;
-            await new Promise(r => setTimeout(r, stepDelay));
-            if (el && (!hud || !hud.contains(el))) {
-              spyExecuteClick(el, x, y, tDoc, tWin);
-              if (step.type === 'dblclick_xy') el.dispatchEvent(new MouseEvent('dblclick', { bubbles:true, clientX:x, clientY:y }));
-              if (step.type.includes('type')) {
-                const ceOrInp = (el.isContentEditable || (el.getAttribute && el.getAttribute('contenteditable') === 'true'))
-                  ? el
-                  : ((el.closest && el.closest('[contenteditable="true"]')) || (el.querySelector && el.querySelector('[contenteditable="true"], input, textarea')) || (('value' in el && el.tagName !== 'BUTTON') ? el : lastEl));
-                if (ceOrInp) {
-                  setVal(ceOrInp, val);
-                  await new Promise(r => setTimeout(r, 80));
-                }
-              }
-            }
-            lockHudOnScreen();
-          }
+          await executeOneStepInHud(step, executedIdx);
         }
         await new Promise(r => setTimeout(r, stepDelay));
       } catch (e) {
-        lockHudOnScreen();
         await new Promise(r => setTimeout(r, 150));
       }
     }
@@ -2419,7 +2416,6 @@
     setTimeout(loop, 250);
   }
 
-  // High-frequency 120ms Anti-Hide Watchdog: Guarantees AutoMouse NEVER hides, shrinks, or disappears!
   setInterval(() => {
     lockHudOnScreen();
     if (location.href !== lastUrl) {
@@ -2429,7 +2425,7 @@
     if (running && commandedByUser && !loopActive) {
       loop();
     }
-  }, 120);
+  }, 200);
 })();`;
     }
 
